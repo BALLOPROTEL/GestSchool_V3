@@ -1,0 +1,22 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "categories": {
+    "correctness": "error",
+    "suspicious": "error"
+  },
+  "rules": {
+    "no-console": "error",
+    "no-debugger": "error",
+    "typescript/no-explicit-any": "error",
+    "typescript/no-extraneous-class": ["error", { "allowWithDecorator": true }],
+    "unicorn/require-module-specifiers": "off"
+  },
+  "ignorePatterns": [
+    "**/.next/**",
+    "**/dist/**",
+    "**/coverage/**",
+    "**/node_modules/**",
+    "**/playwright-report/**",
+    "**/test-results/**"
+  ]
+}
