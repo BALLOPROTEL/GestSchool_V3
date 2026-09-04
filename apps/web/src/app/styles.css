@@ -1,25 +1,40 @@
-:root {
-  color-scheme: light dark;
-  font-family: system-ui, sans-serif;
-}
+@import '@fontsource-variable/plus-jakarta-sans';
+@import '@fontsource-variable/jetbrains-mono';
+@import '@fontsource-variable/noto-sans-arabic';
+@import 'tailwindcss';
+@import '../../../../packages/ui/src/styles.css';
 
-* {
-  box-sizing: border-box;
-}
+@source '../../../../packages/ui/src';
 
+html,
 body {
-  min-height: 100vh;
+  min-height: 100%;
   margin: 0;
 }
 
-main {
-  display: grid;
-  min-height: 100vh;
-  place-items: center;
-  padding: 2rem;
-  text-align: center;
+body {
+  overflow-x: hidden;
 }
 
-h1 {
-  font-size: clamp(1.75rem, 5vw, 3rem);
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+.page-shell {
+  width: 100%;
+  max-width: 100%;
+  padding: 1.5rem;
+}
+
+@media (min-width: 1024px) {
+  .page-shell {
+    padding: 2rem;
+  }
+}
+
+.scroll-fade {
+  background-image: linear-gradient(to inline-end, transparent, var(--card));
 }

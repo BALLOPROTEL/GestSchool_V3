@@ -13,8 +13,32 @@ export default defineConfig({
   },
   projects: [
     {
-      name: 'chromium',
-      use: devices['Desktop Chrome'],
+      name: '360x800',
+      use: { ...devices['Desktop Chrome'], viewport: { height: 800, width: 360 } },
+    },
+    {
+      name: '414x896',
+      use: { ...devices['Desktop Chrome'], viewport: { height: 896, width: 414 } },
+    },
+    {
+      name: '768x1024',
+      use: { ...devices['Desktop Chrome'], viewport: { height: 1024, width: 768 } },
+    },
+    {
+      name: '1024x768',
+      use: { ...devices['Desktop Chrome'], viewport: { height: 768, width: 1024 } },
+    },
+    {
+      name: '1366x768',
+      use: { ...devices['Desktop Chrome'], viewport: { height: 768, width: 1366 } },
+    },
+    {
+      name: '1440x900',
+      use: { ...devices['Desktop Chrome'], viewport: { height: 900, width: 1440 } },
+    },
+    {
+      name: '1920x1080',
+      use: { ...devices['Desktop Chrome'], viewport: { height: 1080, width: 1920 } },
     },
   ],
   webServer: {

@@ -10,6 +10,7 @@
     "./typescript/base": "./typescript/base.json",
     "./typescript/next": "./typescript/next.json",
     "./typescript/node": "./typescript/node.json",
-    "./typescript/package": "./typescript/package.json"
+    "./typescript/package": "./typescript/package.json",
+    "./typescript/react-library": "./typescript/react-library.json"
   }
 }
