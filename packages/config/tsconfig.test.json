@@ -1,0 +1,9 @@
+{
+  "extends": "./typescript/node.json",
+  "compilerOptions": {
+    "lib": ["ES2024", "DOM"],
+    "noEmit": true,
+    "rootDir": "src"
+  },
+  "include": ["src/**/*.test.ts"]
+}

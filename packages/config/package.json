@@ -4,13 +4,30 @@
   "private": true,
   "type": "module",
   "files": [
+    "dist",
+    "src",
     "typescript"
   ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.test.json",
+    "test": "vitest run"
+  },
   "exports": {
+    "./environment": {
+      "types": "./src/environment.ts",
+      "default": "./dist/environment.js"
+    },
     "./typescript/base": "./typescript/base.json",
     "./typescript/next": "./typescript/next.json",
     "./typescript/node": "./typescript/node.json",
     "./typescript/package": "./typescript/package.json",
     "./typescript/react-library": "./typescript/react-library.json"
+  },
+  "dependencies": {
+    "zod": "4.5.4"
+  },
+  "devDependencies": {
+    "vitest": "5.0.0"
   }
 }

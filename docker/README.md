@@ -1,4 +1,7 @@
-# Docker
+# Infrastructure Docker locale
 
-Emplacement réservé à l'infrastructure locale des lots futurs. Aucun service Docker n'est requis
-ou configuré pour le LOT 0.
+La composition officielle du LOT 2 se trouve dans `compose.yml`. Elle démarre PostgreSQL, Redis
+et MinIO sur un réseau dédié, avec volumes persistants et healthchecks.
+
+Utilisez exclusivement les scripts racine `pnpm infra:*`. `pnpm infra:reset` supprime les trois
+volumes nommés et toutes leurs données locales.

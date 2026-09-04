@@ -9,16 +9,23 @@
     "pnpm": ">=10.24.0 <11"
   },
   "scripts": {
-    "dev": "turbo run dev",
+    "dev": "pnpm --filter @gestschool/infrastructure... build && node --env-file=.env.example --env-file-if-exists=.env node_modules/turbo/bin/turbo run dev",
     "build": "turbo run build",
     "lint": "oxlint . --deny-warnings",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
-    "test:e2e": "turbo run test:e2e"
+    "test:e2e": "turbo run test:e2e",
+    "infra:up": "docker compose -f docker/compose.yml up -d --wait postgres redis minio && docker compose -f docker/compose.yml run --rm minio-init",
+    "infra:down": "docker compose -f docker/compose.yml down --remove-orphans",
+    "infra:logs": "docker compose -f docker/compose.yml logs -f postgres redis minio",
+    "infra:reset": "docker compose -f docker/compose.yml down --volumes --remove-orphans",
+    "infra:check": "pnpm --filter @gestschool/infrastructure... build && node --env-file=.env.example --env-file-if-exists=.env --import tsx scripts/infra-check.ts"
   },
   "devDependencies": {
+    "@gestschool/config": "workspace:*",
+    "@gestschool/infrastructure": "workspace:*",
     "@playwright/test": "1.62.1",
     "@types/node": "24.10.1",
     "@types/react": "19.2.18",

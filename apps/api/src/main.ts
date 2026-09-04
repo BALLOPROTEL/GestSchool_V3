@@ -3,12 +3,16 @@ import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 
 import { AppModule } from './app.module.js';
+import {
+  INFRASTRUCTURE_CONFIGURATION,
+  type InfrastructureConfiguration,
+} from './infrastructure/tokens.js';
 
 const bootstrap = async (): Promise<void> => {
   const application = await NestFactory.create(AppModule);
-  const port = Number.parseInt(process.env.API_PORT ?? '3001', 10);
+  const configuration = application.get<InfrastructureConfiguration>(INFRASTRUCTURE_CONFIGURATION);
 
-  await application.listen(port, '0.0.0.0');
+  await application.listen(configuration.apiPort, '127.0.0.1');
 };
 
 await bootstrap();
