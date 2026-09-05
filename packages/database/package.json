@@ -5,7 +5,8 @@
   "type": "module",
   "sideEffects": false,
   "files": [
-    "dist"
+    "dist",
+    "prisma"
   ],
   "types": "./dist/index.d.ts",
   "exports": {
@@ -15,10 +16,27 @@
     }
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "typecheck": "tsc --noEmit -p tsconfig.json"
+    "build": "pnpm db:generate && tsc -p tsconfig.json",
+    "db:generate": "node --env-file=../../.env.example --env-file-if-exists=../../.env node_modules/prisma/build/index.js generate --config prisma.config.ts",
+    "db:migrate": "node --env-file=../../.env.example --env-file-if-exists=../../.env node_modules/prisma/build/index.js migrate dev --config prisma.config.ts",
+    "db:migrate:deploy": "node --env-file=../../.env.example --env-file-if-exists=../../.env node_modules/prisma/build/index.js migrate deploy --config prisma.config.ts",
+    "db:reset": "node --env-file=../../.env.example --env-file-if-exists=../../.env node_modules/prisma/build/index.js migrate reset --force --config prisma.config.ts",
+    "db:seed": "node --env-file=../../.env.example --env-file-if-exists=../../.env --import tsx prisma/seed.ts",
+    "db:studio": "node --env-file=../../.env.example --env-file-if-exists=../../.env node_modules/prisma/build/index.js studio --config prisma.config.ts",
+    "db:test": "pnpm db:generate && node --env-file=../../.env.example --env-file-if-exists=../../.env ../../node_modules/vitest/vitest.mjs run --config vitest.integration.config.ts",
+    "test": "pnpm db:generate && vitest run --config vitest.config.ts",
+    "typecheck": "pnpm db:generate && tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.test.json"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "7.10.0",
+    "@prisma/client": "7.10.0",
+    "pg": "8.23.0"
   },
   "devDependencies": {
-    "@gestschool/config": "workspace:*"
+    "@gestschool/config": "workspace:*",
+    "@types/pg": "8.23.1",
+    "prisma": "7.10.0",
+    "tsx": "4.21.0",
+    "vitest": "5.0.0"
   }
 }

@@ -8,6 +8,7 @@ dist/
 coverage/
 .turbo/
 *.tsbuildinfo
+packages/database/src/generated/
 
 # Test artifacts
 playwright-report/

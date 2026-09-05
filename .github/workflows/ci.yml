@@ -12,6 +12,23 @@ permissions:
 jobs:
   quality:
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://gestschool:gestschool-ci-only@127.0.0.1:5432/gestschool
+      NODE_ENV: test
+    services:
+      postgres:
+        image: postgres:18.6-trixie
+        env:
+          POSTGRES_DB: gestschool
+          POSTGRES_PASSWORD: gestschool-ci-only
+          POSTGRES_USER: gestschool
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U gestschool -d gestschool"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -29,6 +46,18 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm db:generate
+
+      - name: Apply database migrations
+        run: pnpm db:migrate:deploy
+
+      - name: Seed test database
+        run: pnpm db:seed
+
+      - name: Test database integrity
+        run: pnpm db:test
 
       - name: Check formatting
         run: pnpm format:check
