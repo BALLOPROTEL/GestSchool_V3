@@ -1,8 +1,9 @@
 # GestSchool
 
 Monorepo SaaS GestSchool : fondation technique, interface visuelle, infrastructure locale et socle
-de données multi-tenant des LOTS 0 à 3. Le LOT 3 fournit le modèle relationnel et ses garanties
-d'intégrité ; il n'ajoute encore ni authentification, ni API métier, ni traitement asynchrone.
+de données multi-tenant des LOTS 0 à 3. Le LOT 4 ajoute l'identité, l'authentification réelle,
+les sessions, le RBAC et le MFA. Les écrans métier restent alimentés par mocks ; aucune API
+métier ni traitement asynchrone n'est ajouté.
 
 ## Prérequis
 
@@ -19,7 +20,9 @@ pnpm db:generate
 pnpm db:migrate:deploy
 pnpm db:seed
 pnpm db:test
-pnpm db:reset
+pnpm iam:keys
+pnpm iam:dev activation student@example.invalid
+pnpm iam:test
 pnpm exec playwright install chromium
 pnpm dev
 pnpm build
@@ -51,3 +54,6 @@ Le guide complet de l'infrastructure se trouve dans
 [`docs/infrastructure/local-development.md`](docs/infrastructure/local-development.md).
 Le modèle PostgreSQL et ses règles d'intégrité sont décrits dans
 [`docs/database/data-model.md`](docs/database/data-model.md).
+Le démarrage des comptes fictifs, les secrets locaux et les garanties IAM sont décrits dans
+[`docs/security/iam-auth.md`](docs/security/iam-auth.md). Aucun mot de passe n'est prédéfini par
+le seed : utilisez le lien d'activation du fichier local indiqué par `iam:dev`.

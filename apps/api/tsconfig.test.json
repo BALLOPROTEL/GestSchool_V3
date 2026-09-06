@@ -1,9 +1,10 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
+    "rootDir": ".",
     "lib": ["ES2024", "DOM"],
     "noEmit": true
   },
-  "include": ["src/**/*.test.ts"],
+  "include": ["src/**/*.test.ts", "tests/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }

@@ -3,6 +3,7 @@ import type { DependencyStates } from '@gestschool/infrastructure';
 import { isInfrastructureReady } from '@gestschool/infrastructure';
 
 import { InfrastructureHealthService } from './infrastructure/infrastructure-health.service.js';
+import { Public } from './modules/iam/presentation/http/security.js';
 
 export type LiveHealth = Readonly<{
   status: 'ok';
@@ -16,6 +17,7 @@ export type ReadyHealth = Readonly<{
 type ReadinessProvider = Pick<InfrastructureHealthService, 'check'>;
 
 @Controller('health')
+@Public()
 export class AppController {
   constructor(
     @Inject(InfrastructureHealthService)

@@ -20,6 +20,7 @@ test-results/
 !.env.example
 
 # Logs and editor files
+.local/
 *.log
 .DS_Store
 .idea/

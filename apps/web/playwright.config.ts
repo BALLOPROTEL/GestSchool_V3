@@ -1,5 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
 
+// Do not automatically persist DOM snapshots containing enrollment keys on failure.
+process.env['PLAYWRIGHT_NO_COPY_PROMPT'] = '1';
+
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
@@ -9,7 +12,8 @@ export default defineConfig({
   reporter: 'list',
   use: {
     baseURL: 'http://127.0.0.1:3000',
-    trace: 'on-first-retry',
+    // Auth flows contain credentials: do not persist traces, videos or screenshots.
+    trace: 'off',
   },
   projects: [
     {
@@ -41,10 +45,25 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'], viewport: { height: 1080, width: 1920 } },
     },
   ],
-  webServer: {
-    command: 'pnpm start --hostname 127.0.0.1 --port 3000',
-    url: 'http://127.0.0.1:3000',
-    reuseExistingServer: false,
-    timeout: 120_000,
-  },
+  webServer: [
+    {
+      command:
+        'node --env-file=../../.env.example --env-file-if-exists=../../.env --import tsx ../api/tests/e2e-server.ts',
+      url: 'http://127.0.0.1:3100/health/live',
+      reuseExistingServer: false,
+      timeout: 120_000,
+      env: {
+        NODE_ENV: 'test',
+        IAM_ENV: 'local',
+        IAM_REDIS_PREFIX: 'gestschool:iam:e2e',
+        TSX_TSCONFIG_PATH: '../api/tsconfig.json',
+      },
+    },
+    {
+      command: 'pnpm start --hostname 127.0.0.1 --port 3000',
+      url: 'http://127.0.0.1:3000',
+      reuseExistingServer: false,
+      timeout: 120_000,
+    },
+  ],
 });

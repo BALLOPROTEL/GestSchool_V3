@@ -12,6 +12,7 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@gestschool/contracts": "workspace:*",
     "@fontsource-variable/jetbrains-mono": "5.3.0",
     "@fontsource-variable/noto-sans-arabic": "5.3.0",
     "@fontsource-variable/plus-jakarta-sans": "5.3.0",

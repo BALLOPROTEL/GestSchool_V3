@@ -1,11 +1,51 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
+import { readFileSync } from 'node:fs';
+
+interface E2eUser {
+  email: string;
+  password: string;
+  token?: string;
+}
+function fixtures(): { visual: Record<string, E2eUser>; activation: E2eUser; reset: E2eUser } {
+  return JSON.parse(
+    readFileSync(new URL('../../../.local/iam-e2e.json', import.meta.url), 'utf8'),
+  ) as { visual: Record<string, E2eUser>; activation: E2eUser; reset: E2eUser };
+}
+
+async function waitForPageReady(page: Page): Promise<void> {
+  await expect(page.locator('main')).toBeVisible();
+  await expect(page.locator('main')).not.toHaveAttribute('aria-busy', 'true');
+  await expect(page.getByRole('heading').first()).toBeVisible();
+}
+
+test.beforeEach(async ({ page }, testInfo) => {
+  const title = testInfo.title;
+  const viewport = testInfo.project.name;
+  const runs =
+    title.startsWith('renders every') ||
+    (title.startsWith('supports theme') && viewport === '1366x768') ||
+    (title.startsWith('provides working') && ['360x800', '1366x768'].includes(viewport)) ||
+    (title.startsWith('exposes and') && viewport === '1440x900') ||
+    (title.startsWith('has no automated') && viewport === '1920x1080');
+  if (!runs) return;
+  const csrf = await page.request.get('/api/v1/auth/csrf');
+  const data = (await csrf.json()) as { csrfToken: string };
+  const user = fixtures().visual[viewport];
+  if (!user) throw new Error('Missing E2E fixture');
+  const login = await page.request.post('/api/v1/auth/login', {
+    data: user,
+    headers: { Origin: 'http://127.0.0.1:3000', 'X-CSRF-Token': data.csrfToken },
+  });
+  expect(login.status()).toBe(201);
+});
 
 const routes = [
   '/',
   '/login',
   '/forgot-password',
   '/activation',
+  '/reset-password',
   '/students',
   '/students/EL-2024-001',
   '/parents',
@@ -27,6 +67,7 @@ const routes = [
 ] as const;
 
 test('renders every LOT 1 page without runtime errors or document overflow', async ({ page }) => {
+  test.slow(); // This scenario loads all 23 routes, including real session restoration.
   const consoleErrors: string[] = [];
   const pageErrors: string[] = [];
   const apiCalls: string[] = [];
@@ -37,7 +78,8 @@ test('renders every LOT 1 page without runtime errors or document overflow', asy
   page.on('pageerror', (error) => pageErrors.push(error.message));
   page.on('request', (request) => {
     const url = new URL(request.url());
-    if (url.pathname.startsWith('/api/')) apiCalls.push(`${request.method()} ${url.pathname}`);
+    if (url.pathname.startsWith('/api/') && !url.pathname.startsWith('/api/v1/auth/'))
+      apiCalls.push(`${request.method()} ${url.pathname}`);
   });
 
   for (const route of routes) {
@@ -47,9 +89,7 @@ test('renders every LOT 1 page without runtime errors or document overflow', asy
 
     const response = await page.goto(route, { waitUntil: 'domcontentloaded' });
     expect(response?.ok(), `${route} should return a successful response`).toBe(true);
-    await expect(page.locator('main')).toBeVisible();
-    await expect(page.getByRole('heading').first()).toBeVisible();
-    await page.waitForTimeout(50);
+    await waitForPageReady(page);
 
     const overflow = await page.evaluate(() => ({
       body: document.body.scrollWidth - window.innerWidth,
@@ -113,6 +153,7 @@ test('provides working desktop and mobile navigation', async ({ page }, testInfo
     'Certified at one mobile and one desktop width.',
   );
   await page.goto('/');
+  await waitForPageReady(page);
   const viewport = page.viewportSize();
   expect(viewport).not.toBeNull();
 
@@ -139,24 +180,56 @@ test('provides working desktop and mobile navigation', async ({ page }, testInfo
   }
 });
 
-test('exercises authentication demonstration flows', async ({ page }, testInfo) => {
+test('exercises real login, activation and password reset flows', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== '1440x900', 'Authentication flow is certified once.');
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  page.on('console', (message) => {
+    if (message.type() === 'error') errors.push(message.text());
+  });
+  const fixture = fixtures();
+  const user = fixture.visual['1440x900'];
+  if (!user || !fixture.activation.token || !fixture.reset.token)
+    throw new Error('Missing IAM fixture');
   await page.goto('/login');
-  await page.getByLabel('Mot de passe', { exact: true }).fill('Demo2026!');
+  await page.getByLabel('Adresse e-mail', { exact: true }).fill(user.email);
+  await page.getByLabel('Mot de passe', { exact: true }).fill(user.password);
   await page.getByRole('button', { name: /Se connecter/ }).click();
   await expect(page).toHaveURL(/\/fr$/);
 
   await page.goto('/forgot-password');
+  await waitForPageReady(page);
+  await page.getByLabel('Adresse e-mail', { exact: true }).fill(user.email);
   await page.getByRole('button', { name: /Envoyer le lien/ }).click();
   await expect(page.getByRole('heading', { name: 'E-mail envoyé !' })).toBeVisible();
 
   await page.goto('/activation');
-  await page.getByLabel('Code de vérification').fill('123456');
+  await waitForPageReady(page);
+  const activationInput = page.getByLabel('Jeton à usage unique');
+  await activationInput.fill('!'.repeat(43));
+  expect(
+    await activationInput.evaluate((input: HTMLInputElement) => input.validity.patternMismatch),
+  ).toBe(true);
+  await activationInput.fill(`${'a'.repeat(41)}-_`);
+  expect(await activationInput.evaluate((input: HTMLInputElement) => input.checkValidity())).toBe(
+    true,
+  );
+  await activationInput.fill(fixture.activation.token);
   await page.getByRole('button', { name: /Mot de passe/ }).click();
-  await page.getByLabel('Créer un mot de passe').fill('Demo2026!');
-  await page.getByLabel('Confirmer le mot de passe').fill('Demo2026!');
+  await page.getByLabel('Créer un mot de passe').fill(fixture.activation.password);
+  await page.getByLabel('Confirmer le mot de passe').fill(fixture.activation.password);
   await page.getByRole('button', { name: /Activer mon compte/ }).click();
   await expect(page.getByRole('heading', { name: 'Compte activé !' })).toBeVisible();
+
+  await page.goto('/reset-password');
+  await waitForPageReady(page);
+  await page.getByLabel('Jeton à usage unique').fill(fixture.reset.token);
+  await page.getByRole('button', { name: /Mot de passe/ }).click();
+  await page.getByLabel('Créer un mot de passe').fill(fixture.reset.password);
+  await page.getByLabel('Confirmer le mot de passe').fill(fixture.reset.password);
+  await page.getByRole('button', { name: 'Enregistrer le mot de passe' }).click();
+  await expect(page.getByRole('heading', { name: 'Mot de passe modifié' })).toBeVisible();
+  expect(errors).toEqual([]);
 });
 
 test('exposes and operates the shared component catalogue', async ({ page }, testInfo) => {
@@ -222,6 +295,7 @@ test('exposes and operates the shared component catalogue', async ({ page }, tes
 test('has no automated WCAG A/AA violations on representative screens', async ({
   page,
 }, testInfo) => {
+  test.slow(); // Seven full axe audits need their own aggregate time budget.
   test.skip(
     testInfo.project.name !== '1920x1080',
     'Accessibility audit is certified at the largest desktop viewport.',
@@ -236,6 +310,7 @@ test('has no automated WCAG A/AA violations on representative screens', async ({
     '/ar',
   ]) {
     await page.goto(route);
+    await waitForPageReady(page);
     const results = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
       .analyze();

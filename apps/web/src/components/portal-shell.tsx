@@ -65,6 +65,8 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import type { CSSProperties, ReactNode } from 'react';
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
+import { useAuth } from '../features/auth/auth-provider';
 
 import { Link, usePathname, useRouter } from '../i18n/navigation';
 import type { AppLocale } from '../i18n/routing';
@@ -438,6 +440,9 @@ function NotificationMenu() {
 }
 
 function ProfileMenu() {
+  const { session, logout } = useAuth();
+  const router = useRouter();
+  const iam = useTranslations('Iam');
   const shell = useTranslations('Shell');
   const nav = useTranslations('Nav');
   return (
@@ -447,14 +452,18 @@ function ProfileMenu() {
           <Avatar className="size-7">
             <AvatarFallback className="bg-blue-600 text-[10px] text-white">AK</AvatarFallback>
           </Avatar>
-          <span className="hidden max-w-24 truncate text-xs sm:block">Amadou K.</span>
+          <span className="hidden max-w-24 truncate text-xs sm:block">
+            {session?.session.user.displayName}
+          </span>
           <ChevronDown className="hidden size-3 sm:block" />
         </Button>
       </DropdownTrigger>
       <DropdownContent align="end" className="w-52">
         <DropdownLabel>
-          <span className="block text-foreground">Amadou Kouyaté</span>
-          <span className="mt-0.5 block font-normal">{shell('admin')}</span>
+          <span className="block truncate text-foreground">
+            {session?.session.user.displayName}
+          </span>
+          <span className="mt-0.5 block truncate font-normal">{session?.session.tenant.name}</span>
         </DropdownLabel>
         <DropdownSeparator />
         <DropdownItem asChild>
@@ -470,11 +479,15 @@ function ProfileMenu() {
           </Link>
         </DropdownItem>
         <DropdownSeparator />
-        <DropdownItem asChild>
-          <Link href="/login">
-            <LogOut />
-            {shell('logout')}
-          </Link>
+        <DropdownItem
+          onSelect={() => {
+            void logout()
+              .then(() => router.push('/login'))
+              .catch(() => toast.error(iam('AUTH_UNAVAILABLE')));
+          }}
+        >
+          <LogOut />
+          {shell('logout')}
         </DropdownItem>
       </DropdownContent>
     </Dropdown>

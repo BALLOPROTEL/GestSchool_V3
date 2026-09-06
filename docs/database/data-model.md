@@ -1,5 +1,9 @@
 # Modèle de données — LOT 3
 
+Ce document décrit le socle historique de 43 tables. Le LOT 4 ajoute quatre tables techniques
+IAM et des champs/contraintes additifs, sans réécrire la migration initiale ; le schéma compte
+désormais 47 modèles. Voir [IAM — évolution PostgreSQL](../security/iam-auth.md#audit-et-évolution-postgresql).
+
 ## Périmètre et propriété
 
 `packages/database` est l'unique propriétaire du contrat Prisma, des migrations, du client généré,

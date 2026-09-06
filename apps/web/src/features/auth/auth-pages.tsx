@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, Card, CardContent, Checkbox, Input, Label } from '@gestschool/ui';
+import { Button, Card, CardContent, Input, Label } from '@gestschool/ui';
 import {
   ArrowLeft,
   ArrowRight,
@@ -14,18 +14,25 @@ import {
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { FormEvent, ReactNode } from 'react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import type { LoginResult } from '@gestschool/contracts';
+import { authRequest, AuthClientError } from './auth-client';
+import { useAuth } from './auth-provider';
 
 import { AppLogo } from '../../components/app-logo';
 import { LocaleSelect, ThemeToggle } from '../../components/portal-shell';
 import { Link, useRouter } from '../../i18n/navigation';
 
 function AuthShell({ children }: { children: ReactNode }) {
+  const { ready } = useAuth();
   const translate = useTranslations('Auth');
   const features = ['feature1', 'feature2', 'feature3', 'feature4'] as const;
 
   return (
-    <main className="grid min-h-screen bg-background lg:grid-cols-[minmax(380px,0.9fr)_minmax(480px,1.1fr)]">
+    <main
+      aria-busy={!ready}
+      className="grid min-h-screen bg-background lg:grid-cols-[minmax(380px,0.9fr)_minmax(480px,1.1fr)]"
+    >
       <section className="relative hidden overflow-hidden bg-sidebar p-10 text-white lg:flex lg:flex-col lg:justify-between xl:p-14">
         <div
           aria-hidden="true"
@@ -101,6 +108,8 @@ function PasswordInput({
           id={id}
           minLength={minLength}
           name={id}
+          maxLength={128}
+          autoComplete={id === 'login-password' ? 'current-password' : 'new-password'}
           required
           type={visible ? 'text' : 'password'}
         />
@@ -118,61 +127,159 @@ function PasswordInput({
   );
 }
 
+function ErrorNotice({ error }: { error: string }) {
+  const translate = useTranslations('Iam');
+  if (!error) return null;
+  return (
+    <p role="alert" className="text-sm font-medium text-destructive">
+      {translate(translate.has(error) ? error : 'AUTH_UNAVAILABLE')}
+    </p>
+  );
+}
+
 export function LoginPage() {
   const common = useTranslations('Common');
   const translate = useTranslations('Auth');
+  const iam = useTranslations('Iam');
   const router = useRouter();
-  const submit = (event: FormEvent<HTMLFormElement>) => {
+  const { accept, ready, expired } = useAuth();
+  const [challenge, setChallenge] = useState('');
+  const [enrollment, setEnrollment] = useState(false);
+  const [secret, setSecret] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    router.push('/');
+    const data = new FormData(event.currentTarget);
+    setLoading(true);
+    setError('');
+    try {
+      const result = challenge
+        ? await authRequest<LoginResult>(enrollment ? 'mfa/confirm' : 'mfa/verify', {
+            challenge,
+            code: String(data.get('totp')),
+          })
+        : await authRequest<LoginResult>('login', {
+            email: String(data.get('email')),
+            password: String(data.get('login-password')),
+          });
+      if (result.kind === 'session') {
+        accept(result);
+        setSecret('');
+        setChallenge('');
+        router.push('/');
+      } else {
+        setEnrollment(result.enrollmentRequired);
+        if (result.enrollmentRequired) {
+          const setup = await authRequest<{ challenge: string; secret: string }>('mfa/enroll', {
+            challenge: result.challenge,
+          });
+          setChallenge(setup.challenge);
+          setSecret(setup.secret);
+        } else setChallenge(result.challenge);
+      }
+    } catch (failure) {
+      setError(failure instanceof AuthClientError ? failure.code : 'AUTH_UNAVAILABLE');
+    } finally {
+      setLoading(false);
+    }
   };
-
   return (
     <AuthShell>
       <div className="mb-7">
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">GestSchool</p>
-        <h2 className="mt-2 text-3xl font-bold tracking-tight">{translate('loginTitle')}</h2>
+        <h2 className="mt-2 text-3xl font-bold tracking-tight">
+          {challenge ? iam('mfaTitle') : translate('loginTitle')}
+        </h2>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-          {translate('loginDescription')}
+          {challenge
+            ? iam(enrollment ? 'mfaEnroll' : 'mfaChallenge')
+            : translate('loginDescription')}
         </p>
       </div>
       <Card>
         <CardContent className="p-6 sm:p-7">
+          {expired ? (
+            <p role="status" className="mb-4 text-sm text-muted-foreground">
+              {iam('expired')}
+            </p>
+          ) : null}
           <form className="space-y-5" onSubmit={submit}>
-            <div className="space-y-2">
-              <Label htmlFor="login-email">{common('email')}</Label>
-              <div className="relative">
-                <Mail className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  autoComplete="email"
-                  className="ps-9"
-                  defaultValue="admin@gestschool.ci"
-                  id="login-email"
-                  name="email"
-                  required
-                  type="email"
-                />
-              </div>
-            </div>
-            <PasswordInput id="login-password" label={translate('password')} minLength={8} />
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <label className="flex cursor-pointer items-center gap-2 text-sm">
-                <Checkbox id="remember" />
-                <span>{translate('remember')}</span>
-              </label>
-              <Link
-                className="text-sm font-semibold text-primary hover:underline"
-                href="/forgot-password"
-              >
-                {translate('forgot')}
-              </Link>
-            </div>
-            <Button className="w-full" size="lg" type="submit">
-              {translate('login')}
+            {challenge ? (
+              <>
+                {secret ? (
+                  <p className="rounded-lg bg-muted p-3 text-sm">
+                    <span className="block">{iam('mfaSecret')}</span>
+                    <code
+                      data-testid="mfa-secret"
+                      className="mt-2 block break-all font-mono"
+                      dir="ltr"
+                    >
+                      {secret}
+                    </code>
+                  </p>
+                ) : null}
+                <div className="space-y-2">
+                  <Label htmlFor="totp">{iam('mfaCode')}</Label>
+                  <Input
+                    id="totp"
+                    name="totp"
+                    autoComplete="one-time-code"
+                    inputMode="numeric"
+                    pattern="[0-9]{6}"
+                    maxLength={6}
+                    minLength={6}
+                    required
+                  />
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="login-email">{common('email')}</Label>
+                  <div className="relative">
+                    <Mail className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      autoComplete="username"
+                      className="ps-9"
+                      id="login-email"
+                      name="email"
+                      required
+                      type="email"
+                    />
+                  </div>
+                </div>
+                <PasswordInput id="login-password" label={translate('password')} />
+                <div className="flex flex-wrap items-center justify-end gap-3">
+                  <Link
+                    className="text-sm font-semibold text-primary hover:underline"
+                    href="/forgot-password"
+                  >
+                    {translate('forgot')}
+                  </Link>
+                </div>
+              </>
+            )}
+            <ErrorNotice error={error} />
+            <Button className="w-full" disabled={loading || !ready} size="lg" type="submit">
+              {loading || !ready ? iam('loading') : challenge ? iam('verify') : translate('login')}
               <ArrowRight className="rtl:rotate-180" />
             </Button>
+            {challenge ? (
+              <Button
+                className="w-full"
+                variant="ghost"
+                onClick={() => {
+                  setChallenge('');
+                  setSecret('');
+                  setError('');
+                }}
+              >
+                {translate('backToLogin')}
+              </Button>
+            ) : null}
             <p className="rounded-lg bg-muted p-3 text-center text-xs leading-relaxed text-muted-foreground">
-              {translate('demoHint')}
+              {iam('sessionNotice')}
             </p>
           </form>
         </CardContent>
@@ -189,99 +296,24 @@ export function LoginPage() {
 export function ForgotPasswordPage() {
   const common = useTranslations('Common');
   const translate = useTranslations('Auth');
-  const [email, setEmail] = useState('direction@lyceevictor.ci');
+  const iam = useTranslations('Iam');
   const [sent, setSent] = useState(false);
-
-  return (
-    <AuthShell>
-      <Link
-        className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground"
-        href="/login"
-      >
-        <ArrowLeft className="size-4 rtl:rotate-180" />
-        {translate('backToLogin')}
-      </Link>
-      {sent ? (
-        <Card>
-          <CardContent className="p-7 text-center">
-            <span className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-emerald-100 dark:bg-emerald-950/40">
-              <CheckCircle2 className="size-7 text-success" />
-            </span>
-            <h2 className="mt-5 text-2xl font-bold">{translate('emailSent')}</h2>
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              {translate('emailSentDescription', { email })}
-            </p>
-            <Button className="mt-6" onClick={() => setSent(false)} variant="outline">
-              {translate('resend')}
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <>
-          <div className="mb-7">
-            <h2 className="text-3xl font-bold tracking-tight">{translate('forgotTitle')}</h2>
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              {translate('forgotDescription')}
-            </p>
-          </div>
-          <Card>
-            <CardContent className="p-7">
-              <form
-                className="space-y-5"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  setSent(true);
-                }}
-              >
-                <div className="space-y-2">
-                  <Label htmlFor="forgot-email">{common('email')}</Label>
-                  <div className="relative">
-                    <Mail className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      className="ps-9"
-                      id="forgot-email"
-                      onChange={(event) => setEmail(event.target.value)}
-                      required
-                      type="email"
-                      value={email}
-                    />
-                  </div>
-                </div>
-                <Button className="w-full" size="lg" type="submit">
-                  {translate('sendLink')}
-                  <ArrowRight className="rtl:rotate-180" />
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-        </>
-      )}
-    </AuthShell>
-  );
-}
-
-export function ActivationPage() {
-  const translate = useTranslations('Auth');
-  const router = useRouter();
-  const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const steps = [
-    translate('activationStep1'),
-    translate('activationStep2'),
-    translate('activationStep3'),
-  ];
-
-  const submitPassword = (event: FormEvent<HTMLFormElement>) => {
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
-    if (data.get('activation-password') !== data.get('activation-confirm')) {
-      setError(translate('passwordMismatch'));
-      return;
-    }
+    setLoading(true);
     setError('');
-    setStep(3);
+    try {
+      await authRequest('forgot-password', { email: String(data.get('email')) });
+      setSent(true);
+    } catch (failure) {
+      setError(failure instanceof AuthClientError ? failure.code : 'AUTH_UNAVAILABLE');
+    } finally {
+      setLoading(false);
+    }
   };
-
   return (
     <AuthShell>
       <Link
@@ -292,18 +324,105 @@ export function ActivationPage() {
         {translate('backToLogin')}
       </Link>
       <div className="mb-7">
-        <h2 className="text-3xl font-bold tracking-tight">{translate('activateAccount')}</h2>
-        <div className="mt-5 flex items-center gap-2" aria-label={translate('activateAccount')}>
-          {steps.map((label, index) => (
-            <div className="flex min-w-0 flex-1 items-center gap-2" key={label}>
-              <span
-                className={`flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${step >= index + 1 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}
-              >
-                {step > index + 1 ? <Check className="size-3.5" /> : index + 1}
-              </span>
-              <span className="hidden truncate text-xs font-semibold sm:inline">{label}</span>
+        <h2 className="text-3xl font-bold tracking-tight">
+          {sent ? translate('emailSent') : translate('forgotTitle')}
+        </h2>
+        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+          {sent ? iam('forgotGeneric') : translate('forgotDescription')}
+        </p>
+      </div>
+      <Card>
+        <CardContent className="p-7">
+          {sent ? (
+            <div className="text-center">
+              <CheckCircle2 className="mx-auto size-12 text-success" />
+              <Button className="mt-6" onClick={() => setSent(false)} variant="outline">
+                {translate('resend')}
+              </Button>
             </div>
-          ))}
+          ) : (
+            <form className="space-y-5" onSubmit={submit}>
+              <div className="space-y-2">
+                <Label htmlFor="forgot-email">{common('email')}</Label>
+                <Input id="forgot-email" name="email" autoComplete="email" required type="email" />
+              </div>
+              <ErrorNotice error={error} />
+              <Button className="w-full" disabled={loading} size="lg" type="submit">
+                {loading ? iam('loading') : translate('sendLink')}
+                <ArrowRight className="rtl:rotate-180" />
+              </Button>
+            </form>
+          )}
+        </CardContent>
+      </Card>
+    </AuthShell>
+  );
+}
+
+function SetPasswordPage({ activation }: { activation: boolean }) {
+  const translate = useTranslations('Auth');
+  const iam = useTranslations('Iam');
+  const router = useRouter();
+  const [token, setToken] = useState('');
+  const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  useEffect(() => {
+    const value = new URLSearchParams(window.location.hash.slice(1)).get('token');
+    if (value) {
+      setToken(value);
+      setStep(2);
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+  }, []);
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    if (data.get('activation-password') !== data.get('activation-confirm')) {
+      setError('AUTH_PASSWORD_MISMATCH');
+      return;
+    }
+    setLoading(true);
+    setError('');
+    try {
+      await authRequest(activation ? 'activation' : 'reset-password', {
+        token,
+        password: String(data.get('activation-password')),
+      });
+      setToken('');
+      setStep(3);
+    } catch (failure) {
+      setError(failure instanceof AuthClientError ? failure.code : 'AUTH_UNAVAILABLE');
+    } finally {
+      setLoading(false);
+    }
+  };
+  return (
+    <AuthShell>
+      <Link
+        className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground"
+        href="/login"
+      >
+        <ArrowLeft className="size-4 rtl:rotate-180" />
+        {translate('backToLogin')}
+      </Link>
+      <div className="mb-7">
+        <h2 className="text-3xl font-bold tracking-tight">
+          {activation ? translate('activateAccount') : iam('resetTitle')}
+        </h2>
+        <div className="mt-5 flex items-center gap-2">
+          {[iam('token'), translate('activationStep2'), translate('activationStep3')].map(
+            (label, index) => (
+              <div className="flex min-w-0 flex-1 items-center gap-2" key={label}>
+                <span
+                  className={`flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${step >= index + 1 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}
+                >
+                  {step > index + 1 ? <Check className="size-3.5" /> : index + 1}
+                </span>
+                <span className="hidden truncate text-xs font-semibold sm:inline">{label}</span>
+              </div>
+            ),
+          )}
         </div>
       </div>
       <Card>
@@ -316,67 +435,56 @@ export function ActivationPage() {
                 setStep(2);
               }}
             >
-              <div className="text-center">
-                <ShieldCheck className="mx-auto size-9 text-primary" />
-                <h3 className="mt-3 text-lg font-semibold">{translate('otp')}</h3>
-                <p className="mt-1 text-sm text-muted-foreground">{translate('otpDescription')}</p>
-              </div>
+              <ShieldCheck className="mx-auto size-9 text-primary" />
               <div className="space-y-2">
-                <Label htmlFor="activation-code">{translate('otp')}</Label>
+                <Label htmlFor="activation-code">{iam('token')}</Label>
                 <Input
-                  autoComplete="one-time-code"
-                  className="h-12 text-center font-mono text-xl tracking-[0.35em]"
                   id="activation-code"
-                  inputMode="numeric"
-                  maxLength={6}
-                  minLength={6}
-                  pattern="[0-9]{6}"
-                  placeholder="000000"
+                  value={token}
+                  onChange={(event) => setToken(event.target.value)}
+                  minLength={43}
+                  maxLength={43}
+                  pattern="[A-Za-z0-9_\-]{43}"
                   required
+                  autoComplete="off"
                 />
               </div>
-              <Button className="w-full" size="lg" type="submit">
+              <Button className="w-full" type="submit">
                 {translate('activationStep2')}
                 <ArrowRight className="rtl:rotate-180" />
               </Button>
             </form>
           ) : null}
           {step === 2 ? (
-            <form className="space-y-5" onSubmit={submitPassword}>
+            <form className="space-y-5" onSubmit={submit}>
               <p className="text-sm leading-relaxed text-muted-foreground">
-                {translate('newPasswordDescription')}
+                {iam('passwordPolicy')}
               </p>
               <PasswordInput
                 id="activation-password"
                 label={translate('newPassword')}
-                minLength={8}
+                minLength={12}
               />
               <PasswordInput
                 id="activation-confirm"
                 label={translate('confirmPassword')}
-                minLength={8}
+                minLength={12}
               />
-              {error ? (
-                <p aria-live="polite" className="text-sm font-medium text-destructive">
-                  {error}
-                </p>
-              ) : null}
-              <Button className="w-full" size="lg" type="submit">
-                {translate('activate')}
+              <ErrorNotice error={error} />
+              <Button className="w-full" disabled={loading} size="lg" type="submit">
+                {loading ? iam('loading') : activation ? translate('activate') : iam('resetSubmit')}
                 <ArrowRight className="rtl:rotate-180" />
               </Button>
             </form>
           ) : null}
           {step === 3 ? (
             <div className="text-center">
-              <span className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-emerald-100 dark:bg-emerald-950/40">
-                <CheckCircle2 className="size-7 text-success" />
-              </span>
-              <h3 className="mt-5 text-2xl font-bold">{translate('activationDone')}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                {translate('activationDoneDescription')}
-              </p>
-              <Button className="mt-6 w-full" onClick={() => router.push('/')} size="lg">
+              <CheckCircle2 className="mx-auto size-14 text-success" />
+              <h3 className="mt-5 text-2xl font-bold">
+                {activation ? translate('activationDone') : iam('resetDone')}
+              </h3>
+              <p className="mt-2 text-sm text-muted-foreground">{iam('signInNow')}</p>
+              <Button className="mt-6 w-full" onClick={() => router.push('/login')} size="lg">
                 {translate('login')}
                 <ArrowRight className="rtl:rotate-180" />
               </Button>
@@ -386,4 +494,10 @@ export function ActivationPage() {
       </Card>
     </AuthShell>
   );
+}
+export function ActivationPage() {
+  return <SetPasswordPage activation />;
+}
+export function ResetPasswordPage() {
+  return <SetPasswordPage activation={false} />;
 }

@@ -8,15 +8,26 @@
     "build": "tsc -p tsconfig.build.json",
     "start": "node --enable-source-maps dist/main.js",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.test.json",
-    "test": "vitest run"
+    "test": "vitest run src",
+    "test:iam": "node --env-file=../../.env.example --env-file-if-exists=../../.env ../../node_modules/vitest/vitest.mjs run --config vitest.iam.config.ts"
   },
   "dependencies": {
+    "@gestschool/database": "workspace:*",
+    "@gestschool/contracts": "workspace:*",
     "@gestschool/config": "workspace:*",
     "@gestschool/infrastructure": "workspace:*",
     "@nestjs/common": "12.0.1",
     "@nestjs/core": "12.0.1",
     "@nestjs/platform-express": "12.0.1",
     "reflect-metadata": "0.2.2",
-    "rxjs": "7.8.2"
+    "rxjs": "7.8.2",
+    "argon2": "0.45.1",
+    "jose": "6.2.12",
+    "otpauth": "9.5.2",
+    "redis": "6.2.1",
+    "zod": "4.5.4"
+  },
+  "devDependencies": {
+    "@types/express": "5.0.6"
   }
 }

@@ -1,6 +1,7 @@
 import { loadInfrastructureConfig } from '@gestschool/config/environment';
 
 import { createPrismaClient } from '../src/client.js';
+import { seedIam } from './iam-seed.js';
 
 const config = loadInfrastructureConfig();
 const prisma = createPrismaClient(config.databaseUrl);
@@ -23,7 +24,7 @@ await prisma.$transaction(async (database) => {
     ['grades.manage', 'Gérer les notes'],
     ['finance.read', 'Consulter les données financières'],
   ] as const;
-  const permissions = await Promise.all(
+  await Promise.all(
     permissionDefinitions.map(([code, description]) =>
       database.permission.upsert({
         where: { code },
@@ -48,18 +49,6 @@ await prisma.$transaction(async (database) => {
         });
 
     if (code === 'SCHOOL_ADMIN') adminRoleId = role.id;
-
-    await Promise.all(
-      permissions.map((permission) =>
-        database.rolePermission.upsert({
-          where: {
-            roleId_permissionId: { roleId: role.id, permissionId: permission.id },
-          },
-          update: {},
-          create: { roleId: role.id, permissionId: permission.id },
-        }),
-      ),
-    );
   }
 
   if (!adminRoleId) throw new Error('Unable to seed the SCHOOL_ADMIN role');
@@ -226,5 +215,6 @@ await prisma.$transaction(async (database) => {
   });
 });
 
+await seedIam(prisma);
 await prisma.$disconnect();
 process.stdout.write('GestSchool local seed completed\n');

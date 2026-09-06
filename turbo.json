@@ -1,6 +1,8 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "globalEnv": [
+    "IAM_*",
+    "API_INTERNAL_URL",
     "API_PORT",
     "DATABASE_URL",
     "NODE_ENV",
@@ -23,7 +25,7 @@
       "persistent": true
     },
     "typecheck": {
-      "dependsOn": ["^typecheck"],
+      "dependsOn": ["^build", "^typecheck"],
       "outputs": []
     },
     "test": {
