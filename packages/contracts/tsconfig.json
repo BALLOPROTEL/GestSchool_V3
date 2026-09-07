@@ -1,6 +1,7 @@
 {
   "extends": "../config/typescript/package.json",
   "compilerOptions": {
+    "lib": ["ES2024", "DOM"],
     "rootDir": "src",
     "outDir": "dist"
   },

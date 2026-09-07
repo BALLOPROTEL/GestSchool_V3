@@ -1,14 +1,14 @@
 import { defineConfig, devices } from '@playwright/test';
 
-// Do not automatically persist DOM snapshots containing enrollment keys on failure.
-process.env['PLAYWRIGHT_NO_COPY_PROMPT'] = '1';
-
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,
-  ...(process.env.CI ? { workers: 1 } : {}),
+  // One browser keeps Argon2, PostgreSQL and long multi-page journeys from competing locally.
+  workers: 1,
+  timeout: 60_000,
+  expect: { timeout: 10_000 },
   reporter: 'list',
   use: {
     baseURL: 'http://127.0.0.1:3000',

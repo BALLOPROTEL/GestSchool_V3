@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './fixtures';
 import { readFileSync } from 'node:fs';
 
 interface E2eUser {
@@ -7,16 +7,23 @@ interface E2eUser {
   password: string;
   token?: string;
 }
-function fixtures(): { visual: Record<string, E2eUser>; activation: E2eUser; reset: E2eUser } {
+function fixtures(): {
+  visual: Record<string, E2eUser>;
+  activation: E2eUser;
+  reset: E2eUser;
+  studentId: string;
+} {
   return JSON.parse(
     readFileSync(new URL('../../../.local/iam-e2e.json', import.meta.url), 'utf8'),
-  ) as { visual: Record<string, E2eUser>; activation: E2eUser; reset: E2eUser };
+  ) as { visual: Record<string, E2eUser>; activation: E2eUser; reset: E2eUser; studentId: string };
 }
 
 async function waitForPageReady(page: Page): Promise<void> {
   await expect(page.locator('main')).toBeVisible();
   await expect(page.locator('main')).not.toHaveAttribute('aria-busy', 'true');
   await expect(page.getByRole('heading').first()).toBeVisible();
+  if (await page.locator('[data-people-ready]').count())
+    await expect(page.locator('[data-people-ready]')).toHaveAttribute('data-people-ready', 'true');
 }
 
 test.beforeEach(async ({ page }, testInfo) => {
@@ -78,7 +85,10 @@ test('renders every LOT 1 page without runtime errors or document overflow', asy
   page.on('pageerror', (error) => pageErrors.push(error.message));
   page.on('request', (request) => {
     const url = new URL(request.url());
-    if (url.pathname.startsWith('/api/') && !url.pathname.startsWith('/api/v1/auth/'))
+    if (
+      url.pathname.startsWith('/api/') &&
+      !/^\/api\/v1\/(auth|students|guardians|teachers)(\/|$)/.test(url.pathname)
+    )
       apiCalls.push(`${request.method()} ${url.pathname}`);
   });
 
@@ -87,7 +97,9 @@ test('renders every LOT 1 page without runtime errors or document overflow', asy
     pageErrors.length = 0;
     apiCalls.length = 0;
 
-    const response = await page.goto(route, { waitUntil: 'domcontentloaded' });
+    const response = await page.goto(route.replace('EL-2024-001', fixtures().studentId), {
+      waitUntil: 'domcontentloaded',
+    });
     expect(response?.ok(), `${route} should return a successful response`).toBe(true);
     await waitForPageReady(page);
 
@@ -309,7 +321,7 @@ test('has no automated WCAG A/AA violations on representative screens', async ({
     '/design-system',
     '/ar',
   ]) {
-    await page.goto(route);
+    await page.goto(route.replace('EL-2024-001', fixtures().studentId));
     await waitForPageReady(page);
     const results = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])

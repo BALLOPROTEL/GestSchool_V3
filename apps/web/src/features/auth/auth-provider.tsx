@@ -4,7 +4,7 @@ import type { LoginResult } from '@gestschool/contracts';
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
 import { usePathname, useRouter } from '../../i18n/navigation';
-import { authRequest, restoreSession, setSession } from './auth-client';
+import { authRequest, currentSession, restoreSession, setSession } from './auth-client';
 
 type Authenticated = Extract<LoginResult, { kind: 'session' }>;
 interface AuthState {
@@ -40,9 +40,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     };
     window.addEventListener('storage', onStorage);
+    const onSession = () => {
+      const value = currentSession();
+      update(value);
+      setExpired(!value);
+    };
+    window.addEventListener('gestschool:session', onSession);
     return () => {
       active = false;
       window.removeEventListener('storage', onStorage);
+      window.removeEventListener('gestschool:session', onSession);
     };
   }, []);
   useEffect(() => {

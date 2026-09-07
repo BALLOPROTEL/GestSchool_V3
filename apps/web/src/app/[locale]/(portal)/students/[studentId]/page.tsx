@@ -1,4 +1,4 @@
-import { StudentProfilePage } from '../../../../../features/profiles/profile-pages';
+import { StudentProfilePage } from '../../../../../features/profiles/student-profile-page';
 
 export default function Page() {
   return <StudentProfilePage />;

@@ -66,7 +66,8 @@ export function Pagination({
   onPageChange,
   totalPages,
 }: PaginationProperties) {
-  const pages = Array.from({ length: totalPages }, (_, index) => index + 1);
+  const start = Math.max(1, Math.min(currentPage - 1, totalPages - 2));
+  const pages = Array.from({ length: Math.min(3, totalPages) }, (_, index) => start + index);
   return (
     <nav aria-label="Pagination" className="flex max-w-full items-center justify-center gap-1">
       <Button
@@ -78,6 +79,7 @@ export function Pagination({
       >
         <ChevronLeft className="rtl:rotate-180" />
       </Button>
+      {start > 1 ? <MoreHorizontal aria-hidden="true" className="mx-1 size-4" /> : null}
       {pages.map((page) => (
         <Button
           aria-current={page === currentPage ? 'page' : undefined}
@@ -90,7 +92,9 @@ export function Pagination({
           {page}
         </Button>
       ))}
-      {totalPages > 4 ? <MoreHorizontal aria-hidden="true" className="mx-1 size-4" /> : null}
+      {start + pages.length - 1 < totalPages ? (
+        <MoreHorizontal aria-hidden="true" className="mx-1 size-4" />
+      ) : null}
       <Button
         aria-label={labels.next}
         disabled={currentPage === totalPages}

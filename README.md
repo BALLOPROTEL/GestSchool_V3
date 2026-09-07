@@ -2,8 +2,9 @@
 
 Monorepo SaaS GestSchool : fondation technique, interface visuelle, infrastructure locale et socle
 de données multi-tenant des LOTS 0 à 3. Le LOT 4 ajoute l'identité, l'authentification réelle,
-les sessions, le RBAC et le MFA. Les écrans métier restent alimentés par mocks ; aucune API
-métier ni traitement asynchrone n'est ajouté.
+les sessions, le RBAC et le MFA. Le LOT 5 branche les annuaires élèves, parents et enseignants
+sur PostgreSQL, avec validation, scopes et audit. Les autres écrans restent des démonstrations ;
+aucun module académique du LOT 6 ni traitement asynchrone n'est ajouté.
 
 ## Prérequis
 
@@ -22,6 +23,9 @@ pnpm db:seed
 pnpm db:test
 pnpm iam:keys
 pnpm iam:dev activation student@example.invalid
+pnpm dev:access
+pnpm dev:totp school-admin@example.invalid
+pnpm people:test
 pnpm iam:test
 pnpm exec playwright install chromium
 pnpm dev
@@ -56,4 +60,10 @@ Le modèle PostgreSQL et ses règles d'intégrité sont décrits dans
 [`docs/database/data-model.md`](docs/database/data-model.md).
 Le démarrage des comptes fictifs, les secrets locaux et les garanties IAM sont décrits dans
 [`docs/security/iam-auth.md`](docs/security/iam-auth.md). Aucun mot de passe n'est prédéfini par
-le seed : utilisez le lien d'activation du fichier local indiqué par `iam:dev`.
+le seed. En local uniquement, `pnpm dev:access` génère les accès, les affiche et vérifie les sept
+connexions par HTTP, avec MFA pour les rôles privilégiés. Les accès sont conservés dans
+`.local/test-access.json` (0600, ignoré par Git). `pnpm dev:totp EMAIL` affiche le code courant ;
+chaque code n'est utilisable qu'une fois, attendre la fenêtre suivante si nécessaire.
+Puis `pnpm dev` rend le portail disponible à `http://localhost:3000/fr/login`.
+Le périmètre, les routes et les limites du LOT 5 sont décrits dans
+[`docs/lot5-directories.md`](docs/lot5-directories.md).

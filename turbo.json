@@ -28,6 +28,14 @@
       "dependsOn": ["^build", "^typecheck"],
       "outputs": []
     },
+    "@gestschool/database#typecheck": {
+      "dependsOn": ["build", "^typecheck"],
+      "outputs": []
+    },
+    "@gestschool/database#test": {
+      "dependsOn": ["build"],
+      "outputs": []
+    },
     "test": {
       "dependsOn": ["^build"],
       "outputs": []

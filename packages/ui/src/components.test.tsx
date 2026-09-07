@@ -7,8 +7,21 @@ import { Card, CardContent, StatusBadge } from './display';
 import { Input, Select, SelectItem, Textarea } from './forms';
 import { cn } from './lib/cn';
 import { EmptyState } from './states';
+import { Pagination } from './navigation';
 
 describe('UI foundation components', () => {
+  it('bounds pagination controls independently of the SQL result size', () => {
+    const markup = renderToStaticMarkup(
+      <Pagination
+        currentPage={5000}
+        totalPages={10000}
+        labels={{ next: 'Next', previous: 'Previous' }}
+      />,
+    );
+    expect(markup.match(/<button/g)).toHaveLength(5);
+    expect(markup).toContain('aria-current="page"');
+    expect(markup).toContain('5000');
+  });
   it('merges Tailwind classes predictably', () => {
     expect(cn('px-2 text-sm', false, 'px-4')).toBe('text-sm px-4');
   });

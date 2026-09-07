@@ -1,4 +1,4 @@
-import { TeachersPage } from '../../../../features/directory/directory-pages';
+import { TeachersPage } from '../../../../features/directory/people-pages';
 
 export default function Page() {
   return <TeachersPage />;

@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { createHmac } from 'node:crypto';
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 // Independent RFC 6238 calculation for the browser enrollment check.
 function totp(secret: string): string {

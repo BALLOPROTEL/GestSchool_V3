@@ -29,6 +29,15 @@ export const permissionCodes = [
   'students.read',
   'students.create',
   'students.update',
+  'students.archive',
+  'guardians.read',
+  'guardians.create',
+  'guardians.update',
+  'guardians.archive',
+  'teachers.read',
+  'teachers.create',
+  'teachers.update',
+  'teachers.archive',
   'grades.read',
   'grades.create',
   'grades.update',
@@ -59,6 +68,20 @@ export const roleGrants: Readonly<Record<SystemRole, readonly Grant[]>> = {
     ...grants(self, 'OWN'),
     ...grants(
       [
+        'students.archive',
+        'guardians.read',
+        'guardians.create',
+        'guardians.update',
+        'guardians.archive',
+        'teachers.read',
+        'teachers.create',
+        'teachers.update',
+        'teachers.archive',
+      ],
+      'TENANT',
+    ),
+    ...grants(
+      [
         'users.invite',
         'roles.assign',
         'students.read',
@@ -72,6 +95,7 @@ export const roleGrants: Readonly<Record<SystemRole, readonly Grant[]>> = {
   ],
   DIRECTOR: [
     ...grants(self, 'OWN'),
+    ...grants(['guardians.read', 'teachers.read'], 'TENANT'),
     ...grants(
       ['students.read', 'grades.read', 'grades.validate', 'grades.publish', 'payments.read'],
       'TENANT',
@@ -98,6 +122,7 @@ export const roleGrants: Readonly<Record<SystemRole, readonly Grant[]>> = {
   ],
   TEACHER: [
     ...grants(self, 'OWN'),
+    ...grants(['teachers.read'], 'OWN'),
     ...grants(
       ['students.read', 'grades.read', 'grades.create', 'grades.update', 'grades.submit'],
       'ASSIGNED',
@@ -105,6 +130,7 @@ export const roleGrants: Readonly<Record<SystemRole, readonly Grant[]>> = {
   ],
   PARENT: [
     ...grants(self, 'OWN'),
+    ...grants(['guardians.read'], 'OWN'),
     ...grants(['students.read', 'grades.read', 'payments.read'], 'CHILDREN'),
   ],
   STUDENT: [

@@ -19,9 +19,43 @@ try {
   const tenant = await database.tenant.create({
     data: { slug: `iam-e2e-${randomUUID()}`, name: 'École E2E' },
   });
-  const create = async (code: 'STUDENT' | 'SCHOOL_ADMIN', activated = true) => {
+  // Explicit read-only fixture role: real tenant grants, no administrative CRUD or MFA bypass.
+  const reader = await database.role.create({
+    data: {
+      tenantId: tenant.id,
+      scope: 'TENANT',
+      code: 'VISUAL_READER',
+      name: 'Visual certification reader',
+    },
+  });
+  for (const code of [
+    'session.read',
+    'session.revoke',
+    'membership.read',
+    'tenant.switch',
+    'mfa.manage',
+    'students.read',
+    'guardians.read',
+    'teachers.read',
+  ]) {
+    const permission = await database.permission.findUniqueOrThrow({ where: { code } });
+    await database.rolePermission.create({
+      data: {
+        tenantId: tenant.id,
+        roleId: reader.id,
+        permissionId: permission.id,
+        scope: ['students.read', 'guardians.read', 'teachers.read'].includes(code)
+          ? 'TENANT'
+          : 'OWN',
+      },
+    });
+  }
+  const create = async (code: 'STUDENT' | 'SCHOOL_ADMIN' | 'VISUAL_READER', activated = true) => {
     const email = `${randomUUID()}@example.invalid`;
-    const role = await database.role.findFirstOrThrow({ where: { code, tenantId: null } });
+    const role =
+      code === 'VISUAL_READER'
+        ? reader
+        : await database.role.findFirstOrThrow({ where: { code, tenantId: null } });
     const user = await database.user.create({
       data: {
         email,
@@ -30,7 +64,11 @@ try {
       },
     });
     await database.membership.create({
-      data: { tenantId: tenant.id, userId: user.id, roles: { create: { roleId: role.id } } },
+      data: {
+        tenantId: tenant.id,
+        userId: user.id,
+        roles: { create: { roleId: role.id } },
+      },
     });
     return { email, password };
   };
@@ -44,7 +82,56 @@ try {
     '1440x900',
     '1920x1080',
   ])
-    visual[viewport] = await create('STUDENT');
+    visual[viewport] = await create('VISUAL_READER');
+  const student = await database.student.create({
+    data: {
+      tenantId: tenant.id,
+      matricule: 'VISUAL-001',
+      firstName: 'Aminata',
+      lastName: 'Diallo',
+      birthDate: new Date('2010-03-15'),
+    },
+  });
+  const guardian = await database.guardian.create({
+    data: {
+      tenantId: tenant.id,
+      guardianReference: 'VISUAL-PAR-001',
+      firstName: 'Mariam',
+      lastName: 'Diallo',
+      email: 'visual-parent@example.invalid',
+    },
+  });
+  await database.studentGuardian.create({
+    data: {
+      tenantId: tenant.id,
+      studentId: student.id,
+      guardianId: guardian.id,
+      relationship: 'parent',
+      isPrimary: true,
+    },
+  });
+  await database.teacher.create({
+    data: {
+      tenantId: tenant.id,
+      employeeNumber: 'VISUAL-EMP-001',
+      firstName: 'Moussa',
+      lastName: 'Koné',
+    },
+  });
+  const people: Record<
+    string,
+    {
+      crud: { email: string; password: string };
+      locales: { email: string; password: string };
+      denied: { email: string; password: string };
+    }
+  > = {};
+  for (const viewport of Object.keys(visual))
+    people[viewport] = {
+      crud: await create('SCHOOL_ADMIN'),
+      locales: await create('SCHOOL_ADMIN'),
+      denied: await create('STUDENT'),
+    };
   const activation = await create('STUDENT', false);
   const reset = await create('STUDENT');
   const mfa = await create('SCHOOL_ADMIN');
@@ -57,6 +144,8 @@ try {
     new URL('iam-e2e.json', directory),
     JSON.stringify({
       visual,
+      studentId: student.id,
+      people,
       activation: { ...activation, token: activationToken },
       reset: { ...reset, token: resetToken },
       mfa,

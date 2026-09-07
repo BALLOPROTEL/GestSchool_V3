@@ -440,6 +440,8 @@ model StudentGuardian {
   guardianId   String   @map("guardian_id") @db.Uuid
   relationship String   @db.VarChar(60)
   isPrimary    Boolean  @default(false) @map("is_primary")
+  isFinancialContact Boolean @default(false) @map("is_financial_contact")
+  receivesNotifications Boolean @default(true) @map("receives_notifications")
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   student      Student  @relation(fields: [tenantId, studentId], references: [tenantId, id], onDelete: Cascade)
   guardian     Guardian @relation(fields: [tenantId, guardianId], references: [tenantId, id], onDelete: Cascade)
