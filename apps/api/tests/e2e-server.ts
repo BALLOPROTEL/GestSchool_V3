@@ -3,6 +3,8 @@ import { randomUUID } from 'node:crypto';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { loadInfrastructureConfig } from '@gestschool/config/environment';
 import { createPrismaClient } from '@gestschool/database';
+import { academicReadPermissions } from '@gestschool/contracts';
+import { academicFixture } from './academic-e2e-fixtures.js';
 import { IamRuntime } from '../src/modules/iam/infrastructure/iam-runtime.js';
 import { loadIamConfig } from '../src/modules/iam/infrastructure/iam-config.js';
 import { opaqueToken } from '../src/modules/iam/infrastructure/crypto.js';
@@ -37,6 +39,7 @@ try {
     'students.read',
     'guardians.read',
     'teachers.read',
+    ...academicReadPermissions,
   ]) {
     const permission = await database.permission.findUniqueOrThrow({ where: { code } });
     await database.rolePermission.create({
@@ -44,13 +47,22 @@ try {
         tenantId: tenant.id,
         roleId: reader.id,
         permissionId: permission.id,
-        scope: ['students.read', 'guardians.read', 'teachers.read'].includes(code)
+        scope: [
+          'students.read',
+          'guardians.read',
+          'teachers.read',
+          ...academicReadPermissions,
+        ].includes(code)
           ? 'TENANT'
           : 'OWN',
       },
     });
   }
-  const create = async (code: 'STUDENT' | 'SCHOOL_ADMIN' | 'VISUAL_READER', activated = true) => {
+  const create = async (
+    code: 'STUDENT' | 'SCHOOL_ADMIN' | 'VISUAL_READER' | 'TEACHER',
+    activated = true,
+    tenantId = tenant.id,
+  ) => {
     const email = `${randomUUID()}@example.invalid`;
     const role =
       code === 'VISUAL_READER'
@@ -65,7 +77,7 @@ try {
     });
     await database.membership.create({
       data: {
-        tenantId: tenant.id,
+        tenantId,
         userId: user.id,
         roles: { create: { roleId: role.id } },
       },
@@ -133,6 +145,30 @@ try {
       denied: await create('STUDENT'),
     };
   const activation = await create('STUDENT', false);
+  await academicFixture(database, tenant.id);
+  const academics: Record<
+    string,
+    {
+      crud: { email: string; password: string };
+      locales: { email: string; password: string };
+      teacher: { email: string; password: string };
+      classId: string;
+      yearId: string;
+      teacherName: string;
+    }
+  > = {};
+  for (const viewport of Object.keys(visual)) {
+    const academicTenant = await database.tenant.create({
+      data: { slug: `academic-e2e-${randomUUID()}`, name: 'École académique E2E' },
+    });
+    const teacher = await create('TEACHER', true, academicTenant.id);
+    academics[viewport] = {
+      crud: await create('SCHOOL_ADMIN', true, academicTenant.id),
+      locales: await create('SCHOOL_ADMIN', true, academicTenant.id),
+      teacher,
+      ...(await academicFixture(database, academicTenant.id, teacher.email)),
+    };
+  }
   const reset = await create('STUDENT');
   const mfa = await create('SCHOOL_ADMIN');
   const metadata = { requestId: randomUUID(), ipAddress: 'e2e-setup', userAgent: 'e2e-setup' };
@@ -146,6 +182,7 @@ try {
       visual,
       studentId: student.id,
       people,
+      academics,
       activation: { ...activation, token: activationToken },
       reset: { ...reset, token: resetToken },
       mfa,

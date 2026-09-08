@@ -35,18 +35,11 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 import type { AppLocale } from '../../i18n/routing';
-import {
-  enrollments,
-  gradeRecords,
-  schoolClasses,
-  students,
-  weeklyAttendance,
-} from '../../mocks/data';
+import { enrollments, gradeRecords, students, weeklyAttendance } from '../../mocks/data';
 import type { Enrollment, GradeRecord, Student } from '../../mocks/data';
 import { formatCurrency, formatNumber, getInitials } from '../shared/format';
 import { useMockAction } from '../shared/mock-action';
 import { PageHeader } from '../shared/page-header';
-import { ProgressBar } from '../shared/progress-bar';
 import { RowActions } from '../shared/row-actions';
 import { SearchField } from '../shared/search-field';
 import { StatusPill } from '../shared/status-pill';
@@ -179,93 +172,6 @@ export function EnrollmentsPage() {
           />
         </CardContent>
       </Card>
-    </div>
-  );
-}
-
-export function ClassesPage() {
-  const common = useTranslations('Common');
-  const nav = useTranslations('Nav');
-  const translate = useTranslations('Classes');
-  const mockAction = useMockAction();
-  const [query, setQuery] = useState('');
-  const filtered = schoolClasses.filter((schoolClass) =>
-    `${schoolClass.name} ${schoolClass.teacher}`
-      .toLocaleLowerCase()
-      .includes(query.toLocaleLowerCase()),
-  );
-  return (
-    <div className="page-shell">
-      <PageHeader
-        actions={
-          <>
-            <Button onClick={() => mockAction(common('export'))} size="sm" variant="outline">
-              <Download />
-              {common('export')}
-            </Button>
-            <Button onClick={() => mockAction(translate('add'))} size="sm">
-              <Plus />
-              {translate('add')}
-            </Button>
-          </>
-        }
-        description={translate('description', {
-          classes: schoolClasses.length,
-          students: schoolClasses.reduce((sum, item) => sum + item.count, 0),
-        })}
-        eyebrow={nav('academic')}
-        title={translate('title')}
-      />
-      <SearchField
-        label={common('search')}
-        onChange={setQuery}
-        placeholder={translate('search')}
-        value={query}
-      />
-      <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {filtered.map((schoolClass) => {
-          const percentage = Math.round((schoolClass.count / schoolClass.capacity) * 100);
-          return (
-            <Card className="transition-shadow hover:shadow-sm" key={schoolClass.id}>
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <h2 className="font-bold">{schoolClass.name}</h2>
-                    <p className="mt-0.5 text-[11px] text-muted-foreground">
-                      {schoolClass.level} · {translate('room', { room: schoolClass.room })}
-                    </p>
-                  </div>
-                  <Badge className="font-mono text-[10px]" variant="secondary">
-                    {schoolClass.id}
-                  </Badge>
-                </div>
-                <p className="mt-4 text-xs text-muted-foreground">
-                  {translate('teacher', { name: schoolClass.teacher })}
-                </p>
-                <div className="mt-4 flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">{translate('capacity')}</span>
-                  <span className="font-mono font-bold">
-                    {schoolClass.count}/{schoolClass.capacity}
-                  </span>
-                </div>
-                <ProgressBar
-                  className="mt-2"
-                  label={`${translate('capacity')} ${schoolClass.name}`}
-                  value={percentage}
-                />
-                <Button
-                  className="mt-4 w-full"
-                  onClick={() => mockAction(common('view'))}
-                  size="sm"
-                  variant="outline"
-                >
-                  {common('view')}
-                </Button>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
     </div>
   );
 }

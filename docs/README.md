@@ -3,7 +3,7 @@
 Le monorepo est organisé autour de trois applications et de six packages internes :
 
 - `apps/web` : interface Next.js du LOT 1, localisée en français, anglais et arabe ;
-- `apps/api` : sondes de santé, API IAM du LOT 4 et annuaires du LOT 5 ;
+- `apps/api` : sondes de santé, API IAM du LOT 4, annuaires du LOT 5 et référentiel académique du LOT 6 ;
 - `apps/worker` : contexte applicatif NestJS sans serveur HTTP ;
 - `packages/config` : configurations TypeScript communes ;
 - `packages/ui` : tokens et composants visuels réutilisables du LOT 1 ;
@@ -22,12 +22,14 @@ Le compte rendu des commandes, des 50 tests IAM et de la certification navigateu
 [`security/lot4-certification.md`](security/lot4-certification.md).
 Le LOT 5 et ses accès locaux sont documentés dans [`lot5-directories.md`](lot5-directories.md).
 Son compte rendu de certification est dans [`lot5-certification.md`](lot5-certification.md).
+Le référentiel académique est documenté dans [`lot6-academics.md`](lot6-academics.md).
 
 ## Limites volontaires
 
 Le LOT 1 fournit le contrat visuel. Le LOT 2 ajoute PostgreSQL, Redis et MinIO. Le LOT 3 ajoute
 Prisma et le socle de données multi-tenant. Le LOT 4 branche l'authentification réelle
 et protège l'entrée du portail. Le LOT 5 fournit uniquement les annuaires élèves, parents,
-enseignants et les relations parent/enfant. Les autres écrans restent en mocks : aucun LOT 6,
+enseignants et les relations parent/enfant. Le LOT 6 fournit le référentiel académique et les
+affectations enseignants. Les autres écrans restent en mocks : aucun LOT 7,
 file de travaux, connecteur d'envoi ou calcul académique/financier n'est implémenté. Consultez
 [`infrastructure/local-development.md`](infrastructure/local-development.md) pour le workflow local.

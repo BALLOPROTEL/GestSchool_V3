@@ -10,6 +10,7 @@ import { configureIamHttp } from '../presentation/http/security.js';
 import { loadIamConfig } from './iam-config.js';
 import { IamRuntime } from './iam-runtime.js';
 import { opaqueToken } from './crypto.js';
+import { prepareAcademicDemo } from '../../academics/infrastructure/dev-fixtures.js';
 
 const config = loadIamConfig();
 const infrastructure = loadInfrastructureConfig();
@@ -172,6 +173,10 @@ try {
     },
   });
   // Real HTTP authentication with the same global guards, Redis limiter and MFA as normal login.
+  const academicDemo = await prepareAcademicDemo(database, tenant.id);
+  process.stdout.write(
+    `Academic demo ${academicDemo.created ? 'created' : 'preserved'}: ${academicDemo.academicYearId}\n`,
+  );
   await app.listen(0, '127.0.0.1');
   const base = await app.getUrl();
   for (const account of accounts) {

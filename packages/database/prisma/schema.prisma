@@ -51,8 +51,16 @@ enum AcademicYearStatus {
   DRAFT
   ACTIVE
   CLOSED
+  ARCHIVED
 
   @@map("academic_year_status")
+}
+
+enum AcademicRecordStatus {
+  ACTIVE
+  ARCHIVED
+
+  @@map("academic_record_status")
 }
 
 enum AcademicPeriodType {
@@ -481,6 +489,7 @@ model AcademicYear {
   startsOn     DateTime           @map("starts_on") @db.Date
   endsOn       DateTime           @map("ends_on") @db.Date
   status       AcademicYearStatus @default(DRAFT)
+  archivedAt   DateTime?           @map("archived_at") @db.Timestamptz(6)
   createdAt    DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt    DateTime           @updatedAt @map("updated_at") @db.Timestamptz(6)
   tenant       Tenant             @relation(fields: [tenantId], references: [id], onDelete: Restrict)
@@ -500,6 +509,8 @@ model AcademicPeriod {
   academicYearId String               @map("academic_year_id") @db.Uuid
   name           String               @db.VarChar(100)
   type           AcademicPeriodType
+  status         AcademicRecordStatus @default(ACTIVE)
+  archivedAt     DateTime?             @map("archived_at") @db.Timestamptz(6)
   ordinal        Int                  @db.SmallInt
   startsOn       DateTime             @map("starts_on") @db.Date
   endsOn         DateTime             @map("ends_on") @db.Date
@@ -523,6 +534,8 @@ model Level {
   code      String        @db.VarChar(30)
   name      String        @db.VarChar(100)
   position  Int           @default(0)
+  status    AcademicRecordStatus @default(ACTIVE)
+  archivedAt DateTime? @map("archived_at") @db.Timestamptz(6)
   createdAt DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
   tenant    Tenant        @relation(fields: [tenantId], references: [id], onDelete: Restrict)
@@ -541,6 +554,8 @@ model SchoolClass {
   code           String         @db.VarChar(40)
   name           String         @db.VarChar(120)
   capacity       Int?
+  status         AcademicRecordStatus @default(ACTIVE)
+  archivedAt     DateTime? @map("archived_at") @db.Timestamptz(6)
   createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt      DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
   academicYear   AcademicYear   @relation(fields: [tenantId, academicYearId], references: [tenantId, id], onDelete: Restrict)
@@ -562,6 +577,8 @@ model Subject {
   tenantId    String           @map("tenant_id") @db.Uuid
   code        String           @db.VarChar(30)
   name        String           @db.VarChar(120)
+  status      AcademicRecordStatus @default(ACTIVE)
+  archivedAt  DateTime? @map("archived_at") @db.Timestamptz(6)
   createdAt   DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt   DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
   tenant      Tenant           @relation(fields: [tenantId], references: [id], onDelete: Restrict)
@@ -598,6 +615,9 @@ model TeachingAssignment {
   classSubjectId   String         @map("class_subject_id") @db.Uuid
   teacherId        String         @map("teacher_id") @db.Uuid
   academicPeriodId String         @map("academic_period_id") @db.Uuid
+  status           AcademicRecordStatus @default(ACTIVE)
+  archivedAt       DateTime? @map("archived_at") @db.Timestamptz(6)
+  updatedAt        DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   createdAt        DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
   classSubject     ClassSubject   @relation(fields: [tenantId, classSubjectId], references: [tenantId, id], onDelete: Restrict)
   teacher          Teacher        @relation(fields: [tenantId, teacherId], references: [tenantId, id], onDelete: Restrict)

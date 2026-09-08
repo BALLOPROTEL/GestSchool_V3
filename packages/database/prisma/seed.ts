@@ -12,6 +12,7 @@ await prisma.$transaction(async (database) => {
     update: { name: 'École Démo Locale' },
     create: { slug: 'ecole-demo-locale', name: 'École Démo Locale' },
   });
+  await database.$queryRaw`SELECT id FROM tenants WHERE id = ${tenant.id}::uuid FOR UPDATE`;
 
   await database.tenantSetting.upsert({
     where: { tenantId: tenant.id },
@@ -75,14 +76,19 @@ await prisma.$transaction(async (database) => {
 
   const academicYear = await database.academicYear.upsert({
     where: { tenantId_code: { tenantId: tenant.id, code: '2026-2027' } },
-    update: { status: 'ACTIVE' },
+    // Never reopen a closed/archived year or replace the tenant's current active year.
+    update: {},
     create: {
       tenantId: tenant.id,
       code: '2026-2027',
       name: 'Année 2026-2027',
       startsOn: new Date('2026-09-01T00:00:00.000Z'),
       endsOn: new Date('2027-06-30T00:00:00.000Z'),
-      status: 'ACTIVE',
+      status: (await database.academicYear.count({
+        where: { tenantId: tenant.id, status: 'ACTIVE' },
+      }))
+        ? 'DRAFT'
+        : 'ACTIVE',
     },
   });
 
@@ -108,7 +114,7 @@ await prisma.$transaction(async (database) => {
 
   const level = await database.level.upsert({
     where: { tenantId_code: { tenantId: tenant.id, code: '6E' } },
-    update: { name: 'Sixième' },
+    update: {},
     create: { tenantId: tenant.id, code: '6E', name: 'Sixième', position: 1 },
   });
   const schoolClass = await database.schoolClass.upsert({
@@ -119,7 +125,7 @@ await prisma.$transaction(async (database) => {
         code: '6E-A',
       },
     },
-    update: { name: 'Sixième A' },
+    update: {},
     create: {
       tenantId: tenant.id,
       academicYearId: academicYear.id,
@@ -131,7 +137,7 @@ await prisma.$transaction(async (database) => {
   });
   const subject = await database.subject.upsert({
     where: { tenantId_code: { tenantId: tenant.id, code: 'MATH' } },
-    update: { name: 'Mathématiques' },
+    update: {},
     create: { tenantId: tenant.id, code: 'MATH', name: 'Mathématiques' },
   });
 
@@ -143,7 +149,7 @@ await prisma.$transaction(async (database) => {
         subjectId: subject.id,
       },
     },
-    update: { coefficient: 4 },
+    update: {},
     create: {
       tenantId: tenant.id,
       schoolClassId: schoolClass.id,

@@ -4,6 +4,7 @@ import type { StudentCreate, StudentUpdate, PeopleQuery } from '@gestschool/cont
 import { StudentRepository } from '../domain/student.repository.js';
 import type { RequestContext } from '../../iam/domain/context.js';
 import { hasScope, tenantPermission } from '../../people/domain/policy.js';
+import { assignedWhere } from '../../academics/infrastructure/read-scopes.js';
 import {
   PeopleDatabase,
   audit,
@@ -26,7 +27,7 @@ export function studentReadWhere(context: RequestContext): Prisma.StudentWhereIn
         },
       },
     });
-  // Read existing assignments only: no academic creation or management in LOT 5.
+  // LOT 6 lifecycle applies to the existing LOT 5 ASSIGNED student lookup too.
   if (hasScope(context, 'students', 'ASSIGNED'))
     allowed.push({
       enrollments: {
@@ -37,10 +38,7 @@ export function studentReadWhere(context: RequestContext): Prisma.StudentWhereIn
             subjects: {
               some: {
                 assignments: {
-                  some: {
-                    tenantId: context.tenantId,
-                    teacher: { userId: context.userId, status: 'ACTIVE' },
-                  },
+                  some: assignedWhere(context),
                 },
               },
             },

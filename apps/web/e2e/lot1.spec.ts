@@ -24,6 +24,8 @@ async function waitForPageReady(page: Page): Promise<void> {
   await expect(page.getByRole('heading').first()).toBeVisible();
   if (await page.locator('[data-people-ready]').count())
     await expect(page.locator('[data-people-ready]')).toHaveAttribute('data-people-ready', 'true');
+  for (const section of await page.locator('[data-academic-ready]').all())
+    await expect(section).toHaveAttribute('data-academic-ready', 'true');
 }
 
 test.beforeEach(async ({ page }, testInfo) => {
@@ -87,7 +89,9 @@ test('renders every LOT 1 page without runtime errors or document overflow', asy
     const url = new URL(request.url());
     if (
       url.pathname.startsWith('/api/') &&
-      !/^\/api\/v1\/(auth|students|guardians|teachers)(\/|$)/.test(url.pathname)
+      !/^\/api\/v1\/(auth|students|guardians|teachers|academic-years|academic-periods|levels|classes|subjects|teaching-assignments|me)(\/|$)/.test(
+        url.pathname,
+      )
     )
       apiCalls.push(`${request.method()} ${url.pathname}`);
   });
@@ -102,6 +106,9 @@ test('renders every LOT 1 page without runtime errors or document overflow', asy
     });
     expect(response?.ok(), `${route} should return a successful response`).toBe(true);
     await waitForPageReady(page);
+
+    if (route === '/login')
+      await expect(page.locator('h1 span.text-blue-400')).toHaveText('simplifiée');
 
     const overflow = await page.evaluate(() => ({
       body: document.body.scrollWidth - window.innerWidth,

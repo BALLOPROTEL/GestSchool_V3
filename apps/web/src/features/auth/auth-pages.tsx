@@ -49,6 +49,7 @@ function AuthShell({ children }: { children: ReactNode }) {
           <h1 className="text-4xl font-bold leading-tight tracking-tight xl:text-5xl">
             {translate.rich('promise', {
               highlight: (chunks) => <span className="text-blue-400">{chunks}</span>,
+              highlightText: translate('promiseHighlight'),
             })}
           </h1>
           <p className="mt-5 text-base leading-7 text-slate-300">{translate('promiseText')}</p>

@@ -1,6 +1,11 @@
 import { readFileSync } from 'node:fs';
 
 import { describe, expect, it } from 'vitest';
+import { createTranslator } from 'next-intl';
+
+import fr from '../messages/fr.json';
+import en from '../messages/en.json';
+import ar from '../messages/ar.json';
 
 import { routing } from './i18n/routing';
 import { formatCurrency } from './features/shared/format';
@@ -33,6 +38,20 @@ describe('LOT 1 localisation contract', () => {
     expect(messageKeys(readMessages('en')).toSorted()).toEqual(frenchKeys);
     expect(messageKeys(readMessages('ar')).toSorted()).toEqual(frenchKeys);
     expect(frenchKeys.length).toBeGreaterThan(150);
+  });
+
+  it.each([
+    { locale: 'fr', messages: fr },
+    { locale: 'en', messages: en },
+    { locale: 'ar', messages: ar },
+  ])('renders the login promise highlight in $locale', ({ locale, messages }) => {
+    const translate = createTranslator({ locale, messages, namespace: 'Auth' });
+    const result = translate.markup('promise', {
+      highlight: (chunks) => `<span>${chunks}</span>`,
+      highlightText: translate('promiseHighlight'),
+    });
+    expect(result).toContain(`<span>${messages.Auth.promiseHighlight}</span>`);
+    expect(result).not.toContain('{highlight');
   });
 });
 

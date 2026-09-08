@@ -7,6 +7,7 @@ import { PeopleDatabaseModule } from './modules/people/infrastructure/people-dat
 import { StudentsModule } from './modules/students/students.module.js';
 import { GuardiansModule } from './modules/guardians/guardians.module.js';
 import { TeachersModule } from './modules/teachers/teachers.module.js';
+import { AcademicsModule } from './modules/academics/academics.module.js';
 
 @Module({
   controllers: [AppController],
@@ -17,6 +18,7 @@ import { TeachersModule } from './modules/teachers/teachers.module.js';
     StudentsModule,
     GuardiansModule,
     TeachersModule,
+    AcademicsModule,
   ],
 })
 export class AppModule {}

@@ -1,3 +1,5 @@
+import { academicPermissionCodes, academicReadPermissions } from './academics.js';
+
 export const scopes = ['PLATFORM', 'TENANT', 'ASSIGNED', 'CHILDREN', 'OWN', 'NONE'] as const;
 export type AccessScope = (typeof scopes)[number];
 export const systemRoles = [
@@ -18,6 +20,7 @@ export const privilegedRoles: readonly string[] = [
   'ACCOUNTANT',
 ];
 export const permissionCodes = [
+  ...academicPermissionCodes,
   'session.read',
   'session.revoke',
   'membership.read',
@@ -65,6 +68,7 @@ const grants = (permissions: readonly string[], scope: AccessScope): Grant[] =>
 export const roleGrants: Readonly<Record<SystemRole, readonly Grant[]>> = {
   SUPER_ADMIN: grants(permissionCodes, 'PLATFORM'),
   SCHOOL_ADMIN: [
+    ...grants(academicPermissionCodes, 'TENANT'),
     ...grants(self, 'OWN'),
     ...grants(
       [
@@ -94,6 +98,7 @@ export const roleGrants: Readonly<Record<SystemRole, readonly Grant[]>> = {
     ),
   ],
   DIRECTOR: [
+    ...grants(academicPermissionCodes, 'TENANT'),
     ...grants(self, 'OWN'),
     ...grants(['guardians.read', 'teachers.read'], 'TENANT'),
     ...grants(
@@ -102,6 +107,8 @@ export const roleGrants: Readonly<Record<SystemRole, readonly Grant[]>> = {
     ),
   ],
   ACADEMIC_STAFF: [
+    ...grants(academicPermissionCodes, 'TENANT'),
+    ...grants(['teachers.read'], 'TENANT'),
     ...grants(self, 'OWN'),
     ...grants(
       [
@@ -121,6 +128,7 @@ export const roleGrants: Readonly<Record<SystemRole, readonly Grant[]>> = {
     ...grants(['students.read', 'payments.read', 'payments.create', 'payments.cancel'], 'TENANT'),
   ],
   TEACHER: [
+    ...grants(academicReadPermissions, 'ASSIGNED'),
     ...grants(self, 'OWN'),
     ...grants(['teachers.read'], 'OWN'),
     ...grants(
