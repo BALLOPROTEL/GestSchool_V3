@@ -44,6 +44,7 @@ export function academicErrorKey(error: unknown) {
     ACADEMIC_ACTIVE_YEAR_EXISTS: 'activeYearExists',
     ACADEMIC_INVALID_TRANSITION: 'invalidTransition',
     ACADEMIC_YEAR_CLOSED: 'yearClosed',
+    ACADEMIC_CAPACITY_RESERVED: 'capacityReserved',
     ACADEMIC_ARCHIVED: 'archivedError',
     ACADEMIC_PERIOD_DATES: 'invalidDates',
     ACADEMIC_PERIOD_SEQUENCE: 'invalidSequence',

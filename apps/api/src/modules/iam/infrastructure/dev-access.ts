@@ -11,6 +11,7 @@ import { loadIamConfig } from './iam-config.js';
 import { IamRuntime } from './iam-runtime.js';
 import { opaqueToken } from './crypto.js';
 import { prepareAcademicDemo } from '../../academics/infrastructure/dev-fixtures.js';
+import { prepareEnrollmentDemo } from '../../enrollments/infrastructure/dev-fixtures.js';
 
 const config = loadIamConfig();
 const infrastructure = loadInfrastructureConfig();
@@ -174,6 +175,10 @@ try {
   });
   // Real HTTP authentication with the same global guards, Redis limiter and MFA as normal login.
   const academicDemo = await prepareAcademicDemo(database, tenant.id);
+  const enrollmentDemo = await prepareEnrollmentDemo(database, tenant.id);
+  process.stdout.write(
+    `Enrollment demo ${enrollmentDemo.created ? 'created' : 'preserved'}: ${enrollmentDemo.academicYearId}\n`,
+  );
   process.stdout.write(
     `Academic demo ${academicDemo.created ? 'created' : 'preserved'}: ${academicDemo.academicYearId}\n`,
   );

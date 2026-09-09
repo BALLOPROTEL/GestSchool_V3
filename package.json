@@ -34,6 +34,7 @@
     "dev:totp": "node --env-file=.env.example --env-file-if-exists=.env --import tsx apps/api/src/modules/iam/infrastructure/dev-totp.ts",
     "people:test": "pnpm --filter @gestschool/api... build && pnpm --filter @gestschool/api test:iam tests/people.test.ts",
     "academics:test": "pnpm --filter @gestschool/api... build && pnpm --filter @gestschool/api test:iam tests/academics.test.ts",
+    "enrollments:test": "pnpm --filter @gestschool/api... build && pnpm --filter @gestschool/api test:iam tests/enrollments.test.ts",
     "iam:dev": "pnpm --filter @gestschool/api... build && node --env-file=.env.example --env-file-if-exists=.env --import tsx apps/api/src/modules/iam/infrastructure/dev-cli.ts",
     "iam:test": "pnpm --filter @gestschool/api... build && pnpm --filter @gestschool/api test:iam"
   },

@@ -4,8 +4,9 @@ Monorepo SaaS GestSchool : fondation technique, interface visuelle, infrastructu
 de données multi-tenant des LOTS 0 à 3. Le LOT 4 ajoute l'identité, l'authentification réelle,
 les sessions, le RBAC et le MFA. Le LOT 5 branche les annuaires élèves, parents et enseignants
 sur PostgreSQL, avec validation, scopes et audit. Le LOT 6 connecte le référentiel académique,
-les coefficients par classe et les affectations enseignants. Les autres écrans restent des
-démonstrations ; aucun LOT 7 ni traitement asynchrone métier n'est ajouté.
+les coefficients par classe et les affectations enseignants. Le LOT 7 branche les inscriptions,
+réinscriptions, transferts, capacités et historiques scolaires. Les autres écrans restent des
+démonstrations ; aucun LOT 8 Finance ni traitement asynchrone métier n'est ajouté.
 
 ## Prérequis
 
@@ -28,6 +29,7 @@ pnpm dev:access
 pnpm dev:totp school-admin@example.invalid
 pnpm people:test
 pnpm academics:test
+pnpm enrollments:test
 pnpm iam:test
 pnpm exec playwright install chromium
 pnpm dev
@@ -71,3 +73,6 @@ Le périmètre, les routes et les limites du LOT 5 sont décrits dans
 [`docs/lot5-directories.md`](docs/lot5-directories.md).
 Le référentiel académique et ses règles sont décrits dans
 [`docs/lot6-academics.md`](docs/lot6-academics.md).
+Le cycle d'inscription et sa certification sont décrits dans
+[`docs/lot7-enrollments.md`](docs/lot7-enrollments.md) et
+[`docs/lot7-certification.md`](docs/lot7-certification.md).

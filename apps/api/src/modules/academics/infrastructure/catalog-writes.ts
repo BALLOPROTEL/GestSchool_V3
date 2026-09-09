@@ -1,7 +1,7 @@
 import type { Prisma } from '@gestschool/database';
 import type { RequestContext } from '../../iam/domain/context.js';
 import type { AcademicCommand } from '../domain/academic.repository.js';
-import { activeRecord, required, writableYear } from '../domain/policy.js';
+import { activeRecord, conflict, required, writableYear } from '../domain/policy.js';
 import { audit } from './database.js';
 import { catalogView, classView } from './views.js';
 
@@ -134,6 +134,17 @@ export async function writeClass(
     capacity:
       command.input.capacity !== undefined ? command.input.capacity : (before?.capacity ?? null),
   };
+  // LOT 7: a capacity edit shares the tenant lock with enrollment reservations.
+  if (before && data.capacity !== null) {
+    const occupied = await db.enrollment.count({
+      where: {
+        tenantId,
+        schoolClassId: before.id,
+        status: { in: ['PENDING', 'ACTIVE'] },
+      },
+    });
+    if (occupied > data.capacity) conflict('ACADEMIC_CAPACITY_RESERVED');
+  }
   const after = before
     ? await classRelation(
         db,

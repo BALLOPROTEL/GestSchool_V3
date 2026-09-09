@@ -3,7 +3,6 @@
 import {
   Avatar,
   AvatarFallback,
-  Badge,
   Button,
   Card,
   CardContent,
@@ -20,161 +19,15 @@ import {
   TabsTrigger,
 } from '@gestschool/ui';
 import type { DataTableColumn } from '@gestschool/ui';
-import {
-  CalendarCheck,
-  CheckCircle2,
-  CircleX,
-  Clock3,
-  Download,
-  FileText,
-  Plus,
-  SearchX,
-  UsersRound,
-} from 'lucide-react';
-import { useLocale, useTranslations } from 'next-intl';
-import { useState } from 'react';
-
-import type { AppLocale } from '../../i18n/routing';
-import { enrollments, gradeRecords, students, weeklyAttendance } from '../../mocks/data';
-import type { Enrollment, GradeRecord, Student } from '../../mocks/data';
-import { formatCurrency, formatNumber, getInitials } from '../shared/format';
+import { CalendarCheck, Clock3, Download, FileText, Plus, UsersRound } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { gradeRecords, students, weeklyAttendance } from '../../mocks/data';
+import type { GradeRecord, Student } from '../../mocks/data';
+import { getInitials } from '../shared/format';
 import { useMockAction } from '../shared/mock-action';
 import { PageHeader } from '../shared/page-header';
 import { RowActions } from '../shared/row-actions';
-import { SearchField } from '../shared/search-field';
 import { StatusPill } from '../shared/status-pill';
-
-export function EnrollmentsPage() {
-  const common = useTranslations('Common');
-  const nav = useTranslations('Nav');
-  const statusText = useTranslations('Status');
-  const translate = useTranslations('Enrollments');
-  const locale = useLocale() as AppLocale;
-  const mockAction = useMockAction();
-  const [query, setQuery] = useState('');
-  const filtered = enrollments.filter((enrollment) =>
-    `${enrollment.studentName} ${enrollment.studentId} ${enrollment.id}`
-      .toLocaleLowerCase()
-      .includes(query.toLocaleLowerCase()),
-  );
-  const columns: readonly DataTableColumn<Enrollment>[] = [
-    {
-      cell: (row) => <span className="font-mono text-xs font-semibold">{row.id}</span>,
-      header: translate('identifier'),
-      id: 'id',
-    },
-    {
-      cell: (row) => (
-        <div className="flex items-center gap-2">
-          <Avatar className="size-7">
-            <AvatarFallback className="text-[10px]">{getInitials(row.studentName)}</AvatarFallback>
-          </Avatar>
-          <span className="whitespace-nowrap font-semibold">{row.studentName}</span>
-        </div>
-      ),
-      header: common('student'),
-      id: 'student',
-    },
-    {
-      cell: (row) => (
-        <span className="font-mono text-xs text-muted-foreground">{row.studentId}</span>
-      ),
-      header: 'ID',
-      id: 'studentId',
-    },
-    {
-      cell: (row) => <Badge variant="outline">{row.className}</Badge>,
-      header: common('class'),
-      id: 'class',
-    },
-    { cell: () => <span>2026–2027</span>, header: common('year'), id: 'year' },
-    {
-      cell: (row) => <span className="whitespace-nowrap text-muted-foreground">{row.date}</span>,
-      header: translate('date'),
-      id: 'date',
-    },
-    {
-      cell: (row) => (
-        <span className="whitespace-nowrap font-mono font-semibold">
-          {formatCurrency(row.annualTuition, locale)}
-        </span>
-      ),
-      header: translate('annualTuition'),
-      id: 'tuition',
-    },
-    { cell: (row) => <StatusPill status={row.status} />, header: common('status'), id: 'status' },
-  ];
-  return (
-    <div className="page-shell">
-      <PageHeader
-        actions={
-          <Button onClick={() => mockAction(translate('new'))} size="sm">
-            <Plus />
-            {translate('new')}
-          </Button>
-        }
-        description={translate('description')}
-        eyebrow={nav('schoolLife')}
-        title={translate('title')}
-      />
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiCard icon={FileText} label={translate('total')} value={formatNumber(1247, locale)} />
-        <KpiCard
-          change="+4,2 %"
-          changeDirection="up"
-          icon={CheckCircle2}
-          label={translate('active')}
-          value={formatNumber(1198, locale)}
-        />
-        <KpiCard icon={Clock3} label={translate('pending')} value="32" />
-        <KpiCard icon={CircleX} label={translate('withdrawn')} value="17" />
-      </div>
-      <Card className="mt-5">
-        <CardContent className="grid gap-3 p-4 md:grid-cols-[minmax(220px,1fr)_170px_170px_auto]">
-          <SearchField
-            label={common('search')}
-            onChange={setQuery}
-            placeholder={common('search')}
-            value={query}
-          />
-          <Select aria-label={common('year')}>
-            <SelectItem>2026–2027</SelectItem>
-            <SelectItem>2025–2026</SelectItem>
-          </Select>
-          <Select aria-label={common('status')}>
-            <SelectItem>{common('all')}</SelectItem>
-            <SelectItem>{statusText('active')}</SelectItem>
-            <SelectItem>{statusText('pending')}</SelectItem>
-          </Select>
-          <Button onClick={() => mockAction(common('export'))} variant="outline">
-            <Download />
-            {common('export')}
-          </Button>
-        </CardContent>
-      </Card>
-      <Card className="mt-5 overflow-hidden">
-        <CardHeader>
-          <CardTitle>{translate('caption')}</CardTitle>
-        </CardHeader>
-        <CardContent className="px-0 pb-0">
-          <DataTable
-            caption={translate('caption')}
-            columns={columns}
-            emptyState={
-              <div className="p-8 text-center text-muted-foreground">
-                <SearchX className="mx-auto mb-2 size-6" />
-                {common('noResults')}
-              </div>
-            }
-            getRowId={(row) => row.id}
-            minWidth={1080}
-            rows={filtered}
-          />
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
 
 function gradeTone(value: number): string {
   if (value >= 16)

@@ -320,26 +320,6 @@ export const subjects: readonly Subject[] = [
   },
 ];
 
-export type Enrollment = {
-  annualTuition: number;
-  className: string;
-  date: string;
-  id: string;
-  status: StudentStatus;
-  studentId: string;
-  studentName: string;
-};
-
-export const enrollments: readonly Enrollment[] = students.map((student, index) => ({
-  annualTuition: 450_000,
-  className: student.className,
-  date: index < 4 ? '02/09/2026' : '03/09/2026',
-  id: `INS-2026-${String(index + 1).padStart(3, '0')}`,
-  status: student.status,
-  studentId: student.id,
-  studentName: student.name,
-}));
-
 export type InvoiceStatus = 'overdue' | 'paid' | 'pending';
 
 export type Invoice = {

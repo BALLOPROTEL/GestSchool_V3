@@ -5,6 +5,7 @@ import { loadInfrastructureConfig } from '@gestschool/config/environment';
 import { createPrismaClient } from '@gestschool/database';
 import { academicReadPermissions } from '@gestschool/contracts';
 import { academicFixture } from './academic-e2e-fixtures.js';
+import { enrollmentFixture } from './enrollment-e2e-fixtures.js';
 import { IamRuntime } from '../src/modules/iam/infrastructure/iam-runtime.js';
 import { loadIamConfig } from '../src/modules/iam/infrastructure/iam-config.js';
 import { opaqueToken } from '../src/modules/iam/infrastructure/crypto.js';
@@ -39,6 +40,7 @@ try {
     'students.read',
     'guardians.read',
     'teachers.read',
+    'enrollments.read',
     ...academicReadPermissions,
   ]) {
     const permission = await database.permission.findUniqueOrThrow({ where: { code } });
@@ -51,6 +53,7 @@ try {
           'students.read',
           'guardians.read',
           'teachers.read',
+          'enrollments.read',
           ...academicReadPermissions,
         ].includes(code)
           ? 'TENANT'
@@ -59,7 +62,7 @@ try {
     });
   }
   const create = async (
-    code: 'STUDENT' | 'SCHOOL_ADMIN' | 'VISUAL_READER' | 'TEACHER',
+    code: 'STUDENT' | 'SCHOOL_ADMIN' | 'VISUAL_READER' | 'TEACHER' | 'PARENT',
     activated = true,
     tenantId = tenant.id,
   ) => {
@@ -169,6 +172,38 @@ try {
       ...(await academicFixture(database, academicTenant.id, teacher.email)),
     };
   }
+  const enrollments: Record<
+    string,
+    Awaited<ReturnType<typeof enrollmentFixture>> & {
+      crud: { email: string; password: string };
+      locales: { email: string; password: string };
+      student: { email: string; password: string };
+      parent: { email: string; password: string };
+      denied: { email: string; password: string };
+    }
+  > = {};
+  for (const viewport of Object.keys(visual)) {
+    const enrollmentTenant = await database.tenant.create({
+      data: { slug: `enrollment-e2e-${randomUUID()}`, name: 'École inscriptions E2E' },
+    });
+    const crud = await create('SCHOOL_ADMIN', true, enrollmentTenant.id);
+    const studentAccount = await create('STUDENT', true, enrollmentTenant.id);
+    const parent = await create('PARENT', true, enrollmentTenant.id);
+    enrollments[viewport] = {
+      crud,
+      student: studentAccount,
+      parent,
+      locales: await create('SCHOOL_ADMIN', true, enrollmentTenant.id),
+      denied: await create('TEACHER', true, enrollmentTenant.id),
+      ...(await enrollmentFixture(
+        database,
+        enrollmentTenant.id,
+        crud.email,
+        studentAccount.email,
+        parent.email,
+      )),
+    };
+  }
   const reset = await create('STUDENT');
   const mfa = await create('SCHOOL_ADMIN');
   const metadata = { requestId: randomUUID(), ipAddress: 'e2e-setup', userAgent: 'e2e-setup' };
@@ -183,6 +218,7 @@ try {
       studentId: student.id,
       people,
       academics,
+      enrollments,
       activation: { ...activation, token: activationToken },
       reset: { ...reset, token: resetToken },
       mfa,

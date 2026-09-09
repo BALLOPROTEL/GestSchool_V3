@@ -33,6 +33,7 @@ import { usePeopleData } from '../directory/people-hooks';
 import { ErrorNotice, PersonEditor } from '../directory/person-editor';
 import { PersonStatus } from '../directory/people-pages';
 import { GuardianLinks } from '../directory/guardian-links';
+import { StudentEnrollmentHistory } from '../enrollments/enrollment-page';
 
 export function StudentProfilePage() {
   const common = useTranslations('Common');
@@ -168,7 +169,11 @@ export function StudentProfilePage() {
             {(['academic', 'enrollment', 'finance', 'attendance'] as const).map((tab) => (
               <TabsContent key={tab} value={tab}>
                 <Card>
-                  <EmptyState icon={Clock3} title={profile(tab)} description={t('laterLot')} />
+                  {tab === 'enrollment' ? (
+                    <StudentEnrollmentHistory studentId={person.id} />
+                  ) : (
+                    <EmptyState icon={Clock3} title={profile(tab)} description={t('laterLot')} />
+                  )}
                 </Card>
               </TabsContent>
             ))}

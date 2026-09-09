@@ -88,11 +88,11 @@ jobs:
       - name: Build
         run: pnpm build
 
-      - name: Certify IAM, directories and academics against PostgreSQL and Redis
+      - name: Certify IAM, directories, academics and enrollments against PostgreSQL and Redis
         run: pnpm iam:test
 
       - name: Install Chromium
         run: pnpm exec playwright install --with-deps chromium
 
-      - name: Test frontend, IAM, directory and academic journeys
+      - name: Test frontend, IAM, directory, academic and enrollment journeys
         run: pnpm test:e2e

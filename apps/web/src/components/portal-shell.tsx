@@ -93,7 +93,7 @@ const navigation: readonly NavGroup[] = [
       { badge: '1K+', href: '/students', icon: GraduationCap, key: 'students' },
       { href: '/parents', icon: UsersRound, key: 'parents' },
       { href: '/teachers', icon: UserRoundCheck, key: 'teachers' },
-      { badge: '89', href: '/enrollments', icon: ClipboardList, key: 'enrollments' },
+      { href: '/enrollments', icon: ClipboardList, key: 'enrollments' },
     ],
   },
   {

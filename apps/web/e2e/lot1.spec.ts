@@ -26,6 +26,8 @@ async function waitForPageReady(page: Page): Promise<void> {
     await expect(page.locator('[data-people-ready]')).toHaveAttribute('data-people-ready', 'true');
   for (const section of await page.locator('[data-academic-ready]').all())
     await expect(section).toHaveAttribute('data-academic-ready', 'true');
+  for (const section of await page.locator('[data-enrollment-ready]').all())
+    await expect(section).toHaveAttribute('data-enrollment-ready', 'true');
 }
 
 test.beforeEach(async ({ page }, testInfo) => {
@@ -89,7 +91,7 @@ test('renders every LOT 1 page without runtime errors or document overflow', asy
     const url = new URL(request.url());
     if (
       url.pathname.startsWith('/api/') &&
-      !/^\/api\/v1\/(auth|students|guardians|teachers|academic-years|academic-periods|levels|classes|subjects|teaching-assignments|me)(\/|$)/.test(
+      !/^\/api\/v1\/(auth|students|guardians|teachers|academic-years|academic-periods|levels|classes|subjects|teaching-assignments|enrollments|enrollment-classes|me)(\/|$)/.test(
         url.pathname,
       )
     )

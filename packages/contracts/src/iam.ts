@@ -1,4 +1,5 @@
 import { academicPermissionCodes, academicReadPermissions } from './academics.js';
+import { enrollmentPermissionCodes } from './enrollments.js';
 
 export const scopes = ['PLATFORM', 'TENANT', 'ASSIGNED', 'CHILDREN', 'OWN', 'NONE'] as const;
 export type AccessScope = (typeof scopes)[number];
@@ -21,6 +22,7 @@ export const privilegedRoles: readonly string[] = [
 ];
 export const permissionCodes = [
   ...academicPermissionCodes,
+  ...enrollmentPermissionCodes,
   'session.read',
   'session.revoke',
   'membership.read',
@@ -68,6 +70,7 @@ const grants = (permissions: readonly string[], scope: AccessScope): Grant[] =>
 export const roleGrants: Readonly<Record<SystemRole, readonly Grant[]>> = {
   SUPER_ADMIN: grants(permissionCodes, 'PLATFORM'),
   SCHOOL_ADMIN: [
+    ...grants(enrollmentPermissionCodes, 'TENANT'),
     ...grants(academicPermissionCodes, 'TENANT'),
     ...grants(self, 'OWN'),
     ...grants(
@@ -98,6 +101,7 @@ export const roleGrants: Readonly<Record<SystemRole, readonly Grant[]>> = {
     ),
   ],
   DIRECTOR: [
+    ...grants(enrollmentPermissionCodes, 'TENANT'),
     ...grants(academicPermissionCodes, 'TENANT'),
     ...grants(self, 'OWN'),
     ...grants(['guardians.read', 'teachers.read'], 'TENANT'),
@@ -107,6 +111,7 @@ export const roleGrants: Readonly<Record<SystemRole, readonly Grant[]>> = {
     ),
   ],
   ACADEMIC_STAFF: [
+    ...grants(enrollmentPermissionCodes, 'TENANT'),
     ...grants(academicPermissionCodes, 'TENANT'),
     ...grants(['teachers.read'], 'TENANT'),
     ...grants(self, 'OWN'),
@@ -137,11 +142,13 @@ export const roleGrants: Readonly<Record<SystemRole, readonly Grant[]>> = {
     ),
   ],
   PARENT: [
+    ...grants(['enrollments.read'], 'CHILDREN'),
     ...grants(self, 'OWN'),
     ...grants(['guardians.read'], 'OWN'),
     ...grants(['students.read', 'grades.read', 'payments.read'], 'CHILDREN'),
   ],
   STUDENT: [
+    ...grants(['enrollments.read'], 'OWN'),
     ...grants(self, 'OWN'),
     ...grants(['students.read', 'grades.read', 'payments.read'], 'OWN'),
   ],

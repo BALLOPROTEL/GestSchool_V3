@@ -80,6 +80,26 @@ enum EnrollmentStatus {
   @@map("enrollment_status")
 }
 
+enum EnrollmentType {
+  NEW
+  RE_ENROLLMENT
+  TRANSFER
+
+  @@map("enrollment_type")
+}
+
+enum EnrollmentEventKind {
+  BASELINE
+  CREATED
+  UPDATED
+  CONFIRMED
+  CANCELLED
+  TRANSFERRED
+  COMPLETED
+
+  @@map("enrollment_event_kind")
+}
+
 enum AcademicWorkflowStatus {
   DRAFT
   SUBMITTED
@@ -186,12 +206,12 @@ model TenantSetting {
 }
 
 model User {
-  id          String       @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  email       String       @unique @db.VarChar(254)
-  displayName String       @map("display_name") @db.VarChar(160)
-  disabledAt  DateTime?    @map("disabled_at") @db.Timestamptz(6)
-  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt   DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id          String        @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  email       String        @unique @db.VarChar(254)
+  displayName String        @map("display_name") @db.VarChar(160)
+  disabledAt  DateTime?     @map("disabled_at") @db.Timestamptz(6)
+  createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
   memberships Membership[]
   sessions    Session[]
   students    Student[]
@@ -224,6 +244,7 @@ model Membership {
   notifications    Notification[]
   auditLogs        AuditLog[]
   authSessions     Session[]
+  enrollmentEvents EnrollmentEvent[]
 
   @@unique([tenantId, userId])
   @@unique([tenantId, id])
@@ -261,13 +282,13 @@ model Permission {
 }
 
 model RolePermission {
-  roleId       String     @map("role_id") @db.Uuid
-  permissionId String     @map("permission_id") @db.Uuid
-  tenantId     String?    @map("tenant_id") @db.Uuid
-  createdAt    DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  roleId       String      @map("role_id") @db.Uuid
+  permissionId String      @map("permission_id") @db.Uuid
+  tenantId     String?     @map("tenant_id") @db.Uuid
+  createdAt    DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
   scope        AccessScope @default(NONE)
-  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  role         Role        @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission  @relation(fields: [permissionId], references: [id], onDelete: Cascade)
 
   @@id([roleId, permissionId])
   @@index([tenantId])
@@ -288,23 +309,23 @@ model MembershipRole {
 }
 
 model Session {
-  id        String        @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  tenantId  String?       @map("tenant_id") @db.Uuid
-  userId    String        @map("user_id") @db.Uuid
-  tokenHash String        @unique @map("token_hash") @db.VarChar(128)
-  status    SessionStatus @default(ACTIVE)
-  expiresAt DateTime      @map("expires_at") @db.Timestamptz(6)
-  createdAt DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
-  revokedAt DateTime?     @map("revoked_at") @db.Timestamptz(6)
-  membershipId String?    @map("membership_id") @db.Uuid
-  userAgent String?       @map("user_agent") @db.VarChar(512)
-  ipAddress String?       @map("ip_address") @db.VarChar(64)
-  lastUsedAt DateTime     @default(now()) @map("last_used_at") @db.Timestamptz(6)
-  mfaVerifiedAt DateTime? @map("mfa_verified_at") @db.Timestamptz(6)
-  membership Membership? @relation(fields: [tenantId, membershipId, userId], references: [tenantId, id, userId], onDelete: Restrict)
+  id            String         @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  tenantId      String?        @map("tenant_id") @db.Uuid
+  userId        String         @map("user_id") @db.Uuid
+  tokenHash     String         @unique @map("token_hash") @db.VarChar(128)
+  status        SessionStatus  @default(ACTIVE)
+  expiresAt     DateTime       @map("expires_at") @db.Timestamptz(6)
+  createdAt     DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  revokedAt     DateTime?      @map("revoked_at") @db.Timestamptz(6)
+  membershipId  String?        @map("membership_id") @db.Uuid
+  userAgent     String?        @map("user_agent") @db.VarChar(512)
+  ipAddress     String?        @map("ip_address") @db.VarChar(64)
+  lastUsedAt    DateTime       @default(now()) @map("last_used_at") @db.Timestamptz(6)
+  mfaVerifiedAt DateTime?      @map("mfa_verified_at") @db.Timestamptz(6)
+  membership    Membership?    @relation(fields: [tenantId, membershipId, userId], references: [tenantId, id, userId], onDelete: Restrict)
   refreshTokens RefreshToken[]
-  tenant    Tenant?       @relation(fields: [tenantId], references: [id], onDelete: Restrict)
-  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant        Tenant?        @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, status])
   @@index([tenantId, createdAt])
@@ -332,56 +353,56 @@ enum AuthTokenPurpose {
 }
 
 model AuthIdentity {
-  userId String @id @map("user_id") @db.Uuid
-  passwordHash String? @map("password_hash")
-  activatedAt DateTime? @map("activated_at") @db.Timestamptz(6)
+  userId            String    @id @map("user_id") @db.Uuid
+  passwordHash      String?   @map("password_hash")
+  activatedAt       DateTime? @map("activated_at") @db.Timestamptz(6)
   passwordChangedAt DateTime? @map("password_changed_at") @db.Timestamptz(6)
-  mfaSecret String? @map("mfa_secret")
-  mfaEnabledAt DateTime? @map("mfa_enabled_at") @db.Timestamptz(6)
-  mfaLastCounter BigInt @default(-1) @map("mfa_last_counter")
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mfaSecret         String?   @map("mfa_secret")
+  mfaEnabledAt      DateTime? @map("mfa_enabled_at") @db.Timestamptz(6)
+  mfaLastCounter    BigInt    @default(-1) @map("mfa_last_counter")
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("auth_identities")
 }
 
 model AuthToken {
-  id String @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  userId String @map("user_id") @db.Uuid
-  tokenHash String @unique @map("token_hash") @db.Char(64)
-  purpose AuthTokenPurpose
-  membershipId String? @map("membership_id") @db.Uuid
-  encryptedSecret String? @map("encrypted_secret")
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  expiresAt DateTime @map("expires_at") @db.Timestamptz(6)
-  usedAt DateTime? @map("used_at") @db.Timestamptz(6)
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id              String           @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId          String           @map("user_id") @db.Uuid
+  tokenHash       String           @unique @map("token_hash") @db.Char(64)
+  purpose         AuthTokenPurpose
+  membershipId    String?          @map("membership_id") @db.Uuid
+  encryptedSecret String?          @map("encrypted_secret")
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  expiresAt       DateTime         @map("expires_at") @db.Timestamptz(6)
+  usedAt          DateTime?        @map("used_at") @db.Timestamptz(6)
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, purpose, expiresAt])
   @@map("auth_tokens")
 }
 
 model RefreshToken {
-  id String @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  sessionId String @map("session_id") @db.Uuid
-  tokenHash String @unique @map("token_hash") @db.Char(64)
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  expiresAt DateTime @map("expires_at") @db.Timestamptz(6)
+  id         String    @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  sessionId  String    @map("session_id") @db.Uuid
+  tokenHash  String    @unique @map("token_hash") @db.Char(64)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  expiresAt  DateTime  @map("expires_at") @db.Timestamptz(6)
   consumedAt DateTime? @map("consumed_at") @db.Timestamptz(6)
-  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  session    Session   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@index([sessionId, expiresAt])
   @@map("refresh_tokens")
 }
 
 model IamAuditLog {
-  id String @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  userId String? @map("user_id") @db.Uuid
-  tenantId String? @map("tenant_id") @db.Uuid
-  requestId String @map("request_id") @db.Uuid
-  action String @db.VarChar(120)
-  subjectId String? @map("subject_id") @db.Uuid
+  id         String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId     String?  @map("user_id") @db.Uuid
+  tenantId   String?  @map("tenant_id") @db.Uuid
+  requestId  String   @map("request_id") @db.Uuid
+  action     String   @db.VarChar(120)
+  subjectId  String?  @map("subject_id") @db.Uuid
   occurredAt DateTime @default(now()) @map("occurred_at") @db.Timestamptz(6)
-  user User? @relation(fields: [userId], references: [id], onDelete: Restrict)
+  user       User?    @relation(fields: [userId], references: [id], onDelete: Restrict)
 
   @@index([tenantId, occurredAt])
   @@index([userId, occurredAt])
@@ -443,16 +464,16 @@ model Guardian {
 }
 
 model StudentGuardian {
-  tenantId     String   @map("tenant_id") @db.Uuid
-  studentId    String   @map("student_id") @db.Uuid
-  guardianId   String   @map("guardian_id") @db.Uuid
-  relationship String   @db.VarChar(60)
-  isPrimary    Boolean  @default(false) @map("is_primary")
-  isFinancialContact Boolean @default(false) @map("is_financial_contact")
-  receivesNotifications Boolean @default(true) @map("receives_notifications")
-  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  student      Student  @relation(fields: [tenantId, studentId], references: [tenantId, id], onDelete: Cascade)
-  guardian     Guardian @relation(fields: [tenantId, guardianId], references: [tenantId, id], onDelete: Cascade)
+  tenantId              String   @map("tenant_id") @db.Uuid
+  studentId             String   @map("student_id") @db.Uuid
+  guardianId            String   @map("guardian_id") @db.Uuid
+  relationship          String   @db.VarChar(60)
+  isPrimary             Boolean  @default(false) @map("is_primary")
+  isFinancialContact    Boolean  @default(false) @map("is_financial_contact")
+  receivesNotifications Boolean  @default(true) @map("receives_notifications")
+  createdAt             DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  student               Student  @relation(fields: [tenantId, studentId], references: [tenantId, id], onDelete: Cascade)
+  guardian              Guardian @relation(fields: [tenantId, guardianId], references: [tenantId, id], onDelete: Cascade)
 
   @@id([tenantId, studentId, guardianId])
   @@index([tenantId, guardianId])
@@ -489,7 +510,7 @@ model AcademicYear {
   startsOn     DateTime           @map("starts_on") @db.Date
   endsOn       DateTime           @map("ends_on") @db.Date
   status       AcademicYearStatus @default(DRAFT)
-  archivedAt   DateTime?           @map("archived_at") @db.Timestamptz(6)
+  archivedAt   DateTime?          @map("archived_at") @db.Timestamptz(6)
   createdAt    DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt    DateTime           @updatedAt @map("updated_at") @db.Timestamptz(6)
   tenant       Tenant             @relation(fields: [tenantId], references: [id], onDelete: Restrict)
@@ -510,7 +531,7 @@ model AcademicPeriod {
   name           String               @db.VarChar(100)
   type           AcademicPeriodType
   status         AcademicRecordStatus @default(ACTIVE)
-  archivedAt     DateTime?             @map("archived_at") @db.Timestamptz(6)
+  archivedAt     DateTime?            @map("archived_at") @db.Timestamptz(6)
   ordinal        Int                  @db.SmallInt
   startsOn       DateTime             @map("starts_on") @db.Date
   endsOn         DateTime             @map("ends_on") @db.Date
@@ -529,17 +550,17 @@ model AcademicPeriod {
 }
 
 model Level {
-  id        String        @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  tenantId  String        @map("tenant_id") @db.Uuid
-  code      String        @db.VarChar(30)
-  name      String        @db.VarChar(100)
-  position  Int           @default(0)
-  status    AcademicRecordStatus @default(ACTIVE)
-  archivedAt DateTime? @map("archived_at") @db.Timestamptz(6)
-  createdAt DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
-  tenant    Tenant        @relation(fields: [tenantId], references: [id], onDelete: Restrict)
-  classes   SchoolClass[]
+  id         String               @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  tenantId   String               @map("tenant_id") @db.Uuid
+  code       String               @db.VarChar(30)
+  name       String               @db.VarChar(100)
+  position   Int                  @default(0)
+  status     AcademicRecordStatus @default(ACTIVE)
+  archivedAt DateTime?            @map("archived_at") @db.Timestamptz(6)
+  createdAt  DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
+  tenant     Tenant               @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  classes    SchoolClass[]
 
   @@unique([tenantId, code])
   @@unique([tenantId, id])
@@ -547,22 +568,24 @@ model Level {
 }
 
 model SchoolClass {
-  id             String         @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  tenantId       String         @map("tenant_id") @db.Uuid
-  academicYearId String         @map("academic_year_id") @db.Uuid
-  levelId        String         @map("level_id") @db.Uuid
-  code           String         @db.VarChar(40)
-  name           String         @db.VarChar(120)
-  capacity       Int?
-  status         AcademicRecordStatus @default(ACTIVE)
-  archivedAt     DateTime? @map("archived_at") @db.Timestamptz(6)
-  createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt      DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
-  academicYear   AcademicYear   @relation(fields: [tenantId, academicYearId], references: [tenantId, id], onDelete: Restrict)
-  level          Level          @relation(fields: [tenantId, levelId], references: [tenantId, id], onDelete: Restrict)
-  subjects       ClassSubject[]
-  enrollments    Enrollment[]
-  reportCards    ReportCard[]
+  id                   String               @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  tenantId             String               @map("tenant_id") @db.Uuid
+  academicYearId       String               @map("academic_year_id") @db.Uuid
+  levelId              String               @map("level_id") @db.Uuid
+  code                 String               @db.VarChar(40)
+  name                 String               @db.VarChar(120)
+  capacity             Int?
+  status               AcademicRecordStatus @default(ACTIVE)
+  archivedAt           DateTime?            @map("archived_at") @db.Timestamptz(6)
+  createdAt            DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
+  academicYear         AcademicYear         @relation(fields: [tenantId, academicYearId], references: [tenantId, id], onDelete: Restrict)
+  level                Level                @relation(fields: [tenantId, levelId], references: [tenantId, id], onDelete: Restrict)
+  subjects             ClassSubject[]
+  enrollments          Enrollment[]
+  enrollmentEventsFrom EnrollmentEvent[]    @relation("EnrollmentEventFrom")
+  enrollmentEventsTo   EnrollmentEvent[]    @relation("EnrollmentEventTo")
+  reportCards          ReportCard[]
 
   @@unique([tenantId, academicYearId, code])
   @@unique([tenantId, id])
@@ -573,15 +596,15 @@ model SchoolClass {
 }
 
 model Subject {
-  id          String           @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  tenantId    String           @map("tenant_id") @db.Uuid
-  code        String           @db.VarChar(30)
-  name        String           @db.VarChar(120)
+  id          String               @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  tenantId    String               @map("tenant_id") @db.Uuid
+  code        String               @db.VarChar(30)
+  name        String               @db.VarChar(120)
   status      AcademicRecordStatus @default(ACTIVE)
-  archivedAt  DateTime? @map("archived_at") @db.Timestamptz(6)
-  createdAt   DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt   DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
-  tenant      Tenant           @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  archivedAt  DateTime?            @map("archived_at") @db.Timestamptz(6)
+  createdAt   DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
+  tenant      Tenant               @relation(fields: [tenantId], references: [id], onDelete: Restrict)
   classes     ClassSubject[]
   reportLines ReportCardLine[]
 
@@ -610,18 +633,18 @@ model ClassSubject {
 }
 
 model TeachingAssignment {
-  id               String         @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  tenantId         String         @map("tenant_id") @db.Uuid
-  classSubjectId   String         @map("class_subject_id") @db.Uuid
-  teacherId        String         @map("teacher_id") @db.Uuid
-  academicPeriodId String         @map("academic_period_id") @db.Uuid
+  id               String               @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  tenantId         String               @map("tenant_id") @db.Uuid
+  classSubjectId   String               @map("class_subject_id") @db.Uuid
+  teacherId        String               @map("teacher_id") @db.Uuid
+  academicPeriodId String               @map("academic_period_id") @db.Uuid
   status           AcademicRecordStatus @default(ACTIVE)
-  archivedAt       DateTime? @map("archived_at") @db.Timestamptz(6)
-  updatedAt        DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  createdAt        DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
-  classSubject     ClassSubject   @relation(fields: [tenantId, classSubjectId], references: [tenantId, id], onDelete: Restrict)
-  teacher          Teacher        @relation(fields: [tenantId, teacherId], references: [tenantId, id], onDelete: Restrict)
-  academicPeriod   AcademicPeriod @relation(fields: [tenantId, academicPeriodId], references: [tenantId, id], onDelete: Restrict)
+  archivedAt       DateTime?            @map("archived_at") @db.Timestamptz(6)
+  updatedAt        DateTime             @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  createdAt        DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  classSubject     ClassSubject         @relation(fields: [tenantId, classSubjectId], references: [tenantId, id], onDelete: Restrict)
+  teacher          Teacher              @relation(fields: [tenantId, teacherId], references: [tenantId, id], onDelete: Restrict)
+  academicPeriod   AcademicPeriod       @relation(fields: [tenantId, academicPeriodId], references: [tenantId, id], onDelete: Restrict)
 
   @@unique([tenantId, classSubjectId, teacherId, academicPeriodId])
   @@unique([tenantId, id])
@@ -630,24 +653,60 @@ model TeachingAssignment {
 }
 
 model Enrollment {
-  id             String           @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  tenantId       String           @map("tenant_id") @db.Uuid
-  studentId      String           @map("student_id") @db.Uuid
-  schoolClassId  String           @map("school_class_id") @db.Uuid
-  academicYearId String           @map("academic_year_id") @db.Uuid
-  status         EnrollmentStatus @default(ACTIVE)
-  enrolledOn     DateTime         @map("enrolled_on") @db.Date
-  endedOn        DateTime?        @map("ended_on") @db.Date
-  createdAt      DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt      DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
-  student        Student          @relation(fields: [tenantId, studentId], references: [tenantId, id], onDelete: Restrict)
-  schoolClass    SchoolClass      @relation(fields: [tenantId, schoolClassId, academicYearId], references: [tenantId, id, academicYearId], onDelete: Restrict)
+  id             String            @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  tenantId       String            @map("tenant_id") @db.Uuid
+  studentId      String            @map("student_id") @db.Uuid
+  schoolClassId  String            @map("school_class_id") @db.Uuid
+  academicYearId String            @map("academic_year_id") @db.Uuid
+  status         EnrollmentStatus  @default(ACTIVE)
+  // Null only denotes historical provenance unknown before LOT 7; every API creation requires a type.
+  type           EnrollmentType?
+  enrolledOn     DateTime          @map("enrolled_on") @db.Date
+  endedOn        DateTime?         @map("ended_on") @db.Date
+  createdAt      DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime          @updatedAt @map("updated_at") @db.Timestamptz(6)
+  student        Student           @relation(fields: [tenantId, studentId], references: [tenantId, id], onDelete: Restrict)
+  schoolClass    SchoolClass       @relation(fields: [tenantId, schoolClassId, academicYearId], references: [tenantId, id, academicYearId], onDelete: Restrict)
+  events         EnrollmentEvent[]
 
   @@unique([tenantId, studentId, academicYearId])
   @@unique([tenantId, id])
+  @@unique([tenantId, id, academicYearId])
   @@index([tenantId, schoolClassId])
   @@index([tenantId, status])
   @@map("enrollments")
+}
+
+model EnrollmentEvent {
+  id                String              @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  tenantId          String              @map("tenant_id") @db.Uuid
+  enrollmentId      String              @map("enrollment_id") @db.Uuid
+  academicYearId    String              @map("academic_year_id") @db.Uuid
+  kind              EnrollmentEventKind
+  fromClassId       String?             @map("from_class_id") @db.Uuid
+  toClassId         String              @map("to_class_id") @db.Uuid
+  fromClassName     String?             @map("from_class_name") @db.VarChar(120)
+  toClassName       String              @map("to_class_name") @db.VarChar(120)
+  fromStatus        EnrollmentStatus?   @map("from_status")
+  toStatus          EnrollmentStatus    @map("to_status")
+  type              EnrollmentType?
+  effectiveDate     DateTime            @map("effective_date") @db.Date
+  reason            String?             @db.VarChar(1000)
+  actorMembershipId String?             @map("actor_membership_id") @db.Uuid
+  actorName         String?             @map("actor_name") @db.VarChar(200)
+  requestId         String?             @map("request_id") @db.VarChar(100)
+  recordedAt        DateTime            @default(now()) @map("recorded_at") @db.Timestamptz(6)
+  enrollment        Enrollment          @relation(fields: [tenantId, enrollmentId, academicYearId], references: [tenantId, id, academicYearId], onDelete: Restrict, map: "enrollment_events_enrollment_fkey")
+  fromClass         SchoolClass?        @relation("EnrollmentEventFrom", fields: [tenantId, fromClassId, academicYearId], references: [tenantId, id, academicYearId], onDelete: Restrict, map: "enrollment_events_from_class_fkey")
+  toClass           SchoolClass         @relation("EnrollmentEventTo", fields: [tenantId, toClassId, academicYearId], references: [tenantId, id, academicYearId], onDelete: Restrict, map: "enrollment_events_to_class_fkey")
+  actor             Membership?         @relation(fields: [tenantId, actorMembershipId], references: [tenantId, id], onDelete: Restrict, map: "enrollment_events_actor_fkey")
+
+  @@unique([tenantId, id])
+  @@index([tenantId, enrollmentId, recordedAt, id])
+  @@index([tenantId, fromClassId])
+  @@index([tenantId, toClassId])
+  @@index([tenantId, actorMembershipId])
+  @@map("enrollment_events")
 }
 
 model Assessment {

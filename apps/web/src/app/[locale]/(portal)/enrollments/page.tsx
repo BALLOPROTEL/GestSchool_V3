@@ -1,4 +1,4 @@
-import { EnrollmentsPage } from '../../../../features/academics/academic-pages';
+import { EnrollmentsPage } from '../../../../features/enrollments/enrollment-page';
 
 export default function Page() {
   return <EnrollmentsPage />;
