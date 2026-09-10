@@ -26,7 +26,7 @@
     "db:migrate": "pnpm --filter @gestschool/database db:migrate",
     "db:migrate:deploy": "pnpm --filter @gestschool/database db:migrate:deploy",
     "db:reset": "pnpm --filter @gestschool/database db:reset",
-    "db:seed": "pnpm --filter @gestschool/contracts build && pnpm --filter @gestschool/database db:seed",
+    "db:seed": "pnpm --filter @gestschool/database^... build && pnpm --filter @gestschool/database db:seed",
     "db:studio": "pnpm --filter @gestschool/database db:studio",
     "db:test": "pnpm --filter @gestschool/database db:test",
     "iam:keys": "node scripts/iam-keys.mjs",
