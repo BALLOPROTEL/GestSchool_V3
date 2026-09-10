@@ -24,6 +24,7 @@ import {
 import { useTranslations } from 'next-intl';
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
+import { StudentFinance } from '../finance/finance-page';
 import { personId, type PersonView } from '@gestschool/contracts';
 import { Link } from '../../i18n/navigation';
 import { useAuth } from '../auth/auth-provider';
@@ -171,6 +172,8 @@ export function StudentProfilePage() {
                 <Card>
                   {tab === 'enrollment' ? (
                     <StudentEnrollmentHistory studentId={person.id} />
+                  ) : tab === 'finance' ? (
+                    <StudentFinance studentId={person.id} />
                   ) : (
                     <EmptyState icon={Clock3} title={profile(tab)} description={t('laterLot')} />
                   )}

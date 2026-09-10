@@ -103,7 +103,10 @@ export function configureIamHttp(app: INestApplication): void {
         return;
       }
       response.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
-      response.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-CSRF-Token');
+      response.setHeader(
+        'Access-Control-Allow-Headers',
+        'Content-Type,Authorization,X-CSRF-Token,Idempotency-Key',
+      );
       response.setHeader('Access-Control-Max-Age', '600');
       response.status(204).end();
       return;

@@ -9,6 +9,7 @@ import { GuardiansModule } from './modules/guardians/guardians.module.js';
 import { TeachersModule } from './modules/teachers/teachers.module.js';
 import { AcademicsModule } from './modules/academics/academics.module.js';
 import { EnrollmentsModule } from './modules/enrollments/enrollments.module.js';
+import { FinanceModule } from './modules/finance/finance.module.js';
 
 @Module({
   controllers: [AppController],
@@ -21,6 +22,7 @@ import { EnrollmentsModule } from './modules/enrollments/enrollments.module.js';
     TeachersModule,
     AcademicsModule,
     EnrollmentsModule,
+    FinanceModule,
   ],
 })
 export class AppModule {}

@@ -245,6 +245,10 @@ model Membership {
   auditLogs        AuditLog[]
   authSessions     Session[]
   enrollmentEvents EnrollmentEvent[]
+  paymentsCreated Payment[] @relation("PaymentCreatedBy")
+  paymentsValidated Payment[] @relation("PaymentValidatedBy")
+  paymentCancellationRequests Payment[] @relation("PaymentCancellationRequestedBy")
+  paymentReversals PaymentReversal[]
 
   @@unique([tenantId, userId])
   @@unique([tenantId, id])
@@ -517,6 +521,7 @@ model AcademicYear {
   periods      AcademicPeriod[]
   classes      SchoolClass[]
   feeSchedules FeeSchedule[]
+  invoices Invoice[]
 
   @@unique([tenantId, code])
   @@unique([tenantId, id])
@@ -561,6 +566,7 @@ model Level {
   updatedAt  DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
   tenant     Tenant               @relation(fields: [tenantId], references: [id], onDelete: Restrict)
   classes    SchoolClass[]
+  feeSchedules FeeSchedule[]
 
   @@unique([tenantId, code])
   @@unique([tenantId, id])
@@ -586,6 +592,7 @@ model SchoolClass {
   enrollmentEventsFrom EnrollmentEvent[]    @relation("EnrollmentEventFrom")
   enrollmentEventsTo   EnrollmentEvent[]    @relation("EnrollmentEventTo")
   reportCards          ReportCard[]
+  feeSchedules         FeeSchedule[]
 
   @@unique([tenantId, academicYearId, code])
   @@unique([tenantId, id])
@@ -668,8 +675,10 @@ model Enrollment {
   student        Student           @relation(fields: [tenantId, studentId], references: [tenantId, id], onDelete: Restrict)
   schoolClass    SchoolClass       @relation(fields: [tenantId, schoolClassId, academicYearId], references: [tenantId, id, academicYearId], onDelete: Restrict)
   events         EnrollmentEvent[]
+  invoices       Invoice[]
 
   @@unique([tenantId, studentId, academicYearId])
+  @@unique([tenantId, id, studentId, academicYearId])
   @@unique([tenantId, id])
   @@unique([tenantId, id, academicYearId])
   @@index([tenantId, schoolClassId])
@@ -816,6 +825,21 @@ model ReportCardLine {
   @@map("report_card_lines")
 }
 
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  CHECK
+  OTHER
+}
+
+enum InvoiceAdjustmentKind {
+  DISCOUNT
+  SCHOLARSHIP
+  CREDIT
+  DEBIT
+  CORRECTION
+}
+
 model FeeType {
   id            String            @id @default(dbgenerated("uuidv7()")) @db.Uuid
   tenantId      String            @map("tenant_id") @db.Uuid
@@ -826,6 +850,7 @@ model FeeType {
   tenant        Tenant            @relation(fields: [tenantId], references: [id], onDelete: Restrict)
   scheduleItems FeeScheduleItem[]
   invoiceLines  InvoiceLine[]
+  archivedAt    DateTime? @map("archived_at") @db.Timestamptz(6)
 
   @@unique([tenantId, code])
   @@unique([tenantId, id])
@@ -843,10 +868,17 @@ model FeeSchedule {
   updatedAt      DateTime          @updatedAt @map("updated_at") @db.Timestamptz(6)
   academicYear   AcademicYear      @relation(fields: [tenantId, academicYearId], references: [tenantId, id], onDelete: Restrict)
   items          FeeScheduleItem[]
+  levelId        String? @map("level_id") @db.Uuid
+  schoolClassId  String? @map("school_class_id") @db.Uuid
+  level          Level? @relation(fields: [tenantId, levelId], references: [tenantId, id], onDelete: Restrict)
+  schoolClass    SchoolClass? @relation(fields: [tenantId, schoolClassId, academicYearId], references: [tenantId, id, academicYearId], onDelete: Restrict)
+  invoices       Invoice[]
 
   @@unique([tenantId, academicYearId, code])
   @@unique([tenantId, id])
   @@index([tenantId, academicYearId])
+  @@index([tenantId, levelId])
+  @@index([tenantId, schoolClassId])
   @@map("fee_schedules")
 }
 
@@ -860,10 +892,25 @@ model FeeScheduleItem {
   createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
   feeSchedule   FeeSchedule @relation(fields: [tenantId, feeScheduleId], references: [tenantId, id], onDelete: Restrict)
   feeType       FeeType     @relation(fields: [tenantId, feeTypeId], references: [tenantId, id], onDelete: Restrict)
+  installments FeeInstallment[]
 
   @@unique([tenantId, feeScheduleId, feeTypeId])
   @@unique([tenantId, id])
   @@map("fee_schedule_items")
+}
+
+model FeeInstallment {
+  id String @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  tenantId String @map("tenant_id") @db.Uuid
+  feeScheduleItemId String @map("fee_schedule_item_id") @db.Uuid
+  amountMinor BigInt @map("amount_minor") @db.BigInt
+  dueOn DateTime @map("due_on") @db.Date
+  ordinal Int @db.SmallInt
+  item FeeScheduleItem @relation(fields: [tenantId, feeScheduleItemId], references: [tenantId, id], onDelete: Restrict)
+
+  @@unique([tenantId, id])
+  @@unique([tenantId, feeScheduleItemId, ordinal])
+  @@map("fee_installments")
 }
 
 model Invoice {
@@ -882,12 +929,24 @@ model Invoice {
   lines            InvoiceLine[]
   adjustments      InvoiceAdjustment[]
   allocations      PaymentAllocation[]
+  // Nullable only for pre-LOT 8 history. New issued invoices require these links.
+  enrollmentId     String? @map("enrollment_id") @db.Uuid
+  academicYearId   String? @map("academic_year_id") @db.Uuid
+  feeScheduleId    String? @map("fee_schedule_id") @db.Uuid
+  studentName      String? @map("student_name") @db.VarChar(240)
+  className        String? @map("class_name") @db.VarChar(120)
+  yearName         String? @map("year_name") @db.VarChar(100)
+  enrollment       Enrollment? @relation(fields: [tenantId, enrollmentId, studentId, academicYearId], references: [tenantId, id, studentId, academicYearId], onDelete: Restrict)
+  academicYear     AcademicYear? @relation(fields: [tenantId, academicYearId], references: [tenantId, id], onDelete: Restrict)
+  feeSchedule      FeeSchedule? @relation(fields: [tenantId, feeScheduleId], references: [tenantId, id], onDelete: Restrict)
 
   @@unique([tenantId, invoiceNumber])
   @@unique([tenantId, id])
   @@index([tenantId, studentId])
   @@index([tenantId, status])
   @@index([tenantId, createdAt])
+  @@index([tenantId, academicYearId, dueOn])
+  @@index([tenantId, enrollmentId])
   @@map("invoices")
 }
 
@@ -903,6 +962,8 @@ model InvoiceLine {
   createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   invoice          Invoice  @relation(fields: [tenantId, invoiceId], references: [tenantId, id], onDelete: Restrict)
   feeType          FeeType? @relation(fields: [tenantId, feeTypeId], references: [tenantId, id], onDelete: Restrict)
+  dueOn            DateTime? @map("due_on") @db.Date
+  ordinal          Int? @db.SmallInt
 
   @@unique([tenantId, id])
   @@index([tenantId, invoiceId])
@@ -916,6 +977,7 @@ model InvoiceAdjustment {
   createdByMembershipId String?     @map("created_by_membership_id") @db.Uuid
   amountMinor           BigInt      @map("amount_minor") @db.BigInt
   reason                String      @db.VarChar(500)
+  kind                  InvoiceAdjustmentKind @default(CORRECTION)
   createdAt             DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
   invoice               Invoice     @relation(fields: [tenantId, invoiceId], references: [tenantId, id], onDelete: Restrict)
   createdBy             Membership? @relation(fields: [tenantId, createdByMembershipId], references: [tenantId, id], onDelete: Restrict)
@@ -941,12 +1003,27 @@ model Payment {
   allocations      PaymentAllocation[]
   reversals        PaymentReversal[]
   receipts         Receipt[]
+  method           PaymentMethod @default(OTHER)
+  requestHash      String? @map("request_hash") @db.Char(64)
+  cashSessionId    String? @map("cash_session_id") @db.Uuid
+  createdByMembershipId String? @map("created_by_membership_id") @db.Uuid
+  validatedByMembershipId String? @map("validated_by_membership_id") @db.Uuid
+  cancellationRequestedByMembershipId String? @map("cancellation_requested_by_membership_id") @db.Uuid
+  cancellationRequestedAt DateTime? @map("cancellation_requested_at") @db.Timestamptz(6)
+  cancellationReason String? @map("cancellation_reason") @db.VarChar(500)
+  cashSession CashSession? @relation(fields: [tenantId, cashSessionId], references: [tenantId, id], onDelete: Restrict)
+  createdBy Membership? @relation("PaymentCreatedBy", fields: [tenantId, createdByMembershipId], references: [tenantId, id], onDelete: Restrict)
+  validatedBy Membership? @relation("PaymentValidatedBy", fields: [tenantId, validatedByMembershipId], references: [tenantId, id], onDelete: Restrict)
+  cancellationRequestedBy Membership? @relation("PaymentCancellationRequestedBy", fields: [tenantId, cancellationRequestedByMembershipId], references: [tenantId, id], onDelete: Restrict)
 
   @@unique([tenantId, paymentReference])
   @@unique([tenantId, idempotencyKey])
   @@unique([tenantId, id])
   @@index([tenantId, status])
   @@index([tenantId, createdAt])
+  @@index([tenantId, studentId])
+  @@index([tenantId, cashSessionId])
+  @@index([tenantId, paidAt])
   @@map("payments")
 }
 
@@ -975,6 +1052,10 @@ model PaymentReversal {
   reason            String   @db.VarChar(500)
   reversedAt        DateTime @default(now()) @map("reversed_at") @db.Timestamptz(6)
   payment           Payment  @relation(fields: [tenantId, paymentId], references: [tenantId, id], onDelete: Restrict)
+  actorMembershipId String? @map("actor_membership_id") @db.Uuid
+  cashSessionId String? @map("cash_session_id") @db.Uuid
+  actor Membership? @relation(fields: [tenantId, actorMembershipId], references: [tenantId, id], onDelete: Restrict)
+  cashSession CashSession? @relation(fields: [tenantId, cashSessionId], references: [tenantId, id], onDelete: Restrict)
 
   @@unique([tenantId, reversalReference])
   @@unique([tenantId, id])
@@ -1012,6 +1093,11 @@ model CashSession {
   closedAt             DateTime?         @map("closed_at") @db.Timestamptz(6)
   openedBy             Membership        @relation("CashSessionOpenedBy", fields: [tenantId, openedByMembershipId], references: [tenantId, id], onDelete: Restrict)
   closedBy             Membership?       @relation("CashSessionClosedBy", fields: [tenantId, closedByMembershipId], references: [tenantId, id], onDelete: Restrict)
+  expectedClosingAmountMinor BigInt? @map("expected_closing_amount_minor") @db.BigInt
+  differenceAmountMinor BigInt? @map("difference_amount_minor") @db.BigInt
+  closingReason String? @map("closing_reason") @db.VarChar(500)
+  payments Payment[]
+  reversals PaymentReversal[]
 
   @@unique([tenantId, id])
   @@index([tenantId, status])

@@ -104,6 +104,19 @@ export async function prepareEnrollmentDemo(database: GestSchoolPrismaClient, te
         },
       });
       for (const learner of [own, eligible]) {
+        // Reuse the real student's existing history when a later demo cycle is requested.
+        if (
+          learner.id === own.id &&
+          (await db.enrollment.count({
+            where: {
+              tenantId,
+              studentId: own.id,
+              status: { in: ['ACTIVE', 'COMPLETED', 'TRANSFERRED'] },
+              schoolClass: { academicYear: { endsOn: { lt: year.startsOn } } },
+            },
+          }))
+        )
+          continue;
         const pending = await writeEnrollment(db, context, {
           action: 'create',
           input: {

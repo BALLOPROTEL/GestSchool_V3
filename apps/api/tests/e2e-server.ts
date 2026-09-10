@@ -3,9 +3,10 @@ import { randomUUID } from 'node:crypto';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { loadInfrastructureConfig } from '@gestschool/config/environment';
 import { createPrismaClient } from '@gestschool/database';
-import { academicReadPermissions } from '@gestschool/contracts';
+import { academicReadPermissions, financeReadPermissions } from '@gestschool/contracts';
 import { academicFixture } from './academic-e2e-fixtures.js';
 import { enrollmentFixture } from './enrollment-e2e-fixtures.js';
+import { prepareFinanceDemo } from '../src/modules/finance/finance.dev.js';
 import { IamRuntime } from '../src/modules/iam/infrastructure/iam-runtime.js';
 import { loadIamConfig } from '../src/modules/iam/infrastructure/iam-config.js';
 import { opaqueToken } from '../src/modules/iam/infrastructure/crypto.js';
@@ -42,6 +43,7 @@ try {
     'teachers.read',
     'enrollments.read',
     ...academicReadPermissions,
+    ...financeReadPermissions,
   ]) {
     const permission = await database.permission.findUniqueOrThrow({ where: { code } });
     await database.rolePermission.create({
@@ -55,6 +57,7 @@ try {
           'teachers.read',
           'enrollments.read',
           ...academicReadPermissions,
+          ...financeReadPermissions,
         ].includes(code)
           ? 'TENANT'
           : 'OWN',
@@ -62,7 +65,7 @@ try {
     });
   }
   const create = async (
-    code: 'STUDENT' | 'SCHOOL_ADMIN' | 'VISUAL_READER' | 'TEACHER' | 'PARENT',
+    code: 'STUDENT' | 'SCHOOL_ADMIN' | 'VISUAL_READER' | 'TEACHER' | 'PARENT' | 'ACCOUNTANT',
     activated = true,
     tenantId = tenant.id,
   ) => {
@@ -204,6 +207,54 @@ try {
       )),
     };
   }
+  const finance: Record<
+    string,
+    Awaited<ReturnType<typeof enrollmentFixture>> & {
+      accountant: { email: string; password: string };
+      locales: { email: string; password: string };
+      parent: { email: string; password: string };
+      student: { email: string; password: string };
+      teacher: { email: string; password: string };
+      invoiceIds: string[];
+      scheduleId: string;
+      cashSessionId: string;
+    }
+  > = {};
+  for (const viewport of [...Object.keys(visual), 'workflow-360x800', 'workflow-1440x900']) {
+    const financialTenant = await database.tenant.create({
+      data: { slug: `finance-e2e-${randomUUID()}`, name: 'École Finance E2E' },
+    });
+    const administrator = await create('SCHOOL_ADMIN', true, financialTenant.id);
+    const accountant = await create('ACCOUNTANT', true, financialTenant.id),
+      studentAccount = await create('STUDENT', true, financialTenant.id),
+      parent = await create('PARENT', true, financialTenant.id);
+    const graph = await enrollmentFixture(
+      database,
+      financialTenant.id,
+      administrator.email,
+      studentAccount.email,
+      parent.email,
+    );
+    const demo = await prepareFinanceDemo(
+      database,
+      financialTenant.id,
+      accountant.email,
+      studentAccount.email,
+    );
+    if (!demo.created || !demo.invoiceIds || !demo.scheduleId || !demo.cashSessionId)
+      throw new Error('Missing Finance E2E fixture');
+    finance[viewport] = {
+      ...graph,
+      accountant,
+      student: studentAccount,
+      parent,
+      locales: await create('ACCOUNTANT', true, financialTenant.id),
+      teacher: await create('TEACHER', true, financialTenant.id),
+      invoiceIds: demo.invoiceIds,
+      scheduleId: demo.scheduleId,
+      cashSessionId: demo.cashSessionId,
+    };
+  }
   const reset = await create('STUDENT');
   const mfa = await create('SCHOOL_ADMIN');
   const metadata = { requestId: randomUUID(), ipAddress: 'e2e-setup', userAgent: 'e2e-setup' };
@@ -219,6 +270,7 @@ try {
       people,
       academics,
       enrollments,
+      finance,
       activation: { ...activation, token: activationToken },
       reset: { ...reset, token: resetToken },
       mfa,

@@ -26,12 +26,22 @@ describe('LOT 6 presentation permissions and workflow', () => {
       }
     },
   );
-  it.each(['ACCOUNTANT', 'STUDENT', 'PARENT'] as const)(
+  it.each(['STUDENT', 'PARENT'] as const)(
     '%s receives no academic grants automatically',
     (role) => {
       for (const entity of academicEntities) expect(canAcademic(session(role), entity)).toBe(false);
     },
   );
+  it('limits accountant academic access to read-only finance references', () => {
+    for (const entity of academicEntities) {
+      expect(canAcademic(session('ACCOUNTANT'), entity)).toBe(
+        // Class-subject listings share the existing classes.read permission.
+        ['academic-years', 'levels', 'classes', 'class-subjects'].includes(entity),
+      );
+      for (const action of ['create', 'update', 'archive', 'activate', 'close'])
+        expect(canAcademic(session('ACCOUNTANT'), entity, action)).toBe(false);
+    }
+  });
   it('allows assigned teachers to read but never mutate academic data', () => {
     for (const entity of academicEntities) {
       expect(canAcademic(session('TEACHER'), entity)).toBe(true);

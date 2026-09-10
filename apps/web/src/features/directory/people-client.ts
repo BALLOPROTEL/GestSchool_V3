@@ -38,6 +38,7 @@ export async function peopleRequest<T>(
   body?: unknown,
   method = 'GET',
   retry = true,
+  extraHeaders: Record<string, string> = {},
 ): Promise<T> {
   const session = currentSession();
   if (!session) throw new PeopleError('AUTH_SESSION_EXPIRED');
@@ -50,13 +51,14 @@ export async function peopleRequest<T>(
       'Content-Type': 'application/json',
       'X-CSRF-Token': csrfToken,
       Authorization: `Bearer ${session.accessToken}`,
+      ...extraHeaders,
     },
     ...(method !== 'GET' ? { body: JSON.stringify(body ?? {}) } : {}),
   });
   if (response.status === 401 && retry) {
     const renewed = await restoreSession();
     window.dispatchEvent(new Event('gestschool:session'));
-    if (renewed) return peopleRequest<T>(path, body, method, false);
+    if (renewed) return peopleRequest<T>(path, body, method, false, extraHeaders);
   }
   if (!response.ok) {
     const error = (await response.json()) as { code?: string; requestId?: string };

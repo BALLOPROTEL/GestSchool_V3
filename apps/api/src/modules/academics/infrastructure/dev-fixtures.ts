@@ -3,7 +3,11 @@ import type { GestSchoolPrismaClient } from '@gestschool/database';
 import { loadInfrastructureConfig } from '@gestschool/config/environment';
 
 // Called exclusively by the explicit local access command; no production seed or HTTP route.
-export async function prepareAcademicDemo(database: GestSchoolPrismaClient, tenantId: string) {
+export async function prepareAcademicDemo(
+  database: GestSchoolPrismaClient,
+  tenantId: string,
+  renewCompletedStudent = false,
+) {
   if (
     process.env['IAM_ENV'] !== 'local' ||
     !['development', 'test'].includes(process.env['NODE_ENV'] ?? '') ||
@@ -17,8 +21,8 @@ export async function prepareAcademicDemo(database: GestSchoolPrismaClient, tena
     const teacher = await db.teacher.findFirstOrThrow({
       where: { tenantId, status: 'ACTIVE', user: { email: 'teacher@example.invalid' } },
     });
-    const calendarYear = new Date().getUTCFullYear();
-    const existing = await db.academicYear.findFirst({
+    let calendarYear = new Date().getUTCFullYear();
+    let existing = await db.academicYear.findFirst({
       where: {
         tenantId,
         code: { startsWith: 'DEV-ACADEMIC-' },
@@ -26,6 +30,21 @@ export async function prepareAcademicDemo(database: GestSchoolPrismaClient, tena
       },
       orderBy: { createdAt: 'desc' },
     });
+    if (existing && renewCompletedStudent) {
+      const enrollment = await db.enrollment.findFirst({
+        where: {
+          tenantId,
+          academicYearId: existing.id,
+          student: { user: { email: 'student@example.invalid' } },
+          status: { in: ['COMPLETED', 'WITHDRAWN', 'TRANSFERRED'] },
+        },
+      });
+      if (enrollment) {
+        // A user-completed demo is historical: create a following cycle, never reopen it.
+        calendarYear = Math.max(calendarYear, existing.endsOn.getUTCFullYear());
+        existing = null;
+      }
+    }
     const year =
       existing ??
       (await db.academicYear.create({

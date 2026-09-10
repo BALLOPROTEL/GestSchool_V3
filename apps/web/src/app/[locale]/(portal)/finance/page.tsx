@@ -1,4 +1,4 @@
-import { FinancePage } from '../../../../features/administration/administration-pages';
+import { FinancePage } from '../../../../features/finance/finance-page';
 
 export default function Page() {
   return <FinancePage />;

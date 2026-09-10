@@ -162,6 +162,7 @@ let teacherOther: Account;
 let director: Account;
 let staff: Account;
 let denied: Account;
+let accountant: Account;
 let forbiddenRoles: Account[];
 let a: Awaited<ReturnType<typeof graph>>;
 let b: Awaited<ReturnType<typeof graph>>;
@@ -194,11 +195,8 @@ beforeAll(async () => {
   director = await account(tenantA, 'DIRECTOR');
   staff = await account(tenantA, 'ACADEMIC_STAFF');
   denied = await account(tenantA, null);
-  forbiddenRoles = [
-    await account(tenantA, 'ACCOUNTANT'),
-    await account(tenantA, 'PARENT'),
-    await account(tenantA, 'STUDENT'),
-  ];
+  accountant = await account(tenantA, 'ACCOUNTANT');
+  forbiddenRoles = [await account(tenantA, 'PARENT'), await account(tenantA, 'STUDENT')];
   a = await graph(admin.browser, teacher.userId);
   b = await graph(other.browser);
 }, 120000);
@@ -678,6 +676,13 @@ describe('LOT 6 academic workflows over authenticated HTTP', () => {
     expect((await new Browser().send(path)).status).toBe(401);
     for (const actor of [denied, ...forbiddenRoles])
       expect((await actor.browser.send(path)).status).toBe(403);
+    expect((await accountant.browser.send(path)).status).toBe(
+      ['academic-years', 'levels', 'classes'].includes(path) ? 200 : 403,
+    );
+  });
+  it('keeps accountant academic mutations denied after LOT 8 lookup grants', async () => {
+    for (const path of ['academic-years', 'levels', 'classes', 'subjects', 'teaching-assignments'])
+      expect((await accountant.browser.send(path, {}, 'POST')).status).toBe(403);
   });
   it.each([
     'tenantId=arbitrary',

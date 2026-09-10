@@ -77,12 +77,15 @@ describe('LOT 7 presentation rules', () => {
         expect(canEnrollment(session(role), action)).toBe(true);
     },
   );
-  it.each(['PARENT', 'STUDENT'] as const)('%s can read but cannot administer', (role) => {
-    expect(canEnrollment(session(role))).toBe(true);
-    for (const action of ['create', 'update', 'confirm', 'transfer', 'cancel', 'complete'])
-      expect(canEnrollment(session(role), action)).toBe(false);
-  });
-  it.each(['TEACHER', 'ACCOUNTANT'] as const)('%s receives no implicit enrollment grants', (role) =>
+  it.each(['PARENT', 'STUDENT', 'ACCOUNTANT'] as const)(
+    '%s can read but cannot administer',
+    (role) => {
+      expect(canEnrollment(session(role))).toBe(true);
+      for (const action of ['create', 'update', 'confirm', 'transfer', 'cancel', 'complete'])
+        expect(canEnrollment(session(role), action)).toBe(false);
+    },
+  );
+  it.each(['TEACHER'] as const)('%s receives no implicit enrollment grants', (role) =>
     expect(canEnrollment(session(role))).toBe(false),
   );
   it('denies missing sessions and non-super-admin platform grants', () => {

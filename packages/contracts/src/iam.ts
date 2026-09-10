@@ -1,5 +1,6 @@
 import { academicPermissionCodes, academicReadPermissions } from './academics.js';
 import { enrollmentPermissionCodes } from './enrollments.js';
+import { financePermissionCodes, financeReadPermissions } from './finance.js';
 
 export const scopes = ['PLATFORM', 'TENANT', 'ASSIGNED', 'CHILDREN', 'OWN', 'NONE'] as const;
 export type AccessScope = (typeof scopes)[number];
@@ -23,6 +24,7 @@ export const privilegedRoles: readonly string[] = [
 export const permissionCodes = [
   ...academicPermissionCodes,
   ...enrollmentPermissionCodes,
+  ...financePermissionCodes,
   'session.read',
   'session.revoke',
   'membership.read',
@@ -49,9 +51,6 @@ export const permissionCodes = [
   'grades.submit',
   'grades.validate',
   'grades.publish',
-  'payments.read',
-  'payments.create',
-  'payments.cancel',
 ] as const;
 export type PermissionCode = (typeof permissionCodes)[number];
 export interface Grant {
@@ -70,6 +69,7 @@ const grants = (permissions: readonly string[], scope: AccessScope): Grant[] =>
 export const roleGrants: Readonly<Record<SystemRole, readonly Grant[]>> = {
   SUPER_ADMIN: grants(permissionCodes, 'PLATFORM'),
   SCHOOL_ADMIN: [
+    ...grants(financePermissionCodes, 'TENANT'),
     ...grants(enrollmentPermissionCodes, 'TENANT'),
     ...grants(academicPermissionCodes, 'TENANT'),
     ...grants(self, 'OWN'),
@@ -95,20 +95,17 @@ export const roleGrants: Readonly<Record<SystemRole, readonly Grant[]>> = {
         'students.create',
         'students.update',
         'grades.read',
-        'payments.read',
       ],
       'TENANT',
     ),
   ],
   DIRECTOR: [
+    ...grants([...financeReadPermissions, 'cash-sessions.read', 'payments.validate'], 'TENANT'),
     ...grants(enrollmentPermissionCodes, 'TENANT'),
     ...grants(academicPermissionCodes, 'TENANT'),
     ...grants(self, 'OWN'),
     ...grants(['guardians.read', 'teachers.read'], 'TENANT'),
-    ...grants(
-      ['students.read', 'grades.read', 'grades.validate', 'grades.publish', 'payments.read'],
-      'TENANT',
-    ),
+    ...grants(['students.read', 'grades.read', 'grades.validate', 'grades.publish'], 'TENANT'),
   ],
   ACADEMIC_STAFF: [
     ...grants(enrollmentPermissionCodes, 'TENANT'),
@@ -129,8 +126,10 @@ export const roleGrants: Readonly<Record<SystemRole, readonly Grant[]>> = {
     ),
   ],
   ACCOUNTANT: [
+    ...grants(financePermissionCodes, 'TENANT'),
+    ...grants(['academic-years.read', 'levels.read', 'classes.read', 'enrollments.read'], 'TENANT'),
     ...grants(self, 'OWN'),
-    ...grants(['students.read', 'payments.read', 'payments.create', 'payments.cancel'], 'TENANT'),
+    ...grants(['students.read'], 'TENANT'),
   ],
   TEACHER: [
     ...grants(academicReadPermissions, 'ASSIGNED'),
@@ -142,15 +141,17 @@ export const roleGrants: Readonly<Record<SystemRole, readonly Grant[]>> = {
     ),
   ],
   PARENT: [
+    ...grants(financeReadPermissions, 'CHILDREN'),
     ...grants(['enrollments.read'], 'CHILDREN'),
     ...grants(self, 'OWN'),
     ...grants(['guardians.read'], 'OWN'),
-    ...grants(['students.read', 'grades.read', 'payments.read'], 'CHILDREN'),
+    ...grants(['students.read', 'grades.read'], 'CHILDREN'),
   ],
   STUDENT: [
+    ...grants(financeReadPermissions, 'OWN'),
     ...grants(['enrollments.read'], 'OWN'),
     ...grants(self, 'OWN'),
-    ...grants(['students.read', 'grades.read', 'payments.read'], 'OWN'),
+    ...grants(['students.read', 'grades.read'], 'OWN'),
   ],
 };
 export interface SessionView {
