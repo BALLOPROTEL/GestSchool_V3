@@ -3,10 +3,15 @@ import { randomUUID } from 'node:crypto';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { loadInfrastructureConfig } from '@gestschool/config/environment';
 import { createPrismaClient } from '@gestschool/database';
-import { academicReadPermissions, financeReadPermissions } from '@gestschool/contracts';
+import {
+  academicReadPermissions,
+  financeReadPermissions,
+  resultPublishedPermissions,
+} from '@gestschool/contracts';
 import { academicFixture } from './academic-e2e-fixtures.js';
 import { enrollmentFixture } from './enrollment-e2e-fixtures.js';
 import { prepareFinanceDemo } from '../src/modules/finance/finance.dev.js';
+import { prepareResultsDemo } from '../src/modules/grades/grades.dev.js';
 import { IamRuntime } from '../src/modules/iam/infrastructure/iam-runtime.js';
 import { loadIamConfig } from '../src/modules/iam/infrastructure/iam-config.js';
 import { opaqueToken } from '../src/modules/iam/infrastructure/crypto.js';
@@ -44,6 +49,7 @@ try {
     'enrollments.read',
     ...academicReadPermissions,
     ...financeReadPermissions,
+    ...resultPublishedPermissions,
   ]) {
     const permission = await database.permission.findUniqueOrThrow({ where: { code } });
     await database.rolePermission.create({
@@ -58,6 +64,7 @@ try {
           'enrollments.read',
           ...academicReadPermissions,
           ...financeReadPermissions,
+          ...resultPublishedPermissions,
         ].includes(code)
           ? 'TENANT'
           : 'OWN',
@@ -65,7 +72,14 @@ try {
     });
   }
   const create = async (
-    code: 'STUDENT' | 'SCHOOL_ADMIN' | 'VISUAL_READER' | 'TEACHER' | 'PARENT' | 'ACCOUNTANT',
+    code:
+      | 'STUDENT'
+      | 'SCHOOL_ADMIN'
+      | 'DIRECTOR'
+      | 'VISUAL_READER'
+      | 'TEACHER'
+      | 'PARENT'
+      | 'ACCOUNTANT',
     activated = true,
     tenantId = tenant.id,
   ) => {
@@ -255,6 +269,41 @@ try {
       cashSessionId: demo.cashSessionId,
     };
   }
+  const results: Record<
+    string,
+    Extract<Awaited<ReturnType<typeof prepareResultsDemo>>, { created: true }> & {
+      teacher: { email: string; password: string };
+      director: { email: string; password: string };
+      parent: { email: string; password: string };
+      student: { email: string; password: string };
+      accountant: { email: string; password: string };
+    }
+  > = {};
+  for (const viewport of [...Object.keys(visual), 'workflow-360x800', 'workflow-1440x900']) {
+    const resultTenant = await database.tenant.create({
+      data: { slug: `results-e2e-${randomUUID()}`, name: 'École Résultats E2E' },
+    });
+    const administrator = await create('SCHOOL_ADMIN', true, resultTenant.id);
+    const director = await create('DIRECTOR', true, resultTenant.id),
+      teacher = await create('TEACHER', true, resultTenant.id),
+      parent = await create('PARENT', true, resultTenant.id),
+      studentAccount = await create('STUDENT', true, resultTenant.id),
+      accountant = await create('ACCOUNTANT', true, resultTenant.id);
+    await enrollmentFixture(
+      database,
+      resultTenant.id,
+      administrator.email,
+      studentAccount.email,
+      parent.email,
+    );
+    const demo = await prepareResultsDemo(database, resultTenant.id, {
+      teacher: teacher.email,
+      validator: director.email,
+      student: studentAccount.email,
+    });
+    if (!demo.created) throw new Error('Missing Results E2E fixture');
+    results[viewport] = { ...demo, director, teacher, parent, student: studentAccount, accountant };
+  }
   const reset = await create('STUDENT');
   const mfa = await create('SCHOOL_ADMIN');
   const metadata = { requestId: randomUUID(), ipAddress: 'e2e-setup', userAgent: 'e2e-setup' };
@@ -271,6 +320,7 @@ try {
       academics,
       enrollments,
       finance,
+      results,
       activation: { ...activation, token: activationToken },
       reset: { ...reset, token: resetToken },
       mfa,

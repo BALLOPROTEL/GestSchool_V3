@@ -1,6 +1,11 @@
 import { academicPermissionCodes, academicReadPermissions } from './academics.js';
 import { enrollmentPermissionCodes } from './enrollments.js';
 import { financePermissionCodes, financeReadPermissions } from './finance.js';
+import {
+  resultPermissionCodes,
+  resultTeacherPermissions,
+  resultPublishedPermissions,
+} from './results.js';
 
 export const scopes = ['PLATFORM', 'TENANT', 'ASSIGNED', 'CHILDREN', 'OWN', 'NONE'] as const;
 export type AccessScope = (typeof scopes)[number];
@@ -25,6 +30,7 @@ export const permissionCodes = [
   ...academicPermissionCodes,
   ...enrollmentPermissionCodes,
   ...financePermissionCodes,
+  ...resultPermissionCodes,
   'session.read',
   'session.revoke',
   'membership.read',
@@ -45,12 +51,6 @@ export const permissionCodes = [
   'teachers.create',
   'teachers.update',
   'teachers.archive',
-  'grades.read',
-  'grades.create',
-  'grades.update',
-  'grades.submit',
-  'grades.validate',
-  'grades.publish',
 ] as const;
 export type PermissionCode = (typeof permissionCodes)[number];
 export interface Grant {
@@ -69,6 +69,7 @@ const grants = (permissions: readonly string[], scope: AccessScope): Grant[] =>
 export const roleGrants: Readonly<Record<SystemRole, readonly Grant[]>> = {
   SUPER_ADMIN: grants(permissionCodes, 'PLATFORM'),
   SCHOOL_ADMIN: [
+    ...grants(resultPermissionCodes, 'TENANT'),
     ...grants(financePermissionCodes, 'TENANT'),
     ...grants(enrollmentPermissionCodes, 'TENANT'),
     ...grants(academicPermissionCodes, 'TENANT'),
@@ -88,42 +89,32 @@ export const roleGrants: Readonly<Record<SystemRole, readonly Grant[]>> = {
       'TENANT',
     ),
     ...grants(
-      [
-        'users.invite',
-        'roles.assign',
-        'students.read',
-        'students.create',
-        'students.update',
-        'grades.read',
-      ],
+      ['users.invite', 'roles.assign', 'students.read', 'students.create', 'students.update'],
       'TENANT',
     ),
   ],
   DIRECTOR: [
+    ...grants(resultPermissionCodes, 'TENANT'),
     ...grants([...financeReadPermissions, 'cash-sessions.read', 'payments.validate'], 'TENANT'),
     ...grants(enrollmentPermissionCodes, 'TENANT'),
     ...grants(academicPermissionCodes, 'TENANT'),
     ...grants(self, 'OWN'),
     ...grants(['guardians.read', 'teachers.read'], 'TENANT'),
-    ...grants(['students.read', 'grades.read', 'grades.validate', 'grades.publish'], 'TENANT'),
+    ...grants(['students.read'], 'TENANT'),
   ],
   ACADEMIC_STAFF: [
+    ...grants(
+      resultPermissionCodes.filter(
+        (permission) =>
+          !['grades.correct', 'grades.lock', 'report-cards.lock'].includes(permission),
+      ),
+      'TENANT',
+    ),
     ...grants(enrollmentPermissionCodes, 'TENANT'),
     ...grants(academicPermissionCodes, 'TENANT'),
     ...grants(['teachers.read'], 'TENANT'),
     ...grants(self, 'OWN'),
-    ...grants(
-      [
-        'students.read',
-        'students.create',
-        'students.update',
-        'grades.read',
-        'grades.create',
-        'grades.update',
-        'grades.submit',
-      ],
-      'TENANT',
-    ),
+    ...grants(['students.read', 'students.create', 'students.update'], 'TENANT'),
   ],
   ACCOUNTANT: [
     ...grants(financePermissionCodes, 'TENANT'),
@@ -132,26 +123,26 @@ export const roleGrants: Readonly<Record<SystemRole, readonly Grant[]>> = {
     ...grants(['students.read'], 'TENANT'),
   ],
   TEACHER: [
+    ...grants(resultTeacherPermissions, 'ASSIGNED'),
     ...grants(academicReadPermissions, 'ASSIGNED'),
     ...grants(self, 'OWN'),
     ...grants(['teachers.read'], 'OWN'),
-    ...grants(
-      ['students.read', 'grades.read', 'grades.create', 'grades.update', 'grades.submit'],
-      'ASSIGNED',
-    ),
+    ...grants(['students.read'], 'ASSIGNED'),
   ],
   PARENT: [
+    ...grants(resultPublishedPermissions, 'CHILDREN'),
     ...grants(financeReadPermissions, 'CHILDREN'),
     ...grants(['enrollments.read'], 'CHILDREN'),
     ...grants(self, 'OWN'),
     ...grants(['guardians.read'], 'OWN'),
-    ...grants(['students.read', 'grades.read'], 'CHILDREN'),
+    ...grants(['students.read'], 'CHILDREN'),
   ],
   STUDENT: [
+    ...grants(resultPublishedPermissions, 'OWN'),
     ...grants(financeReadPermissions, 'OWN'),
     ...grants(['enrollments.read'], 'OWN'),
     ...grants(self, 'OWN'),
-    ...grants(['students.read', 'grades.read'], 'OWN'),
+    ...grants(['students.read'], 'OWN'),
   ],
 };
 export interface SessionView {

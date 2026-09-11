@@ -690,55 +690,6 @@ export const auditRecords: readonly AuditRecord[] = [
   },
 ];
 
-export type GradeRecord = {
-  history: number;
-  id: string;
-  mathematics: number;
-  name: string;
-  physics: number;
-  rank: number;
-  science: number;
-};
-
-export const gradeRecords: readonly GradeRecord[] = [
-  {
-    history: 17.5,
-    id: 'EL-2024-005',
-    mathematics: 18.5,
-    name: 'Kadiatou Sylla',
-    physics: 18,
-    rank: 1,
-    science: 17.5,
-  },
-  {
-    history: 16,
-    id: 'EL-2024-001',
-    mathematics: 17.5,
-    name: 'Aminata Diallo',
-    physics: 18,
-    rank: 2,
-    science: 16.5,
-  },
-  {
-    history: 15.5,
-    id: 'EL-2024-008',
-    mathematics: 17,
-    name: 'Idrissa Ouédraogo',
-    physics: 16.5,
-    rank: 3,
-    science: 17,
-  },
-  {
-    history: 15,
-    id: 'EL-2024-002',
-    mathematics: 16,
-    name: 'Ibrahim Koné',
-    physics: 16.5,
-    rank: 4,
-    science: 15.5,
-  },
-];
-
 export const weeklyAttendance = [94, 92, 89, 91, 88] as const;
 export const monthlyIncome = [32, 42, 39, 54, 49, 63] as const;
 export const monthlyExpenses = [24, 29, 27, 34, 31, 38] as const;

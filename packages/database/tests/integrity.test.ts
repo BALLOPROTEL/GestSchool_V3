@@ -119,6 +119,13 @@ async function createAssessment(
   graph: AcademicGraph,
   suffix: string,
 ): Promise<string> {
+  // LOT 9 requires real enrollment at the assessment date; assertions remain unchanged.
+  await client.query(
+    `INSERT INTO enrollments
+       (tenant_id, student_id, school_class_id, academic_year_id, enrolled_on, updated_at)
+     VALUES ($1, $2, $3, $4, DATE '2026-09-05', NOW())`,
+    [graph.tenantId, graph.studentId, graph.schoolClassId, graph.academicYearId],
+  );
   return queryId(
     client,
     `INSERT INTO assessments

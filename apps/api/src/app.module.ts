@@ -10,6 +10,7 @@ import { TeachersModule } from './modules/teachers/teachers.module.js';
 import { AcademicsModule } from './modules/academics/academics.module.js';
 import { EnrollmentsModule } from './modules/enrollments/enrollments.module.js';
 import { FinanceModule } from './modules/finance/finance.module.js';
+import { GradesModule } from './modules/grades/grades.module.js';
 
 @Module({
   controllers: [AppController],
@@ -23,6 +24,7 @@ import { FinanceModule } from './modules/finance/finance.module.js';
     AcademicsModule,
     EnrollmentsModule,
     FinanceModule,
+    GradesModule,
   ],
 })
 export class AppModule {}

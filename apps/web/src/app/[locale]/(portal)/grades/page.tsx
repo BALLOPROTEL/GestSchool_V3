@@ -1,4 +1,4 @@
-import { GradesPage } from '../../../../features/academics/academic-pages';
+import { GradesPage } from '../../../../features/grades/grades-page';
 
 export default function Page() {
   return <GradesPage />;

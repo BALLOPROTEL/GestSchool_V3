@@ -110,6 +110,15 @@ enum AcademicWorkflowStatus {
   @@map("academic_workflow_status")
 }
 
+enum GradeOutcome {
+  SCORED
+  ABSENT
+  EXCUSED
+  NOT_GRADED
+
+  @@map("grade_outcome")
+}
+
 enum InvoiceStatus {
   DRAFT
   ISSUED
@@ -236,6 +245,8 @@ model Membership {
   user             User                @relation(fields: [userId], references: [id], onDelete: Restrict)
   roles            MembershipRole[]
   gradeChanges     GradeChange[]
+  assessmentsCreated Assessment[] @relation("AssessmentCreator")
+  assessmentsSubmitted Assessment[] @relation("AssessmentSubmitter")
   invoiceChanges   InvoiceAdjustment[]
   cashOpened       CashSession[]       @relation("CashSessionOpenedBy")
   cashClosed       CashSession[]       @relation("CashSessionClosedBy")
@@ -712,6 +723,7 @@ model EnrollmentEvent {
 
   @@unique([tenantId, id])
   @@index([tenantId, enrollmentId, recordedAt, id])
+  @@index([tenantId, enrollmentId, effectiveDate(sort: Desc), recordedAt(sort: Desc), id(sort: Desc)], map: "enrollment_events_result_date_idx")
   @@index([tenantId, fromClassId])
   @@index([tenantId, toClassId])
   @@index([tenantId, actorMembershipId])
@@ -728,17 +740,24 @@ model Assessment {
   maxScore         Decimal                @default(20) @map("max_score") @db.Decimal(7, 2)
   weight           Decimal                @default(1) @db.Decimal(7, 2)
   status           AcademicWorkflowStatus @default(DRAFT)
+  version          Int                    @default(1)
+  archivedAt       DateTime?              @map("archived_at") @db.Timestamptz(6)
+  createdByMembershipId String?           @map("created_by_membership_id") @db.Uuid
+  submittedByMembershipId String?         @map("submitted_by_membership_id") @db.Uuid
   assessedOn       DateTime               @map("assessed_on") @db.Date
   createdAt        DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt        DateTime               @updatedAt @map("updated_at") @db.Timestamptz(6)
   classSubject     ClassSubject           @relation(fields: [tenantId, classSubjectId], references: [tenantId, id], onDelete: Restrict)
   academicPeriod   AcademicPeriod         @relation(fields: [tenantId, academicPeriodId], references: [tenantId, id], onDelete: Restrict)
   grades           Grade[]
+  createdBy        Membership? @relation("AssessmentCreator", fields: [tenantId, createdByMembershipId], references: [tenantId, id], onDelete: Restrict, map: "assessments_creator_fkey")
+  submittedBy      Membership? @relation("AssessmentSubmitter", fields: [tenantId, submittedByMembershipId], references: [tenantId, id], onDelete: Restrict, map: "assessments_submitter_fkey")
 
   @@unique([tenantId, reference])
   @@unique([tenantId, id])
   @@index([tenantId, classSubjectId])
   @@index([tenantId, status])
+  @@index([tenantId, academicPeriodId, classSubjectId])
   @@map("assessments")
 }
 
@@ -747,7 +766,8 @@ model Grade {
   tenantId     String                 @map("tenant_id") @db.Uuid
   assessmentId String                 @map("assessment_id") @db.Uuid
   studentId    String                 @map("student_id") @db.Uuid
-  score        Decimal                @db.Decimal(7, 2)
+  score        Decimal?               @db.Decimal(7, 2)
+  outcome      GradeOutcome           @default(SCORED)
   status       AcademicWorkflowStatus @default(DRAFT)
   comment      String?                @db.VarChar(500)
   createdAt    DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -769,7 +789,12 @@ model GradeChange {
   gradeId               String      @map("grade_id") @db.Uuid
   changedByMembershipId String?     @map("changed_by_membership_id") @db.Uuid
   previousScore         Decimal?    @map("previous_score") @db.Decimal(7, 2)
-  newScore              Decimal     @map("new_score") @db.Decimal(7, 2)
+  newScore              Decimal?    @map("new_score") @db.Decimal(7, 2)
+  previousOutcome       GradeOutcome? @map("previous_outcome")
+  newOutcome            GradeOutcome @default(SCORED) @map("new_outcome")
+  previousComment       String?      @map("previous_comment") @db.VarChar(500)
+  newComment            String?      @map("new_comment") @db.VarChar(500)
+  requestId             String?      @map("request_id") @db.VarChar(100)
   reason                String      @db.VarChar(500)
   changedAt             DateTime    @default(now()) @map("changed_at") @db.Timestamptz(6)
   grade                 Grade       @relation(fields: [tenantId, gradeId], references: [tenantId, id], onDelete: Restrict)
@@ -814,7 +839,8 @@ model ReportCardLine {
   subjectId     String     @map("subject_id") @db.Uuid
   subjectName   String     @map("subject_name") @db.VarChar(120)
   coefficient   Decimal    @db.Decimal(5, 2)
-  average       Decimal    @db.Decimal(7, 2)
+  average       Decimal?   @db.Decimal(7, 2)
+  outcome       GradeOutcome @default(SCORED)
   teacherRemark String?    @map("teacher_remark") @db.VarChar(500)
   createdAt     DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
   reportCard    ReportCard @relation(fields: [tenantId, reportCardId], references: [tenantId, id], onDelete: Restrict)

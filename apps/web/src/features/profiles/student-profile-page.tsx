@@ -25,6 +25,7 @@ import { useTranslations } from 'next-intl';
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
 import { StudentFinance } from '../finance/finance-page';
+import { StudentResults } from '../grades/grades-page';
 import { personId, type PersonView } from '@gestschool/contracts';
 import { Link } from '../../i18n/navigation';
 import { useAuth } from '../auth/auth-provider';
@@ -170,7 +171,9 @@ export function StudentProfilePage() {
             {(['academic', 'enrollment', 'finance', 'attendance'] as const).map((tab) => (
               <TabsContent key={tab} value={tab}>
                 <Card>
-                  {tab === 'enrollment' ? (
+                  {tab === 'academic' ? (
+                    <StudentResults studentId={person.id} />
+                  ) : tab === 'enrollment' ? (
                     <StudentEnrollmentHistory studentId={person.id} />
                   ) : tab === 'finance' ? (
                     <StudentFinance studentId={person.id} />

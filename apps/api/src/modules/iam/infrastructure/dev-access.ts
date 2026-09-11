@@ -13,6 +13,7 @@ import { opaqueToken } from './crypto.js';
 import { prepareAcademicDemo } from '../../academics/infrastructure/dev-fixtures.js';
 import { prepareEnrollmentDemo } from '../../enrollments/infrastructure/dev-fixtures.js';
 import { prepareFinanceDemo } from '../../finance/finance.dev.js';
+import { prepareResultsDemo } from '../../grades/grades.dev.js';
 
 const config = loadIamConfig();
 const infrastructure = loadInfrastructureConfig();
@@ -178,6 +179,7 @@ try {
   const academicDemo = await prepareAcademicDemo(database, tenant.id, true);
   const enrollmentDemo = await prepareEnrollmentDemo(database, tenant.id);
   await prepareFinanceDemo(database, tenant.id);
+  await prepareResultsDemo(database, tenant.id);
   process.stdout.write(
     `Enrollment demo ${enrollmentDemo.created ? 'created' : 'preserved'}: ${enrollmentDemo.academicYearId}\n`,
   );
