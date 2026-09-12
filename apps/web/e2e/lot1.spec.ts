@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from './fixtures';
 import { readFileSync } from 'node:fs';
+import { freshAuthFixture } from './auth-fixtures';
 
 interface E2eUser {
   email: string;
@@ -9,13 +10,11 @@ interface E2eUser {
 }
 function fixtures(): {
   visual: Record<string, E2eUser>;
-  activation: E2eUser;
-  reset: E2eUser;
   studentId: string;
 } {
   return JSON.parse(
     readFileSync(new URL('../../../.local/iam-e2e.json', import.meta.url), 'utf8'),
-  ) as { visual: Record<string, E2eUser>; activation: E2eUser; reset: E2eUser; studentId: string };
+  ) as { visual: Record<string, E2eUser>; studentId: string };
 }
 
 async function waitForPageReady(page: Page): Promise<void> {
@@ -212,7 +211,7 @@ test('exercises real login, activation and password reset flows', async ({ page 
   page.on('console', (message) => {
     if (message.type() === 'error') errors.push(message.text());
   });
-  const fixture = fixtures();
+  const fixture = { ...fixtures(), ...(await freshAuthFixture()) };
   const user = fixture.visual['1440x900'];
   if (!user || !fixture.activation.token || !fixture.reset.token)
     throw new Error('Missing IAM fixture');

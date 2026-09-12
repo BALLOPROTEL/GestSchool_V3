@@ -82,6 +82,7 @@ try {
       | 'ACCOUNTANT',
     activated = true,
     tenantId = tenant.id,
+    preEnrollMfa = false,
   ) => {
     const email = `${randomUUID()}@example.invalid`;
     const role =
@@ -102,7 +103,9 @@ try {
         roles: { create: { roleId: role.id } },
       },
     });
-    return { email, password };
+    const mfa = preEnrollMfa ? iam.crypto.newTotp() : undefined;
+    if (mfa) await iam.repository.setMfa(user.id, iam.crypto.encrypt(mfa.secret, user.id), -1n);
+    return { email, password, ...(mfa ? { mfaSecret: mfa.secret } : {}) };
   };
   const visual: Record<string, { email: string; password: string }> = {};
   for (const viewport of [
@@ -153,18 +156,18 @@ try {
   const people: Record<
     string,
     {
-      crud: { email: string; password: string };
-      locales: { email: string; password: string };
+      crud: { email: string; password: string; mfaSecret?: string };
+      locales: { email: string; password: string; mfaSecret?: string };
       denied: { email: string; password: string };
     }
   > = {};
   for (const viewport of Object.keys(visual))
     people[viewport] = {
-      crud: await create('SCHOOL_ADMIN'),
-      locales: await create('SCHOOL_ADMIN'),
+      // Deterministic reusable TEST identities; production MFA still verifies real TOTP codes.
+      crud: await create('SCHOOL_ADMIN', true, tenant.id, true),
+      locales: await create('SCHOOL_ADMIN', true, tenant.id, true),
       denied: await create('STUDENT'),
     };
-  const activation = await create('STUDENT', false);
   await academicFixture(database, tenant.id);
   const academics: Record<
     string,
@@ -304,11 +307,7 @@ try {
     if (!demo.created) throw new Error('Missing Results E2E fixture');
     results[viewport] = { ...demo, director, teacher, parent, student: studentAccount, accountant };
   }
-  const reset = await create('STUDENT');
   const mfa = await create('SCHOOL_ADMIN');
-  const metadata = { requestId: randomUUID(), ipAddress: 'e2e-setup', userAgent: 'e2e-setup' };
-  const activationToken = await iam.credentials.issue(activation.email, 'ACTIVATION', metadata);
-  const resetToken = await iam.credentials.issue(reset.email, 'PASSWORD_RESET', metadata);
   const directory = new URL('../../../.local/', import.meta.url);
   await mkdir(directory, { recursive: true, mode: 0o700 });
   await writeFile(
@@ -321,8 +320,6 @@ try {
       enrollments,
       finance,
       results,
-      activation: { ...activation, token: activationToken },
-      reset: { ...reset, token: resetToken },
       mfa,
     }),
     { mode: 0o600 },

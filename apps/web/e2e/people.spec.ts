@@ -1,12 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from './fixtures';
 import { readFileSync } from 'node:fs';
-import { createHmac } from 'node:crypto';
-
-interface Credentials {
-  email: string;
-  password: string;
-}
+import { login, type Credentials } from './academic-helpers';
 interface Fixtures {
   studentId: string;
   people: Record<string, { crud: Credentials; locales: Credentials; denied: Credentials }>;
@@ -15,18 +10,6 @@ function fixtures(): Fixtures {
   return JSON.parse(
     readFileSync(new URL('../../../.local/iam-e2e.json', import.meta.url), 'utf8'),
   ) as Fixtures;
-}
-function totp(secret: string): string {
-  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
-  const bits = [...secret]
-    .map((letter) => alphabet.indexOf(letter).toString(2).padStart(5, '0'))
-    .join('');
-  const key = Buffer.from(bits.match(/.{8}/g)?.map((byte) => Number.parseInt(byte, 2)) ?? []);
-  const counter = Buffer.alloc(8);
-  counter.writeBigUInt64BE(BigInt(Math.floor(Date.now() / 30000)));
-  const digest = createHmac('sha1', key).update(counter).digest();
-  const offset = (digest[digest.length - 1] ?? 0) & 15;
-  return ((digest.readUInt32BE(offset) & 0x7fffffff) % 1000000).toString().padStart(6, '0');
 }
 function watch(page: Page) {
   const consoleErrors: string[] = [];
@@ -51,21 +34,6 @@ async function ready(page: Page) {
   await expect(page.locator('main')).not.toHaveAttribute('aria-busy', 'true');
   if (await page.locator('[data-people-ready]').count())
     await expect(page.locator('[data-people-ready]')).toHaveAttribute('data-people-ready', 'true');
-}
-async function login(page: Page, credentials: Credentials, mfa: boolean) {
-  await page.goto('/fr/login');
-  await page.getByLabel('Adresse e-mail', { exact: true }).fill(credentials.email);
-  await page.getByLabel('Mot de passe', { exact: true }).fill(credentials.password);
-  await page.getByRole('button', { name: /Se connecter/ }).click();
-  if (mfa) {
-    await expect(page.getByTestId('mfa-secret')).toBeVisible();
-    const secret = await page.getByTestId('mfa-secret').textContent();
-    if (!secret) throw new Error('Missing MFA enrollment secret');
-    await page.getByLabel('Code à six chiffres').fill(totp(secret));
-    await page.getByRole('button', { name: 'Vérifier', exact: true }).click();
-  }
-  await expect(page).toHaveURL(/\/fr$/);
-  await ready(page);
 }
 async function overflow(page: Page) {
   expect(
@@ -93,7 +61,10 @@ async function create(page: Page, route: string, add: string, firstName: string,
   await dialog.getByLabel('Nom', { exact: true }).fill(lastName);
   await dialog.getByRole('button', { name: 'Enregistrer', exact: true }).click();
   await expect(dialog).toBeHidden();
-  await page.getByRole('searchbox').fill(lastName);
+  await page
+    .getByRole('main')
+    .getByRole('searchbox', { name: 'Rechercher', exact: true })
+    .fill(lastName);
   await expect(page.getByRole('row').filter({ hasText: `${firstName} ${lastName}` })).toBeVisible();
 }
 
@@ -122,9 +93,15 @@ test('LOT 5 real CRUD, relationships and archive restore on mobile and desktop',
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(`Élève Modifié ${suffix}`);
   const studentPath = new URL(page.url()).pathname;
   await overflow(page);
-  await page.getByRole('link', { name: /Retour/ }).click();
+  await page.getByRole('link', { name: 'Retour aux élèves', exact: true }).click();
+  // ready() alone can still see the profile's data-people-ready while Next is navigating.
+  await expect(page).toHaveURL(/\/fr\/students$/);
+  await expect(page.getByRole('heading', { level: 1, name: 'Élèves', exact: true })).toBeVisible();
   await ready(page);
-  await page.getByRole('searchbox').fill(suffix);
+  await page
+    .getByRole('main')
+    .getByRole('searchbox', { name: 'Rechercher', exact: true })
+    .fill(suffix);
   row = page.getByRole('row').filter({ hasText: suffix });
   await row.getByRole('button', { name: 'Archiver', exact: true }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Confirmer' }).click();
@@ -142,7 +119,9 @@ test('LOT 5 real CRUD, relationships and archive restore on mobile and desktop',
   row = page.getByRole('row').filter({ hasText: suffix });
   await row.getByRole('button', { name: 'Enfants', exact: true }).click();
   const dialog = page.getByRole('dialog');
-  await dialog.getByRole('searchbox').fill(suffix);
+  await dialog
+    .getByRole('searchbox', { name: 'Rechercher une fiche à associer', exact: true })
+    .fill(suffix);
   await expect(dialog.getByLabel('Choisir une fiche').locator('option')).toHaveCount(2);
   await dialog.getByLabel('Choisir une fiche').selectOption({ index: 1 });
   await dialog.getByLabel('Lien de parenté', { exact: true }).fill('Responsable légal');
