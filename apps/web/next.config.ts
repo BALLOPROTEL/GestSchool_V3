@@ -3,6 +3,8 @@ import createNextIntlPlugin from 'next-intl/plugin';
 
 const nextConfig: NextConfig = {
   agentRules: false,
+  // Verification URLs contain bearer tokens; never include them in development access logs.
+  logging: { incomingRequests: { ignore: [/\/verify\//] } },
   transpilePackages: ['@gestschool/ui'],
   async rewrites() {
     return [

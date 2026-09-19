@@ -3,6 +3,16 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "exports": {
+    "./documents": {
+      "types": "./dist/jobs/documents-generation.d.ts",
+      "default": "./dist/jobs/documents-generation.js"
+    },
+    "./documents-runtime": {
+      "types": "./dist/jobs/documents-runtime.d.ts",
+      "default": "./dist/jobs/documents-runtime.js"
+    }
+  },
   "scripts": {
     "dev": "tsx watch src/main.ts",
     "build": "tsc -p tsconfig.build.json",
@@ -11,6 +21,8 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@gestschool/contracts": "workspace:*",
+    "@gestschool/database": "workspace:*",
     "@gestschool/config": "workspace:*",
     "@gestschool/infrastructure": "workspace:*",
     "@nestjs/common": "12.0.1",

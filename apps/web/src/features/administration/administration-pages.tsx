@@ -6,129 +6,24 @@ import {
   Bell,
   Download,
   Eye,
-  File,
-  FileSpreadsheet,
   FileText,
   Mail,
   MessageSquare,
   Plus,
   RefreshCw,
   Send,
-  Trash2,
   TrendingUp,
-  Upload,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
-import { documents, messages, reports } from '../../mocks/data';
-import type { DocumentRecord, MessageRecord, ReportRecord } from '../../mocks/data';
+import { messages, reports } from '../../mocks/data';
+import type { MessageRecord, ReportRecord } from '../../mocks/data';
 import { useMockAction } from '../shared/mock-action';
 import { PageHeader } from '../shared/page-header';
 import { SearchField } from '../shared/search-field';
 import { StatusPill } from '../shared/status-pill';
-
-const documentIcons: Record<DocumentRecord['type'], { className: string; icon: LucideIcon }> = {
-  DOC: { className: 'bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-300', icon: File },
-  PDF: { className: 'bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-300', icon: FileText },
-  XLS: {
-    className: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300',
-    icon: FileSpreadsheet,
-  },
-};
-
-export function DocumentsPage() {
-  const common = useTranslations('Common');
-  const nav = useTranslations('Nav');
-  const translate = useTranslations('Documents');
-  const mockAction = useMockAction();
-  const [query, setQuery] = useState('');
-  const filtered = documents.filter((document) =>
-    `${document.name} ${document.category}`.toLocaleLowerCase().includes(query.toLocaleLowerCase()),
-  );
-  return (
-    <div className="page-shell">
-      <PageHeader
-        actions={
-          <>
-            <Button
-              onClick={() => mockAction(translate('downloadAll'))}
-              size="sm"
-              variant="outline"
-            >
-              <Download />
-              {translate('downloadAll')}
-            </Button>
-            <Button onClick={() => mockAction(translate('add'))} size="sm">
-              <Upload />
-              {translate('add')}
-            </Button>
-          </>
-        }
-        description={translate('description', { count: documents.length })}
-        eyebrow={nav('administration')}
-        title={translate('title')}
-      />
-      <SearchField
-        label={common('search')}
-        onChange={setQuery}
-        placeholder={translate('search')}
-        value={query}
-      />
-      <Card className="mt-5 divide-y divide-border overflow-hidden">
-        {filtered.map((document) => {
-          const config = documentIcons[document.type];
-          const Icon = config.icon;
-          return (
-            <article className="flex items-center gap-3 p-4 hover:bg-muted/25" key={document.id}>
-              <div
-                className={cn(
-                  'flex size-10 shrink-0 items-center justify-center rounded-lg',
-                  config.className,
-                )}
-              >
-                <Icon className="size-5" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <h2 className="truncate text-sm font-semibold">{document.name}</h2>
-                <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
-                  {document.category} · {document.size} · {document.date} · {document.author}
-                </p>
-              </div>
-              <div className="flex shrink-0">
-                <Button
-                  aria-label={`${common('view')} ${document.name}`}
-                  onClick={() => mockAction(common('view'))}
-                  size="icon-sm"
-                  variant="ghost"
-                >
-                  <Eye />
-                </Button>
-                <Button
-                  aria-label={`${common('download')} ${document.name}`}
-                  onClick={() => mockAction(common('download'))}
-                  size="icon-sm"
-                  variant="ghost"
-                >
-                  <Download />
-                </Button>
-                <Button
-                  aria-label={`${common('delete')} ${document.name}`}
-                  onClick={() => mockAction(common('delete'))}
-                  size="icon-sm"
-                  variant="ghost"
-                >
-                  <Trash2 className="text-destructive" />
-                </Button>
-              </div>
-            </article>
-          );
-        })}
-      </Card>
-    </div>
-  );
-}
 
 const messageIcons: Record<MessageRecord['type'], { className: string; icon: LucideIcon }> = {
   email: {

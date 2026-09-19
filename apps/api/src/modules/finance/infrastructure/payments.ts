@@ -262,6 +262,15 @@ export async function writePayment(
     });
     for (const a of row.allocations) await refreshInvoice(db, tenantId, a.invoiceId);
     action = 'payment.cancelled';
+    await db.outboxEvent.create({
+      data: {
+        tenantId,
+        aggregateType: 'payment',
+        aggregateId: row.id,
+        eventType: 'finance.payment.reversed.v1',
+        payload: { schemaVersion: 1, paymentId: row.id },
+      },
+    });
   }
   const after = await financeDetail(db, context, 'payments', row.id, true);
   await audit(db, context, action, row.id, before, after);

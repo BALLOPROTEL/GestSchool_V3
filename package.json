@@ -15,7 +15,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "turbo run typecheck",
-    "test": "turbo run test",
+    "test": "turbo run test --concurrency=2",
     "test:e2e": "turbo run test:e2e",
     "infra:up": "docker compose -f docker/compose.yml up -d --wait postgres redis minio && docker compose -f docker/compose.yml run --rm minio-init",
     "infra:down": "docker compose -f docker/compose.yml down --remove-orphans",
@@ -37,6 +37,7 @@
     "enrollments:test": "pnpm --filter @gestschool/api... build && pnpm --filter @gestschool/api test:iam tests/enrollments.test.ts",
     "finance:test": "pnpm --filter @gestschool/api... build && pnpm --filter @gestschool/api test:iam tests/finance.test.ts",
     "results:test": "pnpm --filter @gestschool/api... build && pnpm --filter @gestschool/api test:iam tests/results.test.ts",
+    "documents:test": "pnpm --filter @gestschool/api... build && pnpm --filter @gestschool/api test:iam tests/documents.test.ts",
     "iam:dev": "pnpm --filter @gestschool/api... build && node --env-file=.env.example --env-file-if-exists=.env --import tsx apps/api/src/modules/iam/infrastructure/dev-cli.ts",
     "iam:test": "pnpm --filter @gestschool/api... build && pnpm --filter @gestschool/api test:iam"
   },

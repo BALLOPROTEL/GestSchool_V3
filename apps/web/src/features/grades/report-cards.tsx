@@ -23,6 +23,7 @@ import { AcademicDialog } from '../academics/academic-components';
 import { usePeopleData } from '../directory/people-hooks';
 import { canResults, resultsRequest } from './results-client';
 import { ResultError, ResultField, ResultStatus } from './results-components';
+import { DocumentsPanel } from '../documents/documents-page';
 
 export function ClassResultPanel({
   classId,
@@ -218,12 +219,20 @@ export function ReportCards({
       {detail.loading ? <p role="status">{t('loading')}</p> : null}
       {detail.error ? <ResultError error={detail.error} /> : null}
       {detail.data ? (
-        <ReportPreview
-          key={`${detail.data.id}:${revision}`}
-          report={detail.data}
-          refresh={refresh}
-          close={() => setSelected(undefined)}
-        />
+        <>
+          <ReportPreview
+            key={`${detail.data.id}:${revision}`}
+            report={detail.data}
+            refresh={refresh}
+            close={() => setSelected(undefined)}
+          />
+          {detail.data.snapshot && ['PUBLISHED', 'LOCKED'].includes(detail.data.status) ? (
+            <>
+              <DocumentsPanel sourceId={detail.data.id} documentType="REPORT_CARD" />
+              <DocumentsPanel sourceId={detail.data.id} documentType="TRANSCRIPT" />
+            </>
+          ) : null}
+        </>
       ) : null}
     </div>
   );

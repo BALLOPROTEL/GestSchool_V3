@@ -14,6 +14,7 @@ import { prepareAcademicDemo } from '../../academics/infrastructure/dev-fixtures
 import { prepareEnrollmentDemo } from '../../enrollments/infrastructure/dev-fixtures.js';
 import { prepareFinanceDemo } from '../../finance/finance.dev.js';
 import { prepareResultsDemo } from '../../grades/grades.dev.js';
+import { prepareDocumentsDemo } from '../../documents/documents.dev.js';
 
 const config = loadIamConfig();
 const infrastructure = loadInfrastructureConfig();
@@ -180,6 +181,8 @@ try {
   const enrollmentDemo = await prepareEnrollmentDemo(database, tenant.id);
   await prepareFinanceDemo(database, tenant.id);
   await prepareResultsDemo(database, tenant.id);
+  const documentsDemo = await prepareDocumentsDemo(database, app, tenant.id);
+  process.stdout.write(`Official documents ready: ${documentsDemo.documents}\n`);
   process.stdout.write(
     `Enrollment demo ${enrollmentDemo.created ? 'created' : 'preserved'}: ${enrollmentDemo.academicYearId}\n`,
   );
@@ -255,7 +258,7 @@ try {
   }
   for (const account of accounts)
     process.stdout.write(
-      `ROLE: ${account.role}\nEMAIL: ${account.email}\nPASSWORD: ${account.password}\nMFA REQUIRED: ${account.mfaRequired ? 'YES' : 'NO'}\nHTTP LOGIN: OK\n\n`,
+      `ROLE: ${account.role}\nEMAIL: ${account.email}\nPASSWORD: see .local/test-access.json\nMFA REQUIRED: ${account.mfaRequired ? 'YES' : 'NO'}\nHTTP LOGIN: OK\n\n`,
     );
   process.stdout.write(
     'Local access only: http://localhost:3000/fr/login\nMFA: import mfaUri from .local/test-access.json into your authenticator, or run pnpm dev:totp EMAIL.\nPasswords/MFA secrets are stored only in .local/test-access.json (0600). Re-running rotates credentials and revokes sessions.\n',

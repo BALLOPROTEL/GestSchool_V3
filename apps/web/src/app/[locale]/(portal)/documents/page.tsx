@@ -1,4 +1,4 @@
-import { DocumentsPage } from '../../../../features/administration/administration-pages';
+import { DocumentsPage } from '../../../../features/documents/documents-page';
 
 export default function Page() {
   return <DocumentsPage />;

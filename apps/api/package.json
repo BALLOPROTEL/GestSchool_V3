@@ -28,6 +28,9 @@
     "zod": "4.5.4"
   },
   "devDependencies": {
+    "pdf-lib": "1.17.1",
+    "jsqr": "1.4.0",
+    "@gestschool/worker": "workspace:*",
     "@types/express": "5.0.6"
   }
 }

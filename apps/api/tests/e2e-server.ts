@@ -307,6 +307,66 @@ try {
     if (!demo.created) throw new Error('Missing Results E2E fixture');
     results[viewport] = { ...demo, director, teacher, parent, student: studentAccount, accountant };
   }
+  const documents: Record<
+    string,
+    {
+      admin: Awaited<ReturnType<typeof create>>;
+      accountant: Awaited<ReturnType<typeof create>>;
+      parent: Awaited<ReturnType<typeof create>>;
+      student: Awaited<ReturnType<typeof create>>;
+      studentId: string;
+      enrollmentId: string;
+      otherEnrollmentId: string;
+      reportId: string;
+      receiptId: string;
+    }
+  > = {};
+  for (const viewport of Object.keys(visual)) {
+    const documentTenant = await database.tenant.create({
+      data: { slug: `documents-e2e-${randomUUID()}`, name: 'École Documents E2E' },
+    });
+    const admin = await create('SCHOOL_ADMIN', true, documentTenant.id, true),
+      accountant = await create('ACCOUNTANT', true, documentTenant.id, true),
+      teacher = await create('TEACHER', true, documentTenant.id),
+      parent = await create('PARENT', true, documentTenant.id),
+      documentStudent = await create('STUDENT', true, documentTenant.id);
+    const enrollment = await enrollmentFixture(
+      database,
+      documentTenant.id,
+      admin.email,
+      documentStudent.email,
+      parent.email,
+    );
+    await database.academicYear.update({
+      where: { id: enrollment.yearId },
+      data: { status: 'ACTIVE' },
+    });
+    const documentResults = await prepareResultsDemo(database, documentTenant.id, {
+      teacher: teacher.email,
+      validator: admin.email,
+      student: documentStudent.email,
+    });
+    if (!documentResults.created || !documentResults.reportIds[0])
+      throw new Error('Missing published document source');
+    await prepareFinanceDemo(database, documentTenant.id, accountant.email, documentStudent.email);
+    const receipt = await database.receipt.findFirstOrThrow({
+      where: {
+        tenantId: documentTenant.id,
+        payment: { studentId: enrollment.ownStudentId, status: 'COMPLETED' },
+      },
+    });
+    documents[viewport] = {
+      admin,
+      accountant,
+      parent,
+      student: documentStudent,
+      studentId: enrollment.ownStudentId,
+      enrollmentId: enrollment.ownEnrollmentId,
+      otherEnrollmentId: enrollment.otherEnrollmentId,
+      reportId: documentResults.reportIds[0],
+      receiptId: receipt.id,
+    };
+  }
   const mfa = await create('SCHOOL_ADMIN');
   const directory = new URL('../../../.local/', import.meta.url);
   await mkdir(directory, { recursive: true, mode: 0o700 });
@@ -320,6 +380,7 @@ try {
       enrollments,
       finance,
       results,
+      documents,
       mfa,
     }),
     { mode: 0o600 },

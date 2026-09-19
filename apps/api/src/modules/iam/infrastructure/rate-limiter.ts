@@ -19,6 +19,21 @@ export class RateLimiter {
   async close(): Promise<void> {
     if (this.client.isOpen) await this.client.close();
   }
+  async checkPublicDocument(ip: string): Promise<void> {
+    try {
+      // One key per IP and endpoint, never per token: rotating tokens cannot reset the limit.
+      const count = Number(
+        await this.client.eval(countScript, {
+          keys: [`${this.prefix}:public-document-verification:${tokenHash(ip)}`],
+          arguments: ['60000'],
+        }),
+      );
+      if (count > 30) throw new IamError('DOCUMENT_RATE_LIMITED', 429);
+    } catch (error) {
+      if (error instanceof IamError) throw error;
+      throw new IamError('DOCUMENT_UNAVAILABLE', 503);
+    }
+  }
   async check(endpoint: string, ip: string, identifier?: string): Promise<void> {
     const sensitive = /login|forgot-password|reset-password|refresh|activation|mfa/.test(endpoint);
     if (!sensitive) return;

@@ -3,14 +3,14 @@
 Le monorepo est organisé autour de trois applications et de six packages internes :
 
 - `apps/web` : interface Next.js du LOT 1, localisée en français, anglais et arabe ;
-- `apps/api` : sondes de santé, IAM LOT 4, annuaires LOT 5, référentiel académique LOT 6, inscriptions LOT 7, Finance LOT 8 et résultats LOT 9 ;
-- `apps/worker` : contexte applicatif NestJS sans serveur HTTP ;
+- `apps/api` : sondes de santé, IAM LOT 4, annuaires LOT 5, référentiel académique LOT 6, inscriptions LOT 7, Finance LOT 8, résultats LOT 9 et documents LOT 10 ;
+- `apps/worker` : contexte NestJS sans serveur HTTP, outbox et génération documentaire BullMQ/Chromium ;
 - `packages/config` : configurations TypeScript communes ;
 - `packages/ui` : tokens et composants visuels réutilisables du LOT 1 ;
 - `packages/database` : propriétaire unique du schéma Prisma 7.10, des migrations, du client, du
   seed et des tests d'intégrité PostgreSQL du LOT 3 ;
 - `packages/contracts` : contrats IAM et Zod des annuaires, rôles, permissions et scopes ; `shared` reste sans logique métier ;
-- `packages/infrastructure` : clients techniques de santé PostgreSQL, Redis et stockage S3.
+- `packages/infrastructure` : clients techniques PostgreSQL, Redis, stockage S3 et rendu PDF fermé.
 
 L'audit exhaustif du prototype et les décisions de portage sont documentés dans
 [`design/template-audit.md`](design/template-audit.md).
@@ -30,6 +30,9 @@ dans [`lot8-certification.md`](lot8-certification.md).
 Les évaluations, calculs, workflows et bulletins métier sont documentés dans
 [`lot9-results.md`](lot9-results.md), avec leur compte rendu dans
 [`lot9-certification.md`](lot9-certification.md).
+Les documents officiels, PDF privés, QR et leur exploitation sont décrits dans
+[`lot10-documents.md`](lot10-documents.md), avec les preuves et le compte rendu des
+70 points dans [`lot10-certification.md`](lot10-certification.md).
 
 ## Limites volontaires
 
@@ -39,6 +42,7 @@ et protège l'entrée du portail. Le LOT 5 fournit uniquement les annuaires él�
 enseignants et les relations parent/enfant. Le LOT 6 fournit le référentiel académique et les
 affectations enseignants. Le LOT 7 fournit le cycle d'inscription et ses historiques. Le LOT 8
 connecte les frais, factures, paiements, reçus métier et sessions de caisse. Le LOT 9 branche les
-évaluations, notes, moyennes, rangs et bulletins historiques. Les autres écrans restent en mocks :
-aucun paiement en ligne, PDF/QR final, file de travaux ou connecteur d'envoi n'est implémenté. Consultez
+évaluations, notes, moyennes, rangs et bulletins historiques. Le LOT 10 ajoute six types de
+documents officiels, des PDF privés, une file documentaire et la vérification publique par QR.
+Les autres écrans restent en mocks : aucun paiement en ligne ni connecteur d'envoi n'est implémenté. Consultez
 [`infrastructure/local-development.md`](infrastructure/local-development.md) pour le workflow local.

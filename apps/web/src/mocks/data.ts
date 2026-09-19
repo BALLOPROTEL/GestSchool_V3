@@ -389,64 +389,6 @@ export const invoices: readonly Invoice[] = [
   },
 ];
 
-export type DocumentRecord = {
-  author: string;
-  category: string;
-  date: string;
-  id: string;
-  name: string;
-  size: string;
-  type: 'DOC' | 'PDF' | 'XLS';
-};
-
-export const documents: readonly DocumentRecord[] = [
-  {
-    author: 'Direction',
-    category: 'Règlement',
-    date: '01/09/2026',
-    id: 'DOC-001',
-    name: 'Règlement intérieur 2026–2027.pdf',
-    size: '1,2 Mo',
-    type: 'PDF',
-  },
-  {
-    author: 'Direction',
-    category: 'Calendrier',
-    date: '01/09/2026',
-    id: 'DOC-002',
-    name: 'Calendrier scolaire 2026–2027.xlsx',
-    size: '245 Ko',
-    type: 'XLS',
-  },
-  {
-    author: 'Dr Assamoi',
-    category: 'Pédagogie',
-    date: '03/09/2026',
-    id: 'DOC-003',
-    name: 'Fournitures — Terminale C.pdf',
-    size: '568 Ko',
-    type: 'PDF',
-  },
-  {
-    author: 'Secrétariat',
-    category: 'Conseil',
-    date: '03/09/2026',
-    id: 'DOC-004',
-    name: 'Convocation conseil de classe.pdf',
-    size: '320 Ko',
-    type: 'PDF',
-  },
-  {
-    author: 'Direction',
-    category: 'Rapport',
-    date: '31/08/2026',
-    id: 'DOC-005',
-    name: 'Rapport de rentrée 2026.docx',
-    size: '890 Ko',
-    type: 'DOC',
-  },
-];
-
 export type MessageRecord = {
   date: string;
   id: string;

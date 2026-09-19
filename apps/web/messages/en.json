@@ -179,7 +179,7 @@
     "allocations": "Payment allocations",
     "reversals": "Reversal history",
     "cancellationRequested": "Cancellation requested",
-    "receiptHint": "The receipt is retained after reversal. PDF and QR are deferred to LOT 10.",
+    "receiptHint": "The receipt is retained after reversal. Its historical PDF remains available; the QR shows its current validity.",
     "adjustmentKind": "Adjustment type",
     "direction": "Correction direction",
     "decrease": "Decrease total",

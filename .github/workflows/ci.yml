@@ -17,6 +17,7 @@ jobs:
       NODE_ENV: test
       IAM_ENV: local
       REDIS_URL: redis://127.0.0.1:6379
+      DOCUMENT_PUBLIC_ORIGIN: http://127.0.0.1:3000
     services:
       redis:
         image: redis:8.10.1-alpine3.23
@@ -61,6 +62,24 @@ jobs:
       - name: Generate Prisma client
         run: pnpm db:generate
 
+      - name: Start private document storage
+        run: |
+          docker run --detach --name gestschool-ci-minio --publish 127.0.0.1:9000:9000 \
+            --env MINIO_ROOT_USER=gestschool-local --env MINIO_ROOT_PASSWORD=gestschool-local-secret \
+            minio/minio:RELEASE.2025-07-23T15-54-02Z server /data
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:9000/minio/health/live; then break; fi
+            sleep 1
+          done
+          curl --fail --silent http://127.0.0.1:9000/minio/health/live
+          docker run --rm --network host --entrypoint /bin/sh minio/mc:RELEASE.2025-08-13T08-35-41Z -ec '
+            mc alias set ci http://127.0.0.1:9000 gestschool-local gestschool-local-secret
+            mc mb ci/gestschool-local-private
+            mc anonymous set none ci/gestschool-local-private'
+
+      - name: Install Chromium for worker PDF and frontend tests
+        run: pnpm exec playwright install --with-deps chromium
+
       - name: Generate ephemeral IAM test keys
         run: pnpm iam:keys
 
@@ -84,16 +103,13 @@ jobs:
 
       - name: Test
         # Keep Argon2 tests within their existing timeout on shared CI runners.
-        run: pnpm test --concurrency=2
+        run: pnpm test
 
       - name: Build
         run: pnpm build
 
-      - name: Certify IAM, directories, academics, enrollments, finance and results against PostgreSQL and Redis
+      - name: Certify IAM, directories, academics, enrollments, finance, results and official documents
         run: pnpm iam:test
 
-      - name: Install Chromium
-        run: pnpm exec playwright install --with-deps chromium
-
-      - name: Test frontend, IAM, directory, academic, enrollment, finance and results journeys
+      - name: Test frontend, IAM, directory, academic, enrollment, finance, results and document journeys
         run: pnpm test:e2e

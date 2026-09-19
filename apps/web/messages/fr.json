@@ -179,7 +179,7 @@
     "allocations": "Ventilation du paiement",
     "reversals": "Historique des annulations",
     "cancellationRequested": "Annulation demandée",
-    "receiptHint": "Reçu métier conservé après annulation. PDF et QR prévus au LOT 10.",
+    "receiptHint": "Reçu conservé après annulation. Le PDF historique reste accessible ; son QR indique la validité actuelle.",
     "adjustmentKind": "Type d’ajustement",
     "direction": "Sens de la correction",
     "decrease": "Diminuer le total",

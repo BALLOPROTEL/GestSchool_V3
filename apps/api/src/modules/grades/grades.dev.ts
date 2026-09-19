@@ -31,6 +31,20 @@ export async function prepareResultsDemo(
       const own = await db.student.findFirstOrThrow({
         where: { tenantId, user: { email: emails.student }, status: 'ACTIVE' },
       });
+      // A later DEV enrollment (for example official documents in the active year)
+      // must not move or regenerate an already prepared Results demonstration.
+      const history = await db.enrollment.findMany({
+        where: { tenantId, studentId: own.id },
+        select: { id: true },
+      });
+      const marker = await db.iamAuditLog.findFirst({
+        where: {
+          tenantId,
+          action: 'dev.results.prepared',
+          subjectId: { in: history.map((entry) => entry.id) },
+        },
+      });
+      if (marker?.subjectId) return { created: false as const, enrollmentId: marker.subjectId };
       const enrollment = await db.enrollment.findFirstOrThrow({
         where: {
           tenantId,
@@ -41,10 +55,6 @@ export async function prepareResultsDemo(
         orderBy: { createdAt: 'desc' },
         include: { schoolClass: true },
       });
-      const marker = await db.iamAuditLog.findFirst({
-        where: { tenantId, action: 'dev.results.prepared', subjectId: enrollment.id },
-      });
-      if (marker) return { created: false as const, enrollmentId: enrollment.id };
       const suffix = enrollment.id.slice(-8),
         classroom = enrollment.schoolClass;
       const year = await db.academicYear.findFirstOrThrow({

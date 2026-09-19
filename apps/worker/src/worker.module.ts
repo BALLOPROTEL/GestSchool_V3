@@ -3,6 +3,7 @@ import { loadInfrastructureConfig } from '@gestschool/config/environment';
 
 import { EnvironmentVerifier } from './infrastructure/environment-verifier.service.js';
 import { WORKER_CONFIGURATION } from './infrastructure/tokens.js';
+import { DocumentsRuntime } from './jobs/documents-runtime.js';
 
 @Module({
   providers: [
@@ -11,6 +12,7 @@ import { WORKER_CONFIGURATION } from './infrastructure/tokens.js';
       useFactory: loadInfrastructureConfig,
     },
     EnvironmentVerifier,
+    DocumentsRuntime,
   ],
 })
 export class WorkerModule {}

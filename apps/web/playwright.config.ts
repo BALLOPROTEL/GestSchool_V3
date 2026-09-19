@@ -48,6 +48,14 @@ export default defineConfig({
   webServer: [
     {
       command:
+        'node --env-file=../../.env.example --env-file-if-exists=../../.env ../worker/dist/main.js',
+      wait: { stdout: /GestSchool worker is ready/ },
+      timeout: 120_000,
+      gracefulShutdown: { signal: 'SIGTERM', timeout: 30_000 },
+      env: { NODE_ENV: 'test', DOCUMENT_PUBLIC_ORIGIN: 'http://127.0.0.1:3000' },
+    },
+    {
+      command:
         'node --env-file=../../.env.example --env-file-if-exists=../../.env --import tsx ../api/tests/e2e-server.ts',
       url: 'http://127.0.0.1:3100/health/live',
       reuseExistingServer: false,

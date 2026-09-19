@@ -15,7 +15,13 @@ interface AuthState {
   logout: () => Promise<void>;
 }
 const Context = createContext<AuthState | null>(null);
-export function AuthProvider({ children }: { children: ReactNode }) {
+export function AuthProvider({
+  children,
+  anonymous = false,
+}: {
+  children: ReactNode;
+  anonymous?: boolean;
+}) {
   const [session, update] = useState<Authenticated | null>(null);
   const [ready, setReady] = useState(false);
   const [expired, setExpired] = useState(false);
@@ -26,6 +32,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setExpired(false);
   };
   useEffect(() => {
+    // Public verification does not attempt a login or expose an expired-session prompt.
+    if (anonymous) {
+      setReady(true);
+      return;
+    }
     let active = true;
     void restoreSession().then((value) => {
       if (active) {
@@ -51,7 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       window.removeEventListener('storage', onStorage);
       window.removeEventListener('gestschool:session', onSession);
     };
-  }, []);
+  }, [anonymous]);
   useEffect(() => {
     if (!session) return;
     const timer = setTimeout(

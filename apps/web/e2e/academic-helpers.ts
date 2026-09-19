@@ -1,17 +1,22 @@
 import { expect, type Page } from './fixtures';
 import { completeMfa, type Credentials } from './mfa-helpers';
 export type { Credentials } from './mfa-helpers';
+const redact = (message: string) =>
+  message.replace(
+    /(\/(?:api\/v1\/public\/documents|fr|en|ar)\/verify\/)[^\s/?#"'<>]+/g,
+    '$1[REDACTED]',
+  );
 export function watch(page: Page) {
   const consoleErrors: string[] = [];
   const pageErrors: string[] = [];
   const apiErrors: string[] = [];
   page.on('console', (entry) => {
-    if (entry.type() === 'error') consoleErrors.push(entry.text());
+    if (entry.type() === 'error') consoleErrors.push(redact(entry.text()));
   });
-  page.on('pageerror', (error) => pageErrors.push(error.message));
+  page.on('pageerror', (error) => pageErrors.push(redact(error.message)));
   page.on('response', (response) => {
     if (new URL(response.url()).pathname.startsWith('/api/') && response.status() >= 400)
-      apiErrors.push(`${response.status()} ${new URL(response.url()).pathname}`);
+      apiErrors.push(redact(`${response.status()} ${new URL(response.url()).pathname}`));
   });
   return () => {
     expect(consoleErrors).toEqual([]);

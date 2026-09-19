@@ -152,6 +152,27 @@ enum DocumentStatus {
   @@map("document_status")
 }
 
+enum OfficialDocumentType {
+  REPORT_CARD
+  TRANSCRIPT
+  SCHOOL_CERTIFICATE
+  ENROLLMENT_CERTIFICATE
+  STUDENT_CARD
+  RECEIPT
+
+  @@map("official_document_type")
+}
+
+enum DocumentGenerationStatus {
+  PENDING
+  PROCESSING
+  READY
+  FAILED
+  REVOKED
+
+  @@map("document_generation_status")
+}
+
 enum MessageStatus {
   DRAFT
   SENT
@@ -194,6 +215,8 @@ model Tenant {
   subjects          Subject[]
   feeTypes          FeeType[]
   documentTemplates DocumentTemplate[]
+  documents Document[]
+  documentCounters DocumentCounter[]
   auditLogs         AuditLog[]
   outboxEvents      OutboxEvent[]
 
@@ -260,6 +283,8 @@ model Membership {
   paymentsValidated Payment[] @relation("PaymentValidatedBy")
   paymentCancellationRequests Payment[] @relation("PaymentCancellationRequestedBy")
   paymentReversals PaymentReversal[]
+  documentsRequested Document[] @relation("DocumentRequester")
+  documentsRevoked Document[] @relation("DocumentRevoker")
 
   @@unique([tenantId, userId])
   @@unique([tenantId, id])
@@ -687,7 +712,9 @@ model Enrollment {
   schoolClass    SchoolClass       @relation(fields: [tenantId, schoolClassId, academicYearId], references: [tenantId, id, academicYearId], onDelete: Restrict)
   events         EnrollmentEvent[]
   invoices       Invoice[]
+  documents Document[]
 
+  @@unique([tenantId, id, studentId])
   @@unique([tenantId, studentId, academicYearId])
   @@unique([tenantId, id, studentId, academicYearId])
   @@unique([tenantId, id])
@@ -824,7 +851,9 @@ model ReportCard {
   academicPeriod   AcademicPeriod         @relation(fields: [tenantId, academicPeriodId, academicYearId], references: [tenantId, id, academicYearId], onDelete: Restrict)
   schoolClass      SchoolClass            @relation(fields: [tenantId, schoolClassId, academicYearId], references: [tenantId, id, academicYearId], onDelete: Restrict)
   lines            ReportCardLine[]
+  documents Document[]
 
+  @@unique([tenantId, id, studentId])
   @@unique([tenantId, studentId, academicPeriodId])
   @@unique([tenantId, id])
   @@index([tenantId, schoolClassId])
@@ -1098,6 +1127,7 @@ model Receipt {
   currency      String   @default("XOF") @db.Char(3)
   issuedAt      DateTime @default(now()) @map("issued_at") @db.Timestamptz(6)
   payment       Payment  @relation(fields: [tenantId, paymentId], references: [tenantId, id], onDelete: Restrict)
+  documents Document[]
 
   @@unique([tenantId, receiptNumber])
   @@unique([tenantId, paymentId])
@@ -1137,12 +1167,17 @@ model DocumentTemplate {
   code      String     @db.VarChar(40)
   name      String     @db.VarChar(140)
   body      String
+  documentType OfficialDocumentType? @map("document_type")
+  locale String? @db.VarChar(10)
+  version Int?
+  publishedAt DateTime? @map("published_at") @db.Timestamptz(6)
   createdAt DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
   tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Restrict)
   documents Document[]
 
   @@unique([tenantId, code])
+  @@unique([tenantId, documentType, locale, version])
   @@unique([tenantId, id])
   @@map("document_templates")
 }
@@ -1158,17 +1193,60 @@ model Document {
   mimeType           String            @map("mime_type") @db.VarChar(120)
   sizeBytes          BigInt            @map("size_bytes") @db.BigInt
   status             DocumentStatus    @default(ACTIVE)
+  // Null denotes a preserved legacy LOT 3 file, never an official LOT 10 issuance.
+  documentType OfficialDocumentType? @map("document_type")
+  generationStatus DocumentGenerationStatus? @map("generation_status")
+  locale String? @db.VarChar(10)
+  snapshot Json? @db.JsonB
+  templateVersion Int? @map("template_version")
+  idempotencyKey String? @map("idempotency_key") @db.Uuid
+  enrollmentId String? @map("enrollment_id") @db.Uuid
+  reportCardId String? @map("report_card_id") @db.Uuid
+  receiptId String? @map("receipt_id") @db.Uuid
+  requestedByMembershipId String? @map("requested_by_membership_id") @db.Uuid
+  checksum String? @db.Char(64)
+  verificationTokenHash String? @unique @map("verification_token_hash") @db.Char(64)
+  issuedAt DateTime? @map("issued_at") @db.Timestamptz(6)
+  revokedAt DateTime? @map("revoked_at") @db.Timestamptz(6)
+  revokedByMembershipId String? @map("revoked_by_membership_id") @db.Uuid
+  revocationReason String? @map("revocation_reason") @db.VarChar(500)
+  supersedesId String? @map("supersedes_id") @db.Uuid
+  attempts Int @default(0)
+  leaseToken String? @map("lease_token") @db.Uuid
+  leaseUntil DateTime? @map("lease_until") @db.Timestamptz(6)
+  failureCode String? @map("failure_code") @db.VarChar(80)
   createdAt          DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt          DateTime          @updatedAt @map("updated_at") @db.Timestamptz(6)
   student            Student?          @relation(fields: [tenantId, studentId], references: [tenantId, id], onDelete: Restrict)
   template           DocumentTemplate? @relation(fields: [tenantId, documentTemplateId], references: [tenantId, id], onDelete: Restrict)
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  enrollment Enrollment? @relation(fields: [tenantId, enrollmentId, studentId], references: [tenantId, id, studentId], onDelete: Restrict, map: "documents_enrollment_source_fkey")
+  reportCard ReportCard? @relation(fields: [tenantId, reportCardId, studentId], references: [tenantId, id, studentId], onDelete: Restrict, map: "documents_report_source_fkey")
+  receipt Receipt? @relation(fields: [tenantId, receiptId], references: [tenantId, id], onDelete: Restrict, map: "documents_receipt_source_fkey")
+  requester Membership? @relation("DocumentRequester", fields: [tenantId, requestedByMembershipId], references: [tenantId, id], onDelete: Restrict, map: "documents_requester_fkey")
+  revoker Membership? @relation("DocumentRevoker", fields: [tenantId, revokedByMembershipId], references: [tenantId, id], onDelete: Restrict, map: "documents_revoker_fkey")
+  supersedes Document? @relation("DocumentReissues", fields: [tenantId, supersedesId], references: [tenantId, id], onDelete: Restrict, map: "documents_supersedes_fkey")
+  reissues Document[] @relation("DocumentReissues")
 
+  @@unique([tenantId, idempotencyKey])
+  @@index([tenantId, generationStatus, createdAt])
   @@unique([tenantId, reference])
   @@unique([tenantId, objectKey])
   @@unique([tenantId, id])
   @@index([tenantId, studentId])
   @@index([tenantId, status])
   @@map("documents")
+}
+
+model DocumentCounter {
+  tenantId String @map("tenant_id") @db.Uuid
+  prefix String @db.VarChar(8)
+  year Int
+  value Int @default(0)
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+
+  @@id([tenantId, prefix, year])
+  @@map("document_counters")
 }
 
 model Message {

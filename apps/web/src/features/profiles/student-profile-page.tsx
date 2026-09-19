@@ -26,6 +26,8 @@ import { useParams } from 'next/navigation';
 import { useState } from 'react';
 import { StudentFinance } from '../finance/finance-page';
 import { StudentResults } from '../grades/grades-page';
+import { DocumentsPanel } from '../documents/documents-page';
+import { useDocumentCopy } from '../documents/document-copy';
 import { personId, type PersonView } from '@gestschool/contracts';
 import { Link } from '../../i18n/navigation';
 import { useAuth } from '../auth/auth-provider';
@@ -39,6 +41,7 @@ import { StudentEnrollmentHistory } from '../enrollments/enrollment-page';
 
 export function StudentProfilePage() {
   const common = useTranslations('Common');
+  const documents = useDocumentCopy();
   const t = useTranslations('People');
   const profile = useTranslations('StudentProfile');
   const grades = useTranslations('Grades');
@@ -166,6 +169,7 @@ export function StudentProfilePage() {
                     {profile(tab)}
                   </TabsTrigger>
                 ))}
+                <TabsTrigger value="documents">{documents.title}</TabsTrigger>
               </TabsList>
             </div>
             {(['academic', 'enrollment', 'finance', 'attendance'] as const).map((tab) => (
@@ -183,6 +187,9 @@ export function StudentProfilePage() {
                 </Card>
               </TabsContent>
             ))}
+            <TabsContent value="documents">
+              <DocumentsPanel studentId={person.id} />
+            </TabsContent>
           </Tabs>
           {editing ? (
             <PersonEditor

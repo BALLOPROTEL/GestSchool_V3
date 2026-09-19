@@ -3,14 +3,16 @@
 import { TooltipProvider } from '@gestschool/ui';
 import { ThemeProvider } from 'next-themes';
 import type { ReactNode } from 'react';
+import { usePathname } from 'next/navigation';
 import { Toaster } from 'sonner';
 import { AuthProvider } from '../../features/auth/auth-provider';
 
 export function AppProviders({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
   return (
     <ThemeProvider attribute="class" defaultTheme="light" disableTransitionOnChange enableSystem>
       <TooltipProvider delayDuration={300}>
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider anonymous={/^\/(fr|en|ar)\/verify\//.test(pathname)}>{children}</AuthProvider>
         <Toaster closeButton position="bottom-right" richColors />
       </TooltipProvider>
     </ThemeProvider>

@@ -6,6 +6,7 @@ import { useAuth } from '../auth/auth-provider';
 import { canFinance } from './finance-client';
 import { Money, FinanceStatus } from './finance-components';
 import type { FinanceAction } from './finance-editor';
+import { DocumentsPanel } from '../documents/documents-page';
 export function financeReference(row: FinanceView) {
   return row.kind === 'invoices'
     ? row.invoiceNumber
@@ -258,6 +259,11 @@ export function FinanceDetail({
             </p>
             <p className="text-sm">{row.issuedAt}</p>
             <p className="text-xs text-muted-foreground">{t('receiptHint')}</p>
+            <DocumentsPanel
+              sourceId={row.id}
+              documentType="RECEIPT"
+              eligible={row.paymentStatus === 'COMPLETED'}
+            />
             <Button size="sm" variant="outline" onClick={() => select('payments', row.paymentId)}>
               {t('payments')} · {t('details')}
             </Button>
