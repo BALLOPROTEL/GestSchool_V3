@@ -33,6 +33,8 @@ Les évaluations, calculs, workflows et bulletins métier sont documentés dans
 Les documents officiels, PDF privés, QR et leur exploitation sont décrits dans
 [`lot10-documents.md`](lot10-documents.md), avec les preuves et le compte rendu des
 70 points dans [`lot10-certification.md`](lot10-certification.md).
+Le correctif de distribution MinIO/mc pour les runners CI vierges est décrit
+dans [`lot10-ci-storage.md`](lot10-ci-storage.md).
 
 ## Limites volontaires
 
