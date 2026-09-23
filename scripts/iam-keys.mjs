@@ -27,3 +27,14 @@ try {
     process.stdout.write('Existing local IAM keys preserved.\n');
   else throw error;
 }
+try {
+  await writeFile(new URL('messaging.key', directory), randomBytes(32).toString('base64'), {
+    mode: 0o600,
+    flag: 'wx',
+  });
+  process.stdout.write('Local messaging encryption key created (0600).\n');
+} catch (error) {
+  if (error instanceof Error && 'code' in error && error.code === 'EEXIST')
+    process.stdout.write('Existing local messaging encryption key preserved.\n');
+  else throw error;
+}

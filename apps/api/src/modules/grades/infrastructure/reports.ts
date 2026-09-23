@@ -192,6 +192,15 @@ export async function generateReports(
         auditData(context, 'report_card.published', row.id, null, { snapshot: row.snapshot }),
       ),
     });
+    await db.outboxEvent.createMany({
+      data: rows.map((row) => ({
+        tenantId: context.tenantId,
+        aggregateType: 'report_card',
+        aggregateId: row.id,
+        eventType: 'report_card.published.v1',
+        payload: { schemaVersion: 1 },
+      })),
+    });
   }
   const after = await db.reportCard.findMany({
     where: { tenantId: context.tenantId, id: { in: rows.map((row) => row.id) } },

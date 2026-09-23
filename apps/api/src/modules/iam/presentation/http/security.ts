@@ -122,6 +122,13 @@ export class BrowserSecurityGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<IamRequest>();
     if (['GET', 'HEAD', 'OPTIONS'].includes(request.method)) return true;
+    if (request.method === 'POST' && request.path === '/api/v1/webhooks/brevo') {
+      // Brevo has no browser Origin or CSRF cookie. Only this exact endpoint is
+      // exempt; its controller verifies a dedicated provider Bearer credential.
+      if (!request.is('application/json')) deny('AUTH_INVALID_REQUEST', 400);
+      await this.iam.limiter.check(request.path, request.metadata.ipAddress);
+      return true;
+    }
     const origin = request.get('origin');
     const csrf = request.get('x-csrf-token') ?? '';
     if (!origin || !this.iam.config.origins.includes(origin)) deny('AUTH_ORIGIN_REJECTED', 403);

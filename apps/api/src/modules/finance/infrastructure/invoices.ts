@@ -119,6 +119,15 @@ export async function writeInvoice(
     });
     const after = await financeDetail(db, context, 'invoices', row.id, true);
     await audit(db, context, 'invoice.created', row.id, null, after);
+    await db.outboxEvent.create({
+      data: {
+        tenantId,
+        aggregateType: 'invoice',
+        aggregateId: row.id,
+        eventType: 'finance.invoice.created.v1',
+        payload: { schemaVersion: 1 },
+      },
+    });
     return after;
   }
   const before = await financeDetail(db, context, 'invoices', command.id, true);

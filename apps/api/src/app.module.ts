@@ -12,6 +12,8 @@ import { EnrollmentsModule } from './modules/enrollments/enrollments.module.js';
 import { FinanceModule } from './modules/finance/finance.module.js';
 import { GradesModule } from './modules/grades/grades.module.js';
 import { DocumentsModule } from './modules/documents/documents.module.js';
+import { NotificationsModule } from './modules/notifications/notifications.module.js';
+import { MessagingModule } from './modules/messaging/messaging.module.js';
 
 @Module({
   controllers: [AppController],
@@ -27,6 +29,8 @@ import { DocumentsModule } from './modules/documents/documents.module.js';
     FinanceModule,
     GradesModule,
     DocumentsModule,
+    NotificationsModule,
+    MessagingModule,
   ],
 })
 export class AppModule {}

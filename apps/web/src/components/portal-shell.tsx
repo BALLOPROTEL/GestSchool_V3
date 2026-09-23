@@ -67,6 +67,7 @@ import type { CSSProperties, ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from '../features/auth/auth-provider';
+import { peopleRequest } from '../features/directory/people-client';
 
 import { Link, usePathname, useRouter } from '../i18n/navigation';
 import type { AppLocale } from '../i18n/routing';
@@ -408,32 +409,129 @@ function SearchDialog() {
 
 function NotificationMenu() {
   const shell = useTranslations('Shell');
-  const notices = ['notification1', 'notification2', 'notification3', 'notification4'] as const;
+  const locale = useLocale();
+  const { session } = useAuth();
+  type Notice = {
+    id: string;
+    title: string;
+    body: string;
+    status: 'UNREAD' | 'READ';
+    createdAt: string;
+    resourcePath: string | null;
+  };
+  const [items, setItems] = useState<Notice[]>([]);
+  const [unread, setUnread] = useState(0);
+  const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
+  const refresh = async () => {
+    try {
+      const [list, count] = await Promise.all([
+        peopleRequest<{ items: Notice[] }>('notifications?page=1&pageSize=10'),
+        peopleRequest<{ count: number }>('notifications/unread-count'),
+      ]);
+      setItems(list.items);
+      setUnread(count.count);
+      setState('ready');
+    } catch {
+      setState('error');
+    }
+  };
+  useEffect(() => {
+    if (!session) return;
+    void refresh();
+    const timer = window.setInterval(() => void refresh(), 30_000);
+    return () => window.clearInterval(timer);
+  }, [session?.session.membershipId]);
+  const mark = async (notice: Notice) => {
+    try {
+      await peopleRequest(`notifications/${notice.id}/read`, {}, 'POST');
+      await refresh();
+      if (
+        notice.resourcePath &&
+        /^\/(fr|en|ar)\/(enrollments|finance|grades|documents|communications)(?:\/|$)/.test(
+          notice.resourcePath,
+        )
+      )
+        window.location.assign(notice.resourcePath);
+    } catch {
+      setState('error');
+    }
+  };
+  const markAll = async () => {
+    try {
+      await peopleRequest('notifications/read-all', {}, 'POST');
+      await refresh();
+    } catch {
+      setState('error');
+    }
+  };
   return (
-    <Dropdown>
+    <Dropdown
+      onOpenChange={(open) => {
+        if (open && session) void refresh();
+      }}
+    >
       <DropdownTrigger asChild>
-        <Button aria-label={shell('unread')} className="relative" size="icon-sm" variant="ghost">
+        <Button
+          aria-label={shell('unreadCount', { count: unread })}
+          className="relative"
+          size="icon-sm"
+          variant="ghost"
+        >
           <Bell />
-          <span className="absolute end-0.5 top-0.5 flex size-4 items-center justify-center rounded-full bg-red-600 text-[9px] font-bold text-white">
-            2
-          </span>
+          {unread > 0 ? (
+            <span className="absolute end-0.5 top-0.5 flex min-w-4 items-center justify-center rounded-full bg-red-600 px-0.5 text-[9px] font-bold text-white">
+              {unread > 99 ? '99+' : unread}
+            </span>
+          ) : null}
         </Button>
       </DropdownTrigger>
       <DropdownContent align="end" className="w-[min(92vw,340px)]">
-        <DropdownLabel>{shell('notifications')}</DropdownLabel>
+        <DropdownLabel data-testid="notification-center">{shell('notifications')}</DropdownLabel>
         <DropdownSeparator />
-        {notices.map((notice, index) => (
-          <DropdownItem className="items-start py-2.5" key={notice}>
+        {state === 'loading' ? (
+          <p className="p-3 text-xs" role="status">
+            {shell('notificationsLoading')}
+          </p>
+        ) : null}
+        {state === 'error' ? (
+          <p className="p-3 text-xs" role="alert">
+            {shell('notificationsError')}
+          </p>
+        ) : null}
+        {state === 'ready' && items.length === 0 ? (
+          <p className="p-3 text-xs">{shell('notificationsEmpty')}</p>
+        ) : null}
+        {items.map((notice) => (
+          <DropdownItem
+            className="items-start py-2.5"
+            key={notice.id}
+            onSelect={() => void mark(notice)}
+          >
             <span
               aria-hidden="true"
               className={cn(
                 'mt-1 size-2 shrink-0 rounded-full',
-                index < 2 ? 'bg-blue-600' : 'bg-slate-300',
+                notice.status === 'UNREAD' ? 'bg-blue-600' : 'bg-slate-300',
               )}
             />
-            <span className="text-xs leading-relaxed">{shell(notice)}</span>
+            <span className="min-w-0 text-xs leading-relaxed">
+              <strong className="block">{notice.title}</strong>
+              {notice.body}
+              <time className="mt-1 block text-muted-foreground" dateTime={notice.createdAt}>
+                {new Intl.DateTimeFormat(locale, {
+                  dateStyle: 'medium',
+                  timeStyle: 'short',
+                }).format(new Date(notice.createdAt))}
+              </time>
+            </span>
           </DropdownItem>
         ))}
+        {unread > 0 ? (
+          <>
+            <DropdownSeparator />
+            <DropdownItem onSelect={() => void markAll()}>{shell('markAllRead')}</DropdownItem>
+          </>
+        ) : null}
       </DropdownContent>
     </Dropdown>
   );

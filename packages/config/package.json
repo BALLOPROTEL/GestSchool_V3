@@ -18,6 +18,10 @@
       "types": "./src/environment.ts",
       "default": "./dist/environment.js"
     },
+    "./messaging": {
+      "types": "./src/messaging.ts",
+      "default": "./dist/messaging.js"
+    },
     "./typescript/base": "./typescript/base.json",
     "./typescript/next": "./typescript/next.json",
     "./typescript/node": "./typescript/node.json",

@@ -367,6 +367,142 @@ try {
       receiptId: receipt.id,
     };
   }
+  const messaging: Record<
+    string,
+    {
+      admin: Awaited<ReturnType<typeof create>>;
+      teacher: Awaited<ReturnType<typeof create>>;
+      parent: Awaited<ReturnType<typeof create>>;
+      student: Awaited<ReturnType<typeof create>>;
+      studentId: string;
+      unassignedStudentId: string;
+      classId: string;
+    }
+  > = {};
+  for (const viewport of Object.keys(visual)) {
+    const messagingTenant = await database.tenant.create({
+      data: { slug: `messaging-e2e-${randomUUID()}`, name: 'École Messagerie E2E' },
+    });
+    const admin = await create('SCHOOL_ADMIN', true, messagingTenant.id, true);
+    const teacher = await create('TEACHER', true, messagingTenant.id, true);
+    const parent = await create('PARENT', true, messagingTenant.id, true);
+    const studentAccount = await create('STUDENT', true, messagingTenant.id, true);
+    const academic = await academicFixture(database, messagingTenant.id, teacher.email);
+    const studentUser = await database.user.findUniqueOrThrow({
+      where: { email: studentAccount.email },
+    });
+    const parentUser = await database.user.findUniqueOrThrow({ where: { email: parent.email } });
+    const messagingStudent = await database.student.create({
+      data: {
+        tenantId: messagingTenant.id,
+        userId: studentUser.id,
+        matricule: `MSG-${randomUUID()}`,
+        firstName: 'Élève',
+        lastName: 'Messagerie',
+      },
+    });
+    const messagingGuardian = await database.guardian.create({
+      data: {
+        tenantId: messagingTenant.id,
+        userId: parentUser.id,
+        guardianReference: `MSG-${randomUUID()}`,
+        firstName: 'Parent',
+        lastName: 'Messagerie',
+        email: parent.email,
+      },
+    });
+    await database.studentGuardian.create({
+      data: {
+        tenantId: messagingTenant.id,
+        studentId: messagingStudent.id,
+        guardianId: messagingGuardian.id,
+        relationship: 'parent',
+        isPrimary: true,
+        receivesNotifications: true,
+      },
+    });
+    await database.enrollment.create({
+      data: {
+        tenantId: messagingTenant.id,
+        studentId: messagingStudent.id,
+        schoolClassId: academic.classId,
+        academicYearId: academic.yearId,
+        type: 'NEW',
+        status: 'ACTIVE',
+        enrolledOn: new Date('2026-09-01'),
+      },
+    });
+    const unassigned = await database.student.create({
+      data: {
+        tenantId: messagingTenant.id,
+        matricule: `MSG-OTHER-${randomUUID().slice(-20)}`,
+        firstName: 'Hors',
+        lastName: 'Affectation',
+      },
+    });
+    for (const email of [parent.email, studentAccount.email]) {
+      const membership = await database.membership.findFirstOrThrow({
+        where: { tenantId: messagingTenant.id, user: { email } },
+      });
+      await database.notification.createMany({
+        data: [
+          {
+            tenantId: messagingTenant.id,
+            membershipId: membership.id,
+            type: 'finance.payment.validated.v1',
+            title: 'Paiement validé',
+            body: 'Votre paiement a été validé.',
+          },
+          {
+            tenantId: messagingTenant.id,
+            membershipId: membership.id,
+            type: 'report_card.published.v1',
+            title: 'Bulletin disponible',
+            body: 'Votre bulletin est disponible dans GestSchool.',
+          },
+          {
+            tenantId: messagingTenant.id,
+            membershipId: membership.id,
+            type: 'documents.ready.v1',
+            title: 'Document disponible',
+            body: 'Votre document est disponible dans GestSchool.',
+          },
+        ],
+      });
+    }
+    const adminMembership = await database.membership.findFirstOrThrow({
+      where: { tenantId: messagingTenant.id, user: { email: admin.email } },
+    });
+    await database.message.create({
+      data: {
+        tenantId: messagingTenant.id,
+        senderMembershipId: adminMembership.id,
+        channel: 'IN_APP',
+        category: 'SCHOOL',
+        templateKey: 'manual.school_notice',
+        templateVersion: 1,
+        eventType: 'communications.manual.requested.v1',
+        locale: 'fr',
+        provider: 'IN_APP',
+        recipientMasked: 'In-app',
+        subject: 'Historique réel E2E',
+        body: 'Communication de certification.',
+        status: 'DELIVERED',
+        attempts: 1,
+        sentAt: new Date(),
+        deliveredAt: new Date(),
+      },
+    });
+    messaging[viewport] = {
+      admin,
+      teacher,
+      parent,
+      student: studentAccount,
+      studentId: messagingStudent.id,
+      unassignedStudentId: unassigned.id,
+      classId: academic.classId,
+    };
+  }
   const mfa = await create('SCHOOL_ADMIN');
   const directory = new URL('../../../.local/', import.meta.url);
   await mkdir(directory, { recursive: true, mode: 0o700 });
@@ -381,6 +517,7 @@ try {
       finance,
       results,
       documents,
+      messaging,
       mfa,
     }),
     { mode: 0o600 },

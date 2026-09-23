@@ -113,6 +113,16 @@ async function event(
       requestId: context.requestId,
     },
   });
+  if (kind === 'CONFIRMED' || kind === 'TRANSFERRED')
+    await db.outboxEvent.create({
+      data: {
+        tenantId,
+        aggregateType: 'enrollment',
+        aggregateId: after.id,
+        eventType: kind === 'CONFIRMED' ? 'enrollments.confirmed.v1' : 'enrollments.transferred.v1',
+        payload: { schemaVersion: 1 },
+      },
+    });
 }
 async function create(
   db: Prisma.TransactionClient,

@@ -108,6 +108,16 @@ export class DocumentsGeneration {
             checksum,
             attempt: row.attempts,
           });
+          if (!reversed)
+            await db.outboxEvent.create({
+              data: {
+                tenantId,
+                aggregateType: 'document',
+                aggregateId: id,
+                eventType: 'documents.ready.v1',
+                payload: { schemaVersion: 1 },
+              },
+            });
           if (reversed)
             await workerDocumentAudit(db, tenantId, id, 'document.revoked', {
               reason: 'PAYMENT_REVERSED',

@@ -6,3 +6,7 @@ export * from './storage/storage-health.js';
 export * from './documents/config.js';
 export * from './documents/queue.js';
 export * from './documents/renderer.js';
+export * from './messaging/provider.js';
+export * from './messaging/queue.js';
+export * from './messaging/templates.js';
+export * from './messaging/token.js';

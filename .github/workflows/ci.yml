@@ -80,6 +80,18 @@ jobs:
       - name: Test database integrity
         run: pnpm db:test
 
+      - name: Certify messaging on a fresh isolated database
+        env:
+          DATABASE_NAME: gestschool_lot11_ci
+          DATABASE_URL: postgresql://gestschool:gestschool-ci-only@127.0.0.1:5432/gestschool_lot11_ci
+          REDIS_URL: redis://127.0.0.1:6379/15
+        run: |
+          DATABASE_URL=postgresql://gestschool:gestschool-ci-only@127.0.0.1:5432/gestschool pnpm db:create:isolated
+          pnpm db:migrate:deploy
+          pnpm db:seed
+          pnpm db:test
+          pnpm messaging:test
+
       - name: Check formatting
         run: pnpm format:check
 

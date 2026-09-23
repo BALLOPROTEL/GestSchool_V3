@@ -11,6 +11,7 @@ import {
   resultTeacherPermissions,
   resultPublishedPermissions,
 } from './results.js';
+import { communicationPermissionCodes } from './messaging.js';
 
 export const scopes = ['PLATFORM', 'TENANT', 'ASSIGNED', 'CHILDREN', 'OWN', 'NONE'] as const;
 export type AccessScope = (typeof scopes)[number];
@@ -37,6 +38,7 @@ export const permissionCodes = [
   ...financePermissionCodes,
   ...resultPermissionCodes,
   ...documentPermissionCodes,
+  ...communicationPermissionCodes,
   'session.read',
   'session.revoke',
   'membership.read',
@@ -75,6 +77,7 @@ const grants = (permissions: readonly string[], scope: AccessScope): Grant[] =>
 export const roleGrants: Readonly<Record<SystemRole, readonly Grant[]>> = {
   SUPER_ADMIN: grants(permissionCodes, 'PLATFORM'),
   SCHOOL_ADMIN: [
+    ...grants(communicationPermissionCodes, 'TENANT'),
     ...grants(documentPermissionCodes, 'TENANT'),
     ...grants(resultPermissionCodes, 'TENANT'),
     ...grants(financePermissionCodes, 'TENANT'),
@@ -101,6 +104,10 @@ export const roleGrants: Readonly<Record<SystemRole, readonly Grant[]>> = {
     ),
   ],
   DIRECTOR: [
+    ...grants(
+      ['communications.read', 'communications.send', 'notification-templates.read'],
+      'TENANT',
+    ),
     ...grants([...documentOperations, 'document-templates.read'], 'TENANT'),
     ...grants(resultPermissionCodes, 'TENANT'),
     ...grants([...financeReadPermissions, 'cash-sessions.read', 'payments.validate'], 'TENANT'),
@@ -111,6 +118,10 @@ export const roleGrants: Readonly<Record<SystemRole, readonly Grant[]>> = {
     ...grants(['students.read'], 'TENANT'),
   ],
   ACADEMIC_STAFF: [
+    ...grants(
+      ['communications.read', 'communications.send', 'notification-templates.read'],
+      'TENANT',
+    ),
     ...grants([...documentOperations, 'document-templates.read'], 'TENANT'),
     ...grants(
       resultPermissionCodes.filter(
@@ -126,6 +137,7 @@ export const roleGrants: Readonly<Record<SystemRole, readonly Grant[]>> = {
     ...grants(['students.read', 'students.create', 'students.update'], 'TENANT'),
   ],
   ACCOUNTANT: [
+    ...grants(['communications.read', 'communications.send'], 'TENANT'),
     ...grants(documentOperations, 'TENANT'),
     ...grants(financePermissionCodes, 'TENANT'),
     ...grants(['academic-years.read', 'levels.read', 'classes.read', 'enrollments.read'], 'TENANT'),
@@ -133,6 +145,7 @@ export const roleGrants: Readonly<Record<SystemRole, readonly Grant[]>> = {
     ...grants(['students.read'], 'TENANT'),
   ],
   TEACHER: [
+    ...grants(['communications.read', 'communications.send'], 'ASSIGNED'),
     ...grants(resultTeacherPermissions, 'ASSIGNED'),
     ...grants(academicReadPermissions, 'ASSIGNED'),
     ...grants(self, 'OWN'),

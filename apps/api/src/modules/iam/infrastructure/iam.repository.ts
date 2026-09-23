@@ -122,8 +122,8 @@ export class IamRepository {
     expiresAt: Date,
     membershipId?: string,
     encryptedSecret?: string,
-  ): Promise<void> {
-    await this.db.authToken.create({
+  ): Promise<{ id: string }> {
+    return this.db.authToken.create({
       data: {
         userId,
         tokenHash: hash,
@@ -131,6 +131,21 @@ export class IamRepository {
         expiresAt,
         ...(membershipId ? { membershipId } : {}),
         ...(encryptedSecret ? { encryptedSecret } : {}),
+      },
+      select: { id: true },
+    });
+  }
+  requestDelivery(tenantId: string, tokenId: string, purpose: 'ACTIVATION' | 'PASSWORD_RESET') {
+    return this.db.outboxEvent.create({
+      data: {
+        tenantId,
+        aggregateType: 'auth_token',
+        aggregateId: tokenId,
+        eventType:
+          purpose === 'ACTIVATION'
+            ? 'iam.account.activation.requested.v1'
+            : 'iam.password.reset.requested.v1',
+        payload: { schemaVersion: 1 },
       },
     });
   }

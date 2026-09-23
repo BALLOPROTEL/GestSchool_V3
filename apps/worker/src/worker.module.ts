@@ -4,6 +4,7 @@ import { loadInfrastructureConfig } from '@gestschool/config/environment';
 import { EnvironmentVerifier } from './infrastructure/environment-verifier.service.js';
 import { WORKER_CONFIGURATION } from './infrastructure/tokens.js';
 import { DocumentsRuntime } from './jobs/documents-runtime.js';
+import { LocalMessagingRuntime } from './jobs/messaging/local-runtime.js';
 
 @Module({
   providers: [
@@ -13,6 +14,7 @@ import { DocumentsRuntime } from './jobs/documents-runtime.js';
     },
     EnvironmentVerifier,
     DocumentsRuntime,
+    LocalMessagingRuntime,
   ],
 })
 export class WorkerModule {}

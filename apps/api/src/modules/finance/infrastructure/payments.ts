@@ -216,6 +216,24 @@ export async function writePayment(
       null,
       receiptView(receipt, 'COMPLETED'),
     );
+    await db.outboxEvent.createMany({
+      data: [
+        {
+          tenantId,
+          aggregateType: 'payment',
+          aggregateId: row.id,
+          eventType: 'finance.payment.validated.v1',
+          payload: { schemaVersion: 1 },
+        },
+        {
+          tenantId,
+          aggregateType: 'receipt',
+          aggregateId: receipt.id,
+          eventType: 'finance.receipt.ready.v1',
+          payload: { schemaVersion: 1 },
+        },
+      ],
+    });
     for (const a of row.allocations) await refreshInvoice(db, tenantId, a.invoiceId);
     action = 'payment.validated';
   } else if (command.action === 'payment.request-cancellation') {

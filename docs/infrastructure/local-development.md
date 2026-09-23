@@ -12,15 +12,15 @@ Resources → WSL Integration** avant d'exécuter les commandes d'infrastructure
 
 ## Services et ports
 
-| Service    | Adresse locale                 | Image                                      |
-| ---------- | ------------------------------ | ------------------------------------------ |
-| PostgreSQL | `127.0.0.1:5432`               | `postgres:18.6-trixie`                     |
-| Redis      | `127.0.0.1:6379`               | `redis:8.10.1-alpine3.23`                  |
-| MinIO S3   | `http://127.0.0.1:9000`        | `minio/minio:RELEASE.2025-07-23T15-54-02Z` |
-| MinIO UI   | `http://127.0.0.1:9001`        | même conteneur                             |
-| API        | `http://127.0.0.1:3100`        | processus NestJS local                     |
-| Web        | `http://127.0.0.1:3000`        | processus Next.js local                    |
-| Init S3    | conteneur ponctuel, aucun port | `minio/mc:RELEASE.2025-08-13T08-35-41Z`    |
+| Service    | Adresse locale                 | Image/source                                      |
+| ---------- | ------------------------------ | ------------------------------------------------- |
+| PostgreSQL | `127.0.0.1:5432`               | `postgres:18.6-trixie`                            |
+| Redis      | `127.0.0.1:6379`               | `redis:8.10.1-alpine3.23`                         |
+| MinIO S3   | `http://127.0.0.1:9000`        | `docker/ci-storage/Dockerfile`, sources épinglées |
+| MinIO UI   | `http://127.0.0.1:9001`        | même conteneur                                    |
+| API        | `http://127.0.0.1:3100`        | processus NestJS local                            |
+| Web        | `http://127.0.0.1:3000`        | processus Next.js local                           |
+| Init S3    | conteneur ponctuel, aucun port | même image, binaire `mc` intégré                  |
 
 Tous les ports Docker sont liés à `127.0.0.1`, pas à toutes les interfaces de la machine.
 
@@ -59,6 +59,12 @@ pnpm dev
 crée le bucket privé `gestschool-local-private` s'il n'existe pas et réapplique explicitement une
 politique anonyme `none`.
 
+MinIO et `mc` sont construits depuis les commits officiels épinglés du Dockerfile,
+sans dépendance aux anciens tags Docker Hub. Compose réutilise l'image si elle est
+déjà présente ; la CI la reconstruit sans cache. Sur un ancien poste local, le
+service MinIO conserve l'UID `0:0` de l'ancienne image afin de lire le volume
+persistant sans modifier son propriétaire. L'image CI isolée reste non-root.
+
 ## Vérification
 
 ```bash
@@ -76,6 +82,21 @@ et une tentative anonyme qui doit être refusée par MinIO.
 
 Le Worker charge la même configuration et vérifie les trois dépendances avant d'annoncer qu'il est
 prêt. Il ne publie aucun port HTTP.
+
+## Messagerie locale LOT 11 (en cours de certification)
+
+`pnpm dev` prépare une clé locale privée et démarre uniquement le provider de capture locale.
+Les emails et messages WhatsApp simulés restent dans `.local/messaging-delivery.jsonl` (mode
+`0600`) ; `pnpm messaging:dev` en affiche les vingt dernières métadonnées avec destinataires
+masqués, sans imprimer les liens d'activation/réinitialisation. Aucun compte Brevo n'est nécessaire
+en DEV/TEST et le worker n'active pas encore l'envoi Brevo en production.
+
+Le test `pnpm messaging:test` exige explicitement `NODE_ENV=test`, une base PostgreSQL **isolée**
+dont le nom commence par `gestschool_lot11_`, Redis sur la base logique `15`, et le provider local.
+Cette garde empêche de le lancer accidentellement sur les données de développement courantes. Il
+vérifie l'outbox, BullMQ, la capture privée, l'idempotence concurrente, une notification interne en
+arabe, l'isolation multi-tenant et une panne simulée du provider. La certification complète des
+retries et du canal Brevo reste ouverte ; ce test ne doit pas être interprété comme un GO LOT 11.
 
 ## Arrêt et réinitialisation
 

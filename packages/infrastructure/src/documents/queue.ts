@@ -9,7 +9,7 @@ import {
 import { createClient } from 'redis';
 import { DOCUMENT_QUEUE, documentJobData } from '@gestschool/contracts';
 
-function connection(url: string): ConnectionOptions {
+export function bullmqConnection(url: string): ConnectionOptions {
   // BullMQ defaults to the optional ioredis peer. Reuse the existing node-redis
   // driver through its supported adapter, including worker-owned duplicate connections.
   RedisConnection.clientFactory = (options) =>
@@ -41,7 +41,7 @@ function connection(url: string): ConnectionOptions {
 }
 export function createDocumentQueue(url: string) {
   return new Queue(DOCUMENT_QUEUE, {
-    connection: { ...connection(url), maxRetriesPerRequest: 1, enableOfflineQueue: false },
+    connection: { ...bullmqConnection(url), maxRetriesPerRequest: 1, enableOfflineQueue: false },
     defaultJobOptions: {
       attempts: 3,
       backoff: { type: 'exponential', delay: 5000 },
@@ -68,6 +68,6 @@ export function createDocumentWorker(
         throw error;
       }
     },
-    { connection: connection(url), concurrency: 2, lockDuration: 90_000, maxStalledCount: 2 },
+    { connection: bullmqConnection(url), concurrency: 2, lockDuration: 90_000, maxStalledCount: 2 },
   );
 }

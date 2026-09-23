@@ -15,6 +15,7 @@ import { prepareEnrollmentDemo } from '../../enrollments/infrastructure/dev-fixt
 import { prepareFinanceDemo } from '../../finance/finance.dev.js';
 import { prepareResultsDemo } from '../../grades/grades.dev.js';
 import { prepareDocumentsDemo } from '../../documents/documents.dev.js';
+import { prepareMessagingDemo } from '../../messaging/infrastructure/messaging.dev.js';
 
 const config = loadIamConfig();
 const infrastructure = loadInfrastructureConfig();
@@ -182,7 +183,11 @@ try {
   await prepareFinanceDemo(database, tenant.id);
   await prepareResultsDemo(database, tenant.id);
   const documentsDemo = await prepareDocumentsDemo(database, app, tenant.id);
+  const messagingDemo = await prepareMessagingDemo(database, tenant.id);
   process.stdout.write(`Official documents ready: ${documentsDemo.documents}\n`);
+  process.stdout.write(
+    `Messaging demo ready: ${messagingDemo.messages} messages, ${messagingDemo.notifications} notifications\n`,
+  );
   process.stdout.write(
     `Enrollment demo ${enrollmentDemo.created ? 'created' : 'preserved'}: ${enrollmentDemo.academicYearId}\n`,
   );

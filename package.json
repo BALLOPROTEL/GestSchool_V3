@@ -9,7 +9,7 @@
     "pnpm": ">=10.24.0 <11"
   },
   "scripts": {
-    "dev": "pnpm --filter @gestschool/database... --filter @gestschool/infrastructure... build && node --env-file=.env.example --env-file-if-exists=.env node_modules/turbo/bin/turbo run dev",
+    "dev": "pnpm iam:keys && pnpm --filter @gestschool/database... --filter @gestschool/infrastructure... build && node --env-file=.env.example --env-file-if-exists=.env node_modules/turbo/bin/turbo run dev",
     "build": "turbo run build",
     "lint": "oxlint . --deny-warnings",
     "format": "prettier --write .",
@@ -23,6 +23,7 @@
     "infra:reset": "docker compose -f docker/compose.yml down --volumes --remove-orphans",
     "infra:check": "pnpm --filter @gestschool/infrastructure... build && node --env-file=.env.example --env-file-if-exists=.env --import tsx scripts/infra-check.ts",
     "db:generate": "pnpm --filter @gestschool/database db:generate",
+    "db:create:isolated": "pnpm --filter @gestschool/database db:create:isolated",
     "db:migrate": "pnpm --filter @gestschool/database db:migrate",
     "db:migrate:deploy": "pnpm --filter @gestschool/database db:migrate:deploy",
     "db:reset": "pnpm --filter @gestschool/database db:reset",
@@ -39,6 +40,8 @@
     "results:test": "pnpm --filter @gestschool/api... build && pnpm --filter @gestschool/api test:iam tests/results.test.ts",
     "documents:test": "pnpm --filter @gestschool/api... build && pnpm --filter @gestschool/api test:iam tests/documents.test.ts",
     "iam:dev": "pnpm --filter @gestschool/api... build && node --env-file=.env.example --env-file-if-exists=.env --import tsx apps/api/src/modules/iam/infrastructure/dev-cli.ts",
+    "messaging:dev": "node --env-file=.env.example --env-file-if-exists=.env scripts/messaging-dev.mjs",
+    "messaging:test": "pnpm --filter @gestschool/worker test:messaging",
     "iam:test": "pnpm --filter @gestschool/api... build && pnpm --filter @gestschool/api test:iam"
   },
   "devDependencies": {

@@ -6,6 +6,7 @@ import { NestFactory } from '@nestjs/core';
 import { EnvironmentVerifier } from './infrastructure/environment-verifier.service.js';
 import { WorkerModule } from './worker.module.js';
 import { DocumentsRuntime } from './jobs/documents-runtime.js';
+import { LocalMessagingRuntime } from './jobs/messaging/local-runtime.js';
 
 const logger = new Logger('Worker');
 
@@ -29,6 +30,7 @@ const bootstrap = async (): Promise<void> => {
   try {
     const dependencies = await application.get(EnvironmentVerifier).verify();
     await application.get(DocumentsRuntime).start();
+    await application.get(LocalMessagingRuntime).start();
     logger.log(
       `Dependencies ready (postgres=${dependencies.postgres}, redis=${dependencies.redis}, storage=${dependencies.storage})`,
     );

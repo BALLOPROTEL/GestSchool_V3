@@ -1,6 +1,8 @@
 import { deny, type RequestMetadata } from '../domain/context.js';
 import { setTimeout } from 'node:timers/promises';
 import { opaqueToken, Passwords, tokenHash, validatePassword } from '../infrastructure/crypto.js';
+import { loadMessagingConfig } from '@gestschool/config/messaging';
+import { encryptMessagingToken } from '@gestschool/infrastructure';
 import type { IamRepository } from '../infrastructure/iam.repository.js';
 
 export class CredentialsService {
@@ -26,14 +28,27 @@ export class CredentialsService {
     )
       return null;
     return this.repository.atomic(user.id, async (repository) => {
+      const membership = (await repository.memberships(user.id)).find(
+        (entry) => entry.status === 'ACTIVE' && entry.tenant.status === 'ACTIVE',
+      );
+      if (!membership) return null;
       await repository.invalidateTokens(user.id, purpose);
       const token = opaqueToken();
-      await repository.createToken(
+      const encrypted = encryptMessagingToken(
+        token,
+        user.id,
+        purpose,
+        loadMessagingConfig().tokenKey,
+      );
+      const record = await repository.createToken(
         user.id,
         tokenHash(token),
         purpose,
         new Date(Date.now() + (purpose === 'ACTIVATION' ? 86400000 : 900000)),
+        membership.id,
+        encrypted,
       );
+      await repository.requestDelivery(membership.tenantId, record.id, purpose);
       await repository.audit(
         purpose === 'ACTIVATION' ? 'activation.requested' : 'password.reset_requested',
         metadata,

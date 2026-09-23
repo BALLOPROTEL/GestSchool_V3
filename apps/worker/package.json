@@ -18,7 +18,8 @@
     "build": "tsc -p tsconfig.build.json",
     "start": "node --enable-source-maps dist/main.js",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.test.json",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:messaging": "node --env-file=../../.env.example --env-file-if-exists=../../.env --import tsx tests/messaging-integration.ts"
   },
   "dependencies": {
     "@gestschool/contracts": "workspace:*",
