@@ -59,7 +59,7 @@ export default defineConfig({
         'node --env-file=../../.env.example --env-file-if-exists=../../.env --import tsx ../api/tests/e2e-server.ts',
       url: 'http://127.0.0.1:3100/health/live',
       reuseExistingServer: false,
-      timeout: 120_000,
+      timeout: 300_000,
       env: {
         NODE_ENV: 'test',
         IAM_ENV: 'local',

@@ -137,7 +137,7 @@ export function documentMoney(amount: string, currency: string, locale: string):
     .join('');
 }
 let fonts: Promise<string> | undefined;
-function localFonts(): Promise<string> {
+export function localFonts(): Promise<string> {
   fonts ??= Promise.all(
     [
       ['GS Latin', '@fontsource/noto-sans/files/noto-sans-latin-400-normal.woff2'],

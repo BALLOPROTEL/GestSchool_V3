@@ -19,9 +19,9 @@ export function watch(page: Page) {
       apiErrors.push(redact(`${response.status()} ${new URL(response.url()).pathname}`));
   });
   return () => {
+    expect(apiErrors).toEqual([]);
     expect(consoleErrors).toEqual([]);
     expect(pageErrors).toEqual([]);
-    expect(apiErrors).toEqual([]);
   };
 }
 export async function ready(page: Page) {

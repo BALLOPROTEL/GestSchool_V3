@@ -14,6 +14,8 @@ import { GradesModule } from './modules/grades/grades.module.js';
 import { DocumentsModule } from './modules/documents/documents.module.js';
 import { NotificationsModule } from './modules/notifications/notifications.module.js';
 import { MessagingModule } from './modules/messaging/messaging.module.js';
+import { ReportsModule } from './modules/reports/reports.module.js';
+import { DashboardModule } from './modules/dashboard/dashboard.module.js';
 
 @Module({
   controllers: [AppController],
@@ -31,6 +33,8 @@ import { MessagingModule } from './modules/messaging/messaging.module.js';
     DocumentsModule,
     NotificationsModule,
     MessagingModule,
+    ReportsModule,
+    DashboardModule,
   ],
 })
 export class AppModule {}

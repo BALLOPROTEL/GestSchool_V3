@@ -4,7 +4,6 @@ import {
   Badge,
   Button,
   Card,
-  CardContent,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -13,27 +12,13 @@ import {
   Input,
   cn,
 } from '@gestschool/ui';
-import {
-  BarChart3,
-  Bell,
-  Download,
-  Eye,
-  FileText,
-  Mail,
-  MessageSquare,
-  Plus,
-  RefreshCw,
-  TrendingUp,
-} from 'lucide-react';
+import { Bell, Eye, Mail, MessageSquare, Plus } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
 
-import { reports } from '../../mocks/data';
-import type { ReportRecord } from '../../mocks/data';
 import { useAuth } from '../auth/auth-provider';
 import { peopleRequest } from '../directory/people-client';
-import { useMockAction } from '../shared/mock-action';
 import { PageHeader } from '../shared/page-header';
 import { SearchField } from '../shared/search-field';
 
@@ -405,103 +390,6 @@ export function CommunicationsPage() {
           </Button>
         </DialogContent>
       </Dialog>
-    </div>
-  );
-}
-
-const reportIcons: Record<string, { className: string; icon: LucideIcon }> = {
-  Finance: {
-    className: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300',
-    icon: BarChart3,
-  },
-  Inscriptions: {
-    className: 'bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-300',
-    icon: FileText,
-  },
-  Notes: {
-    className: 'bg-violet-50 text-violet-600 dark:bg-violet-950/40 dark:text-violet-300',
-    icon: FileText,
-  },
-  Présence: {
-    className: 'bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-300',
-    icon: TrendingUp,
-  },
-};
-
-export function ReportsPage() {
-  const common = useTranslations('Common');
-  const nav = useTranslations('Nav');
-  const translate = useTranslations('Reports');
-  const mockAction = useMockAction();
-  return (
-    <div className="page-shell">
-      <PageHeader
-        actions={
-          <Button onClick={() => mockAction(translate('generate'))} size="sm">
-            <Plus />
-            {translate('generate')}
-          </Button>
-        }
-        description={translate('description')}
-        eyebrow={nav('administration')}
-        title={translate('title')}
-      />
-      <div className="grid gap-3">
-        {reports.map((report: ReportRecord) => {
-          const config = reportIcons[report.type] ?? {
-            className: 'bg-muted text-muted-foreground',
-            icon: FileText,
-          };
-          const Icon = config.icon;
-          return (
-            <Card key={report.id}>
-              <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
-                <div
-                  className={cn(
-                    'flex size-10 shrink-0 items-center justify-center rounded-lg',
-                    config.className,
-                  )}
-                >
-                  <Icon className="size-5" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h2 className="font-semibold">{report.title}</h2>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    <Badge className="me-2" variant="secondary">
-                      {report.type}
-                    </Badge>
-                    {report.period}
-                    {report.status === 'available' ? ` · ${report.size} · ${report.date}` : ''}
-                  </p>
-                </div>
-                <div className="flex shrink-0 gap-1">
-                  {report.status === 'generating' ? (
-                    <span className="flex items-center gap-2 text-xs text-warning">
-                      <RefreshCw className="size-4 animate-spin motion-reduce:animate-none" />
-                      {translate('generating')}
-                    </span>
-                  ) : (
-                    <>
-                      <Button onClick={() => mockAction(common('view'))} size="sm" variant="ghost">
-                        <Eye />
-                        {common('view')}
-                      </Button>
-                      <Button
-                        onClick={() => mockAction(common('download'))}
-                        size="sm"
-                        variant="outline"
-                      >
-                        <Download />
-                        PDF
-                      </Button>
-                    </>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
     </div>
   );
 }

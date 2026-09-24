@@ -5,6 +5,7 @@ import { EnvironmentVerifier } from './infrastructure/environment-verifier.servi
 import { WORKER_CONFIGURATION } from './infrastructure/tokens.js';
 import { DocumentsRuntime } from './jobs/documents-runtime.js';
 import { LocalMessagingRuntime } from './jobs/messaging/local-runtime.js';
+import { ReportsRuntime } from './jobs/reports/runtime.js';
 
 @Module({
   providers: [
@@ -15,6 +16,7 @@ import { LocalMessagingRuntime } from './jobs/messaging/local-runtime.js';
     EnvironmentVerifier,
     DocumentsRuntime,
     LocalMessagingRuntime,
+    ReportsRuntime,
   ],
 })
 export class WorkerModule {}

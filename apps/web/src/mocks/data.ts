@@ -447,64 +447,6 @@ export const messages: readonly MessageRecord[] = [
   },
 ];
 
-export type ReportRecord = {
-  date: string;
-  id: string;
-  period: string;
-  size: string;
-  status: 'available' | 'generating';
-  title: string;
-  type: string;
-};
-
-export const reports: readonly ReportRecord[] = [
-  {
-    date: '03/09/2026',
-    id: 'RPT-001',
-    period: 'Rentrée 2026',
-    size: '2,4 Mo',
-    status: 'available',
-    title: 'Situation financière de rentrée',
-    type: 'Finance',
-  },
-  {
-    date: '03/09/2026',
-    id: 'RPT-002',
-    period: 'Septembre 2026',
-    size: '1,1 Mo',
-    status: 'available',
-    title: 'Rapport de présence',
-    type: 'Présence',
-  },
-  {
-    date: '02/09/2026',
-    id: 'RPT-003',
-    period: 'Année 2025–2026',
-    size: '3,8 Mo',
-    status: 'available',
-    title: 'Résultats annuels — toutes classes',
-    type: 'Notes',
-  },
-  {
-    date: '01/09/2026',
-    id: 'RPT-004',
-    period: '2026–2027',
-    size: '980 Ko',
-    status: 'available',
-    title: 'Tableau de bord des inscriptions',
-    type: 'Inscriptions',
-  },
-  {
-    date: '—',
-    id: 'RPT-005',
-    period: 'Septembre 2026',
-    size: '—',
-    status: 'generating',
-    title: 'Prévision budgétaire mensuelle',
-    type: 'Finance',
-  },
-];
-
 export type UserRecord = {
   email: string;
   id: string;
@@ -633,5 +575,3 @@ export const auditRecords: readonly AuditRecord[] = [
 ];
 
 export const weeklyAttendance = [94, 92, 89, 91, 88] as const;
-export const monthlyIncome = [32, 42, 39, 54, 49, 63] as const;
-export const monthlyExpenses = [24, 29, 27, 34, 31, 38] as const;

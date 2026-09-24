@@ -9,7 +9,7 @@ const config = loadInfrastructureConfig(),
   root = resolve(process.cwd(), '.local');
 if (
   !['127.0.0.1', 'localhost'].includes(new URL(config.databaseUrl).hostname) ||
-  !new URL(config.databaseUrl).pathname.startsWith('/gestschool_lot10_upgrade_') ||
+  !/^\/gestschool_lot(?:10|12)_upgrade_[a-z0-9_]+$/.test(new URL(config.databaseUrl).pathname) ||
   !relative(root, file) ||
   relative(root, file).startsWith('..')
 )

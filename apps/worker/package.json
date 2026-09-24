@@ -11,6 +11,14 @@
     "./documents-runtime": {
       "types": "./dist/jobs/documents-runtime.d.ts",
       "default": "./dist/jobs/documents-runtime.js"
+    },
+    "./reports": {
+      "types": "./dist/jobs/reports/generation.d.ts",
+      "default": "./dist/jobs/reports/generation.js"
+    },
+    "./reports-runtime": {
+      "types": "./dist/jobs/reports/runtime.d.ts",
+      "default": "./dist/jobs/reports/runtime.js"
     }
   },
   "scripts": {

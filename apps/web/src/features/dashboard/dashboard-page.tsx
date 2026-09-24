@@ -1,172 +1,288 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, KpiCard } from '@gestschool/ui';
-import { AlertCircle, CircleDollarSign, TrendingUp, UsersRound } from 'lucide-react';
+'use client';
+import { Card, CardContent, CardHeader, CardTitle, KpiCard } from '@gestschool/ui';
+import { BookOpen, CircleDollarSign, FileCheck2, UsersRound } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
-
-import type { AppLocale } from '../../i18n/routing';
-import { monthlyExpenses, monthlyIncome, weeklyAttendance } from '../../mocks/data';
-import { formatCurrency, formatNumber } from '../shared/format';
+import { useState } from 'react';
+import type { AcademicView, DashboardSummary } from '@gestschool/contracts';
+import { useAuth } from '../auth/auth-provider';
+import { usePeopleData } from '../directory/people-hooks';
+import { moneyMinor } from '../finance/finance-client';
 import { MiniChart } from '../shared/mini-chart';
 import { PageHeader } from '../shared/page-header';
-
-function dateLabels(locale: AppLocale, type: 'month' | 'weekday'): string[] {
-  const options: Intl.DateTimeFormatOptions =
-    type === 'month' ? { month: 'short' } : { weekday: 'short' };
-  const formatter = new Intl.DateTimeFormat(locale === 'ar' ? 'ar-CI' : `${locale}-CI`, options);
-  if (type === 'month') {
-    return Array.from({ length: 6 }, (_, index) => formatter.format(new Date(2026, index, 1)));
-  }
-  return Array.from({ length: 5 }, (_, index) => formatter.format(new Date(2026, 8, 7 + index)));
-}
-
+import { canReport } from '../reports/reporting-client';
+type AcademicList = { items: AcademicView[]; total: number };
 export function DashboardPage() {
-  const locale = useLocale() as AppLocale;
-  const translate = useTranslations('Dashboard');
-  const months = dateLabels(locale, 'month');
-  const weekdays = dateLabels(locale, 'weekday');
-  const activity = [
-    {
-      body: translate('activityEnrollment', { className: 'Terminale C', name: 'Kadiatou Sylla' }),
-      tone: 'bg-blue-500',
-    },
-    {
-      body: translate('activityPayment', {
-        amount: formatCurrency(150_000, locale),
-        name: 'Ibrahim Koné',
-      }),
-      tone: 'bg-emerald-500',
-    },
-    {
-      body: translate('activityGrade', { name: 'Aminata Diallo' }),
-      tone: 'bg-violet-500',
-    },
-  ] as const;
-
-  return (
-    <div className="page-shell">
-      <PageHeader description={translate('description')} title={translate('title')} />
-
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiCard
-          change="+12,5 %"
-          changeDirection="up"
-          helper={translate('versusMonth')}
-          icon={UsersRound}
-          label={translate('students')}
-          value={formatNumber(1247, locale)}
-        />
-        <KpiCard
-          change="+8,2 %"
-          changeDirection="up"
-          helper={translate('versusMonth')}
-          icon={CircleDollarSign}
-          label={translate('revenue')}
-          value={formatCurrency(42_750_000, locale)}
-        />
-        <KpiCard
-          change="−2,1 %"
-          changeDirection="down"
-          helper={translate('versusWeek')}
-          icon={TrendingUp}
-          label={translate('attendance')}
-          value="90,8 %"
-        />
-        <KpiCard
-          helper={translate('issuesHelper')}
-          icon={AlertCircle}
-          label={translate('issues')}
-          value="24"
-        />
+  const t = useTranslations('Dashboard'),
+    locale = useLocale(),
+    { session } = useAuth(),
+    allowed = canReport(session?.session, 'dashboards.read'),
+    canYears = Boolean(
+      session?.session.grants.some(
+        (grant) => grant.permission === 'academic-years.read' && grant.scope !== 'NONE',
+      ),
+    ),
+    [year, setYear] = useState(''),
+    [period, setPeriod] = useState('');
+  const years = usePeopleData<AcademicList>(
+      allowed && canYears
+        ? 'academic-years?page=1&pageSize=100&search=&status=ALL&sort=-createdAt'
+        : null,
+    ),
+    periods = usePeopleData<AcademicList>(
+      allowed && canYears && year
+        ? `academic-years/${year}/periods?page=1&pageSize=100&search=&status=ALL&sort=name`
+        : null,
+    ),
+    summary = usePeopleData<DashboardSummary>(
+      allowed
+        ? `dashboard/summary${year || period ? `?${new URLSearchParams({ ...(year ? { academicYearId: year } : {}), ...(period ? { periodId: period } : {}) }).toString()}` : ''}`
+        : null,
+    );
+  if (!allowed)
+    return (
+      <div className="page-shell">
+        <PageHeader description={t('description')} title={t('title')} />
+        <p role="alert">{t('forbidden')}</p>
       </div>
-
-      <div className="mt-6 grid gap-6 xl:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>{translate('financeChart')}</CardTitle>
-            <CardDescription>{translate('financeChartDescription')}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <MiniChart
-              ariaLabel={translate('financeChart')}
-              labels={months}
-              primary={monthlyIncome}
-              secondary={monthlyExpenses}
-            />
-            <div className="mt-4 flex justify-center gap-5 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1.5">
-                <span className="size-2 rounded-full bg-primary" /> {translate('income')}
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="size-2 rounded-full bg-slate-400" /> {translate('expenses')}
-              </span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>{translate('attendanceChart')}</CardTitle>
-            <CardDescription>{translate('attendanceChartDescription')}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <figure>
-              <div
-                aria-label={translate('attendanceChart')}
-                className="flex h-56 items-end justify-around gap-3 border-b border-border px-2 pt-4"
-                role="img"
-              >
-                {weeklyAttendance.map((value, index) => (
-                  <div
-                    className="flex h-full flex-1 items-end justify-center"
-                    key={weekdays[index]}
+    );
+  const data = summary.data,
+    primaryMoney = data?.money[0];
+  const cards = [
+    { label: t('students'), value: String(data?.counts['activeStudents'] ?? 0), icon: UsersRound },
+    {
+      label: t('enrollments'),
+      value: String(data?.counts['activeEnrollments'] ?? 0),
+      icon: BookOpen,
+    },
+    {
+      label: t('collected'),
+      value: primaryMoney
+        ? moneyMinor(primaryMoney.netCollectedMinor, primaryMoney.currency, locale)
+        : '—',
+      icon: CircleDollarSign,
+    },
+    {
+      label: t('documentsReady'),
+      value: String(data?.counts['readyDocuments'] ?? 0),
+      icon: FileCheck2,
+    },
+  ];
+  return (
+    <div className="page-shell" data-dashboard-ready={!summary.loading}>
+      <PageHeader
+        actions={
+          canYears ? (
+            <div className="flex flex-wrap gap-3">
+              <label className="grid gap-1 text-sm">
+                <span>{t('academicYear')}</span>
+                <select
+                  aria-label={t('academicYear')}
+                  className="h-10 min-w-48 rounded-md border bg-background px-3"
+                  value={year}
+                  onChange={(event) => {
+                    setYear(event.target.value);
+                    setPeriod('');
+                  }}
+                >
+                  <option value="">{t('activeYear')}</option>
+                  {years.data?.items.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {year ? (
+                <label className="grid gap-1 text-sm">
+                  <span>{t('academicPeriod')}</span>
+                  <select
+                    aria-label={t('academicPeriod')}
+                    className="h-10 min-w-48 rounded-md border bg-background px-3"
+                    value={period}
+                    onChange={(event) => setPeriod(event.target.value)}
                   >
-                    <div
-                      className="w-full max-w-14 rounded-t-md bg-primary transition-opacity hover:opacity-80"
-                      style={{ height: `${value}%` }}
-                      title={`${weekdays[index]} · ${value}%`}
+                    <option value="">{t('allPeriods')}</option>
+                    {periods.data?.items.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : null}
+            </div>
+          ) : null
+        }
+        description={t('description')}
+        title={t('title')}
+      />
+      {summary.loading ? <p role="status">{t('loading')}</p> : null}
+      {summary.error ? <p role="alert">{t('error')}</p> : null}
+      {data ? (
+        <>
+          <p className="mb-4 text-sm text-muted-foreground">{t('roleView', { role: data.role })}</p>
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {cards.map((card) => (
+              <KpiCard
+                helper={t('liveData')}
+                icon={card.icon}
+                key={card.label}
+                label={card.label}
+                value={card.value}
+              />
+            ))}
+          </div>
+          <div className="mt-6 grid gap-6 xl:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>{t('classEnrollment')}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {data.classEnrollment.length ? (
+                  <>
+                    <MiniChart
+                      ariaLabel={t('classEnrollment')}
+                      labels={data.classEnrollment.map((item) => item.label)}
+                      primary={data.classEnrollment.map((item) => item.value)}
                     />
+                    <table className="mt-4 w-full text-sm">
+                      <caption className="sr-only">{t('classEnrollment')}</caption>
+                      <tbody>
+                        {data.classEnrollment.map((item) => (
+                          <tr key={item.label}>
+                            <th className="border-b p-2 text-start font-normal">{item.label}</th>
+                            <td className="border-b p-2 text-end">{item.value}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </>
+                ) : (
+                  <p>{t('empty')}</p>
+                )}
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>{t('delivery')}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {data.messageDelivery.length ? (
+                  <>
+                    <MiniChart
+                      ariaLabel={t('delivery')}
+                      labels={data.messageDelivery.map((item) => item.label)}
+                      primary={data.messageDelivery.map((item) => item.value)}
+                    />
+                    <table className="mt-4 w-full text-sm">
+                      <caption className="sr-only">{t('delivery')}</caption>
+                      <tbody>
+                        {data.messageDelivery.map((item) => (
+                          <tr key={item.label}>
+                            <th className="border-b p-2 text-start font-normal">{item.label}</th>
+                            <td className="border-b p-2 text-end">{item.value}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </>
+                ) : (
+                  <p>{t('empty')}</p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>{t('finance')}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                {data.money.map((item) => (
+                  <div className="rounded-lg border p-3" key={item.currency}>
+                    <p className="text-xs text-muted-foreground">{item.currency}</p>
+                    <dl className="mt-2 grid gap-1 text-sm">
+                      <div className="flex justify-between">
+                        <dt>{t('invoiced')}</dt>
+                        <dd>{moneyMinor(item.invoicedMinor, item.currency, locale)}</dd>
+                      </div>
+                      <div className="flex justify-between">
+                        <dt>{t('collected')}</dt>
+                        <dd>{moneyMinor(item.netCollectedMinor, item.currency, locale)}</dd>
+                      </div>
+                      <div className="flex justify-between">
+                        <dt>{t('reversed')}</dt>
+                        <dd>{moneyMinor(item.reversedMinor, item.currency, locale)}</dd>
+                      </div>
+                      <div className="flex justify-between">
+                        <dt>{t('outstanding')}</dt>
+                        <dd>{moneyMinor(item.outstandingMinor, item.currency, locale)}</dd>
+                      </div>
+                    </dl>
                   </div>
                 ))}
               </div>
-              <figcaption className="mt-2 flex justify-around text-[11px] text-muted-foreground">
-                {weekdays.map((day) => (
-                  <span key={day}>{day}</span>
-                ))}
-              </figcaption>
-            </figure>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="mt-6 grid gap-6 xl:grid-cols-[2fr_1fr]">
-        <Card>
-          <CardHeader>
-            <CardTitle>{translate('recent')}</CardTitle>
-          </CardHeader>
-          <CardContent className="pt-4">
-            <ul className="divide-y divide-border">
-              {activity.map((item) => (
-                <li className="flex items-start gap-3 py-3 first:pt-0 last:pb-0" key={item.body}>
-                  <span className={`mt-1.5 size-2 shrink-0 rounded-full ${item.tone}`} />
-                  <span className="text-sm text-foreground">{item.body}</span>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>{translate('alerts')}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 pt-4">
-            <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/35 dark:text-red-300">
-              {translate('alertPayments')}
-            </div>
-            <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/35 dark:text-amber-300">
-              {translate('alertAttendance')}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+              {data.money.length === 0 ? <p>{t('empty')}</p> : null}
+            </CardContent>
+          </Card>
+          <div className="mt-6 grid gap-6 xl:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>{t('scopeStudents')}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {data.students.length ? (
+                  <table className="w-full text-sm">
+                    <caption className="sr-only">{t('scopeStudents')}</caption>
+                    <tbody>
+                      {data.students.map((student) => (
+                        <tr key={student.id}>
+                          <th className="border-b p-2 text-start font-normal">
+                            <span className="font-medium">{student.name}</span>
+                            <span className="block text-xs text-muted-foreground">
+                              {student.matricule}
+                            </span>
+                          </th>
+                          <td className="border-b p-2 text-end">
+                            {student.className ?? '—'}
+                            <span className="block text-xs text-muted-foreground">
+                              {student.academicYear ?? '—'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <p>{t('empty')}</p>
+                )}
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>{t('academicAverages')}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {data.academicAverages.length ? (
+                  <table className="w-full text-sm">
+                    <caption className="sr-only">{t('academicAverages')}</caption>
+                    <tbody>
+                      {data.academicAverages.map((item) => (
+                        <tr key={item.label}>
+                          <th className="border-b p-2 text-start font-normal">{item.label}</th>
+                          <td className="border-b p-2 text-end">{item.average}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <p>{t('empty')}</p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </>
+      ) : null}
     </div>
   );
 }

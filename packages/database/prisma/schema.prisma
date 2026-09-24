@@ -220,6 +220,38 @@ enum OutboxStatus {
   @@map("outbox_status")
 }
 
+enum ReportType {
+  STUDENTS
+  ENROLLMENTS
+  ACADEMIC
+  RESULTS
+  FINANCE
+  PAYMENTS
+  OUTSTANDING_BALANCES
+  DOCUMENTS
+  COMMUNICATIONS
+
+  @@map("report_type")
+}
+
+enum ReportFormat {
+  CSV
+  XLSX
+  PDF
+
+  @@map("report_format")
+}
+
+enum ReportExportStatus {
+  PENDING
+  PROCESSING
+  READY
+  FAILED
+  EXPIRED
+
+  @@map("report_export_status")
+}
+
 model Tenant {
   id                String             @id @default(dbgenerated("uuidv7()")) @db.Uuid
   slug              String             @unique @db.VarChar(80)
@@ -247,6 +279,7 @@ model Tenant {
   notificationPreferences NotificationPreference[]
   providerWebhookEvents ProviderWebhookEvent[]
   communicationRequests CommunicationRequest[]
+  reportExports ReportExport[]
 
   @@map("tenants")
 }
@@ -317,6 +350,7 @@ model Membership {
   paymentReversals PaymentReversal[]
   documentsRequested Document[] @relation("DocumentRequester")
   documentsRevoked Document[] @relation("DocumentRevoker")
+  reportExports ReportExport[]
 
   @@unique([tenantId, userId])
   @@unique([tenantId, id])
@@ -1449,4 +1483,39 @@ model OutboxEvent {
   @@index([tenantId, status, occurredAt])
   @@index([tenantId, aggregateType, aggregateId])
   @@map("outbox_events")
+}
+
+model ReportExport {
+  id                      String             @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  tenantId                String             @map("tenant_id") @db.Uuid
+  requestedByMembershipId String             @map("requested_by_membership_id") @db.Uuid
+  idempotencyKey          String             @map("idempotency_key") @db.Uuid
+  reportType              ReportType         @map("report_type")
+  format                  ReportFormat
+  locale                  String             @default("fr") @db.VarChar(10)
+  filters                 Json               @db.JsonB
+  actorSnapshot           Json               @map("actor_snapshot") @db.JsonB
+  status                  ReportExportStatus @default(PENDING)
+  storageKey              String?            @map("storage_key") @db.VarChar(500)
+  checksum                String?            @db.Char(64)
+  rowCount                Int?               @map("row_count")
+  sizeBytes               BigInt             @default(0) @map("size_bytes") @db.BigInt
+  attempts                Int                @default(0)
+  leaseToken              String?            @map("lease_token") @db.Uuid
+  leaseUntil              DateTime?           @map("lease_until") @db.Timestamptz(6)
+  safeErrorCode           String?            @map("safe_error_code") @db.VarChar(80)
+  createdAt               DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  startedAt               DateTime?           @map("started_at") @db.Timestamptz(6)
+  completedAt             DateTime?           @map("completed_at") @db.Timestamptz(6)
+  failedAt                DateTime?           @map("failed_at") @db.Timestamptz(6)
+  expiresAt               DateTime            @map("expires_at") @db.Timestamptz(6)
+  tenant                  Tenant              @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  requestedBy             Membership          @relation(fields: [tenantId, requestedByMembershipId], references: [tenantId, id], onDelete: Restrict)
+
+  @@unique([tenantId, id])
+  @@unique([tenantId, idempotencyKey])
+  @@unique([tenantId, storageKey])
+  @@index([tenantId, requestedByMembershipId, createdAt])
+  @@index([tenantId, status, createdAt])
+  @@map("report_exports")
 }

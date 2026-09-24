@@ -2,8 +2,8 @@ import pg from 'pg';
 
 const databaseName = process.env['DATABASE_NAME'];
 const source = process.env['DATABASE_URL'];
-if (!source || !databaseName || !/^gestschool_lot11_[a-z0-9_]+$/.test(databaseName))
-  throw new Error('An isolated gestschool_lot11_* database name is required');
+if (!source || !databaseName || !/^gestschool_lot(?:11|12)_[a-z0-9_]+$/.test(databaseName))
+  throw new Error('An isolated gestschool_lot11_* or gestschool_lot12_* database name is required');
 
 const adminUrl = new URL(source);
 if (!['127.0.0.1', 'localhost', '[::1]'].includes(adminUrl.hostname))

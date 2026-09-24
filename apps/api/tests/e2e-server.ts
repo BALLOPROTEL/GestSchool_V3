@@ -79,7 +79,8 @@ try {
       | 'VISUAL_READER'
       | 'TEACHER'
       | 'PARENT'
-      | 'ACCOUNTANT',
+      | 'ACCOUNTANT'
+      | 'ACADEMIC_STAFF',
     activated = true,
     tenantId = tenant.id,
     preEnrollMfa = false,
@@ -504,6 +505,40 @@ try {
     };
   }
   const mfa = await create('SCHOOL_ADMIN');
+  const reporting: Record<
+    string,
+    Record<
+      'admin' | 'director' | 'academicStaff' | 'accountant' | 'teacher' | 'parent' | 'student',
+      { email: string; password: string; mfaSecret?: string }
+    >
+  > = {};
+  for (const viewport of Object.keys(visual)) {
+    const reportingTenant = await database.tenant.create({
+      data: { slug: `reporting-e2e-${randomUUID()}`, name: 'École reporting E2E' },
+    });
+    const accounts = {
+      admin: await create('SCHOOL_ADMIN', true, reportingTenant.id, true),
+      director: await create('DIRECTOR', true, reportingTenant.id, true),
+      academicStaff: await create('ACADEMIC_STAFF', true, reportingTenant.id, true),
+      accountant: await create('ACCOUNTANT', true, reportingTenant.id, true),
+      teacher: await create('TEACHER', true, reportingTenant.id, true),
+      parent: await create('PARENT', true, reportingTenant.id, true),
+      student: await create('STUDENT', true, reportingTenant.id, true),
+    };
+    const reportingEnrollment = await enrollmentFixture(
+      database,
+      reportingTenant.id,
+      accounts.admin.email,
+      accounts.student.email,
+      accounts.parent.email,
+    );
+    await database.academicYear.update({
+      where: { id: reportingEnrollment.yearId },
+      data: { status: 'ACTIVE' },
+    });
+    await academicFixture(database, reportingTenant.id, accounts.teacher.email);
+    reporting[viewport] = accounts;
+  }
   const directory = new URL('../../../.local/', import.meta.url);
   await mkdir(directory, { recursive: true, mode: 0o700 });
   await writeFile(
@@ -518,6 +553,7 @@ try {
       results,
       documents,
       messaging,
+      reporting,
       mfa,
     }),
     { mode: 0o600 },

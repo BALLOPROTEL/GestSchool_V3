@@ -49,6 +49,37 @@ export class S3StorageAdapter implements StorageHealth {
     );
   }
 
+  async putReport(key: string, bytes: Uint8Array, contentType: string): Promise<void> {
+    if (!/^tenants\/[0-9a-f-]{36}\/reports\/[0-9a-f-]{36}\/[0-9a-f]{64}\.(csv|xlsx|pdf)$/.test(key))
+      throw new Error('REPORT_OBJECT_KEY_INVALID');
+    await this.client.send(
+      new PutObjectCommand({
+        Bucket: this.bucket,
+        Key: key,
+        Body: bytes,
+        ContentType: contentType,
+        CacheControl: 'private, no-store',
+      }),
+      { abortSignal: AbortSignal.timeout(30_000) },
+    );
+  }
+
+  async getReport(key: string, expectedContentType: string): Promise<Uint8Array> {
+    if (!/^tenants\/[0-9a-f-]{36}\/reports\/[0-9a-f-]{36}\/[0-9a-f]{64}\.(csv|xlsx|pdf)$/.test(key))
+      throw new Error('REPORT_OBJECT_KEY_INVALID');
+    const result = await this.client.send(new GetObjectCommand({ Bucket: this.bucket, Key: key }), {
+      abortSignal: AbortSignal.timeout(30_000),
+    });
+    if (
+      !result.Body ||
+      result.ContentType !== expectedContentType ||
+      !result.ContentLength ||
+      result.ContentLength > 50_000_000
+    )
+      throw new Error('REPORT_OBJECT_INVALID');
+    return result.Body.transformToByteArray();
+  }
+
   async getPdf(key: string): Promise<Uint8Array> {
     const result = await this.client.send(new GetObjectCommand({ Bucket: this.bucket, Key: key }), {
       abortSignal: AbortSignal.timeout(10_000),
@@ -66,6 +97,14 @@ export class S3StorageAdapter implements StorageHealth {
   async deleteUncommittedPdf(key: string): Promise<void> {
     if (!/^tenants\/[0-9a-f-]{36}\/documents\/[0-9a-f-]{36}\/[0-9a-f]{64}\.pdf$/.test(key))
       throw new Error('DOCUMENT_OBJECT_KEY_INVALID');
+    await this.client.send(new DeleteObjectCommand({ Bucket: this.bucket, Key: key }), {
+      abortSignal: AbortSignal.timeout(10_000),
+    });
+  }
+
+  async deleteUncommittedReport(key: string): Promise<void> {
+    if (!/^tenants\/[0-9a-f-]{36}\/reports\/[0-9a-f-]{36}\/[0-9a-f]{64}\.(csv|xlsx|pdf)$/.test(key))
+      throw new Error('REPORT_OBJECT_KEY_INVALID');
     await this.client.send(new DeleteObjectCommand({ Bucket: this.bucket, Key: key }), {
       abortSignal: AbortSignal.timeout(10_000),
     });
