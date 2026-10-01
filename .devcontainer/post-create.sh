@@ -3,8 +3,13 @@ set -euo pipefail
 
 echo "[GestSchool] Preparing the Codespaces development environment..."
 
-corepack enable
-corepack prepare pnpm@10.24.0 --activate
+if ! command -v pnpm >/dev/null 2>&1; then
+  echo "[GestSchool] pnpm is missing; enabling Corepack with elevated permissions..."
+  sudo corepack enable
+  sudo corepack prepare pnpm@10.24.0 --activate
+fi
+
+echo "[GestSchool] Using pnpm $(pnpm -v)"
 
 pnpm install --frozen-lockfile
 pnpm db:generate
