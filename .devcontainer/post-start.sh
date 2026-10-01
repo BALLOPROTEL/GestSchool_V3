@@ -5,8 +5,13 @@ if [[ "${CODESPACES:-}" != "true" ]]; then
   exit 0
 fi
 
-corepack enable
-corepack prepare pnpm@10.24.0 --activate
+if ! command -v pnpm >/dev/null 2>&1; then
+  echo "[GestSchool] pnpm is missing; enabling Corepack with elevated permissions..."
+  sudo corepack enable
+  sudo corepack prepare pnpm@10.24.0 --activate
+fi
+
+echo "[GestSchool] Using pnpm $(pnpm -v)"
 
 if [[ ! -d node_modules ]]; then
   echo "[GestSchool] node_modules missing; installing workspace dependencies..."
