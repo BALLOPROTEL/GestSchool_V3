@@ -5,6 +5,15 @@ if [[ "${CODESPACES:-}" != "true" ]]; then
   exit 0
 fi
 
+corepack enable
+corepack prepare pnpm@10.24.0 --activate
+
+if [[ ! -d node_modules ]]; then
+  echo "[GestSchool] node_modules missing; installing workspace dependencies..."
+  pnpm install --frozen-lockfile
+  pnpm db:generate
+fi
+
 if [[ ! -f .env ]]; then
   cp .env.example .env
 fi
