@@ -7,7 +7,7 @@ import {
   type ConnectionOptions,
 } from 'bullmq';
 import { createClient } from 'redis';
-import { DOCUMENT_QUEUE, documentJobData } from '@gestschool/contracts';
+import { DOCUMENT_QUEUE, DOCUMENT_GENERATION_EVENT, documentJobData } from '@gestschool/contracts';
 
 export function bullmqConnection(url: string): ConnectionOptions {
   // BullMQ defaults to the optional ioredis peer. Reuse the existing node-redis
@@ -59,6 +59,7 @@ export function createDocumentWorker(
     DOCUMENT_QUEUE,
     async (job, token) => {
       try {
+        if (job.name !== DOCUMENT_GENERATION_EVENT) throw new Error('DOCUMENT_JOB_NAME_INVALID');
         await run(documentJobData.parse(job.data as unknown));
       } catch (error) {
         if (error instanceof Error && error.message === 'DOCUMENT_LEASE_BUSY') {

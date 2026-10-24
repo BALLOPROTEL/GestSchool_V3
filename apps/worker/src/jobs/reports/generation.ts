@@ -18,6 +18,16 @@ async function audit(
     data: { tenantId, action, entityType: 'report_export', entityId: id, metadata },
   });
 }
+export function validateExportActor(
+  snapshot: unknown,
+  tenantId: string,
+  membershipId: string,
+): ReportActor {
+  const actor = reportActorSchema.parse(snapshot) as ReportActor;
+  if (actor.tenantId !== tenantId || actor.membershipId !== membershipId)
+    throw new Error('REPORT_ACTOR_TENANT_INVALID');
+  return actor;
+}
 export class ReportsGeneration {
   private readonly engine: ReportDataEngine;
   constructor(
@@ -73,8 +83,48 @@ export class ReportsGeneration {
     if (!row) return;
     let candidate: string | undefined;
     try {
-      const actor = reportActorSchema.parse(row.actorSnapshot) as ReportActor,
-        filters = reportQuery.parse(row.filters),
+      const actor = validateExportActor(row.actorSnapshot, tenantId, row.requestedByMembershipId);
+      const membership = await this.db.membership.findFirst({
+        where: {
+          id: actor.membershipId,
+          tenantId,
+          userId: actor.userId,
+          status: 'ACTIVE',
+          tenant: { status: 'ACTIVE' },
+          user: { disabledAt: null },
+        },
+        include: {
+          roles: {
+            include: { role: { include: { permissions: { include: { permission: true } } } } },
+          },
+        },
+      });
+      if (!membership) throw new Error('REPORT_REQUESTER_REVOKED');
+      const roles = membership.roles
+        .map((binding) => binding.role)
+        .filter(
+          (role) =>
+            role.tenantId === tenantId ||
+            (role.tenantId === null && role.isSystem && role.scope === 'SYSTEM'),
+        );
+      const currentGrants = roles.flatMap((role) =>
+        role.permissions
+          .filter(
+            (binding) =>
+              binding.tenantId === role.tenantId &&
+              (binding.scope !== 'PLATFORM' ||
+                (role.code === 'SUPER_ADMIN' && role.tenantId === null)),
+          )
+          .map((binding) => ({ permission: binding.permission.code, scope: binding.scope })),
+      );
+      // Intersection never widens the original snapshot after a privilege change.
+      actor.roles = actor.roles.filter((role) => roles.some((current) => current.code === role));
+      actor.grants = actor.grants.filter((grant) =>
+        currentGrants.some(
+          (current) => current.permission === grant.permission && current.scope === grant.scope,
+        ),
+      );
+      const filters = reportQuery.parse(row.filters),
         page = await this.engine.snapshot(row.reportType, actor, filters),
         file = await serializeReport(page, row.format, row.locale as 'fr' | 'en' | 'ar'),
         checksum = createHash('sha256').update(file.bytes).digest('hex'),

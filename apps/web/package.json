@@ -12,13 +12,14 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@gestschool/config": "workspace:*",
     "@gestschool/contracts": "workspace:*",
     "@fontsource-variable/jetbrains-mono": "5.3.0",
     "@fontsource-variable/noto-sans-arabic": "5.3.0",
     "@fontsource-variable/plus-jakarta-sans": "5.3.0",
     "@gestschool/ui": "workspace:*",
     "lucide-react": "1.40.0",
-    "next": "16.3.4",
+    "next": "16.4.1",
     "next-intl": "4.14.2",
     "next-themes": "0.4.6",
     "react": "19.2.8",
@@ -27,7 +28,6 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "4.13.0",
-    "@gestschool/config": "workspace:*",
     "@tailwindcss/postcss": "4.3.3",
     "tailwindcss": "4.3.3",
     "webpack": "5.110.3"

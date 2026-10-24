@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { validateProductionInfrastructure } from './security.js';
 
 const postgresUrl = z.url().refine((value) => new URL(value).protocol === 'postgresql:', {
   message: 'must use the postgresql: protocol',
@@ -58,6 +59,8 @@ export function loadInfrastructureConfig(
       .join('; ');
     throw new Error(`Invalid GestSchool environment: ${details}`);
   }
+
+  validateProductionInfrastructure(environment);
 
   return {
     apiPort: result.data.API_PORT,

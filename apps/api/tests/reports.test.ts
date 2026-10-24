@@ -3,6 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { loadInfrastructureConfig } from '@gestschool/config/environment';
 import type { DashboardSummary, ReportExportView, ReportPage } from '@gestschool/contracts';
 import { S3StorageAdapter } from '@gestschool/infrastructure';
+import type { Prisma } from '@gestschool/database';
 import { ReportsGeneration } from '@gestschool/worker/reports';
 import {
   capture,
@@ -137,6 +138,14 @@ afterAll(async () => {
   await h?.close();
 });
 describe('LOT 12 dashboards, reports and exports', () => {
+  it('binds SQL metacharacters without leaking foreign rows or database errors', async () => {
+    for (const payload of ["' OR 1=1 --", '"', '--', ';', '%_']) {
+      const response = await report(admin, 'students', encodeURIComponent(payload));
+      expect(response.status).toBe(200);
+      expect(JSON.stringify(response.body)).not.toContain(foreign.student.id);
+      expect(JSON.stringify(response.body)).not.toMatch(/PrismaClient|SELECT .* FROM|stack trace/);
+    }
+  });
   it('keeps tenant aggregates isolated and returns real role-scoped dashboards', async () => {
     const dashboard = await admin.browser.send<DashboardSummary>('dashboard/summary');
     expect(dashboard.status).toBe(200);
@@ -348,5 +357,48 @@ describe('LOT 12 dashboards, reports and exports', () => {
     expect(ready.status).toBe('READY');
     expect(ready.rowCount).toBeGreaterThan(1000);
     expect(ready.sizeBytes).toBeGreaterThan(0n);
+  });
+  it('rejects queue tenant confusion, a foreign actor snapshot and a revoked requester before storage', async () => {
+    const created = await requestExport(admin, 'STUDENTS', 'CSV');
+    expect(created.status).toBe(202);
+    const id = created.body.id;
+    const original = await h.db.reportExport.findUniqueOrThrow({ where: { id } });
+    await pipeline.run({ tenantId: foreign.tenantId, exportId: id });
+    expect(await h.db.reportExport.findUniqueOrThrow({ where: { id } })).toMatchObject({
+      status: 'PENDING',
+      attempts: 0,
+      storageKey: null,
+    });
+    const snapshot = original.actorSnapshot as Prisma.InputJsonObject;
+    await h.db.reportExport.update({
+      where: { id },
+      data: { actorSnapshot: { ...snapshot, tenantId: foreign.tenantId } },
+    });
+    await expect(pipeline.run({ tenantId: a.tenantId, exportId: id })).rejects.toThrow(
+      'REPORT_GENERATION_FAILED',
+    );
+    await h.db.reportExport.update({ where: { id }, data: { actorSnapshot: snapshot } });
+    await h.db.membership.update({
+      where: { id: admin.membershipId },
+      data: { status: 'SUSPENDED' },
+    });
+    try {
+      await expect(pipeline.run({ tenantId: a.tenantId, exportId: id })).rejects.toThrow(
+        'REPORT_GENERATION_FAILED',
+      );
+      expect(await h.db.reportExport.findUniqueOrThrow({ where: { id } })).toMatchObject({
+        storageKey: null,
+        safeErrorCode: 'REPORT_GENERATION_FAILED',
+      });
+      expect(
+        await h.db.auditLog.count({ where: { entityId: id, action: 'report.export.generated' } }),
+      ).toBe(0);
+    } finally {
+      await h.db.membership.update({
+        where: { id: admin.membershipId },
+        data: { status: 'ACTIVE' },
+      });
+      await h.db.reportExport.update({ where: { id }, data: { status: 'FAILED' } });
+    }
   });
 });

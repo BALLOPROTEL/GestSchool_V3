@@ -19,6 +19,8 @@ const bootstrap = async (): Promise<void> => {
   httpServer.keepAliveTimeout = 65_000;
   httpServer.keepAliveTimeoutBuffer = 5_000;
   httpServer.headersTimeout = 75_000;
+  httpServer.requestTimeout = 120_000;
+  httpServer.maxHeadersCount = 100;
 
   const configuration = application.get<InfrastructureConfiguration>(INFRASTRUCTURE_CONFIGURATION);
 

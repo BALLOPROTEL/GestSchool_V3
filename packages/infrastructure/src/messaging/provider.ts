@@ -29,9 +29,12 @@ export class LocalMessagingProvider implements MessagingProvider {
   readonly name = 'LOCAL' as const;
   constructor(
     private readonly path = new URL('../../../../.local/messaging-delivery.jsonl', import.meta.url),
-  ) {}
+  ) {
+    if (process.env['NODE_ENV'] === 'production') throw new Error('LOCAL_PROVIDER_FORBIDDEN');
+  }
 
   private async capture(channel: 'EMAIL' | 'WHATSAPP', message: OutgoingEmail | OutgoingWhatsApp) {
+    if (process.env['NODE_ENV'] === 'production') throw new Error('LOCAL_PROVIDER_FORBIDDEN');
     const directory = new URL('./', this.path);
     await mkdir(directory, { recursive: true, mode: 0o700 });
     await chmod(directory, 0o700);
@@ -69,6 +72,7 @@ export class BrevoMessagingProvider implements MessagingProvider {
   private async send(path: string, payload: unknown): Promise<ProviderReceipt> {
     const response = await fetch(`https://api.brevo.com/v3/${path}`, {
       method: 'POST',
+      redirect: 'error',
       headers: {
         accept: 'application/json',
         'content-type': 'application/json',

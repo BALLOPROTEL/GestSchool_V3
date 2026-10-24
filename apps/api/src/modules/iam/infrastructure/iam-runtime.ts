@@ -1,4 +1,5 @@
 import type { OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { loadMessagingConfig } from '@gestschool/config/messaging';
 import { AuthService } from '../application/auth.service.js';
 import { CredentialsService } from '../application/credentials.service.js';
 import { MembershipsService } from '../application/memberships.service.js';
@@ -26,6 +27,7 @@ export class IamRuntime implements OnModuleInit, OnModuleDestroy {
     databaseUrl: string,
     redisUrl: string,
   ) {
+    if (process.env['NODE_ENV'] === 'production') loadMessagingConfig();
     this.repository = IamRepository.connect(databaseUrl);
     this.crypto = new IamCrypto(config);
     this.limiter = new RateLimiter(redisUrl, config.redisPrefix);

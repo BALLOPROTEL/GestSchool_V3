@@ -9,6 +9,14 @@ import type { InfrastructureConfig } from '@gestschool/config/environment';
 
 import type { StorageHealth } from './storage-health.js';
 
+const uuid = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
+const pdfKey = new RegExp(`^tenants/${uuid}/documents/${uuid}/[0-9a-f]{64}\\.pdf$`);
+const reportKey = new RegExp(`^tenants/${uuid}/reports/${uuid}/[0-9a-f]{64}\\.(csv|xlsx|pdf)$`);
+export function validateStorageKey(key: string, kind: 'document' | 'report'): void {
+  if (!(kind === 'document' ? pdfKey : reportKey).test(key))
+    throw new Error('STORAGE_OBJECT_KEY_INVALID');
+}
+
 export class S3StorageAdapter implements StorageHealth {
   readonly name = 'storage';
   private readonly bucket: string;
@@ -37,6 +45,9 @@ export class S3StorageAdapter implements StorageHealth {
   }
 
   async putPdf(key: string, bytes: Uint8Array): Promise<void> {
+    validateStorageKey(key, 'document');
+    if (bytes.length > 10_000_000 || Buffer.from(bytes.subarray(0, 5)).toString() !== '%PDF-')
+      throw new Error('DOCUMENT_OBJECT_INVALID');
     await this.client.send(
       new PutObjectCommand({
         Bucket: this.bucket,
@@ -50,8 +61,18 @@ export class S3StorageAdapter implements StorageHealth {
   }
 
   async putReport(key: string, bytes: Uint8Array, contentType: string): Promise<void> {
-    if (!/^tenants\/[0-9a-f-]{36}\/reports\/[0-9a-f-]{36}\/[0-9a-f]{64}\.(csv|xlsx|pdf)$/.test(key))
-      throw new Error('REPORT_OBJECT_KEY_INVALID');
+    validateStorageKey(key, 'report');
+    const mime: Record<string, string> = {
+      csv: 'text/csv; charset=utf-8',
+      xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      pdf: 'application/pdf',
+    };
+    if (
+      !bytes.length ||
+      bytes.length > 50_000_000 ||
+      contentType !== mime[key.split('.').at(-1) ?? '']
+    )
+      throw new Error('REPORT_OBJECT_INVALID');
     await this.client.send(
       new PutObjectCommand({
         Bucket: this.bucket,
@@ -65,8 +86,7 @@ export class S3StorageAdapter implements StorageHealth {
   }
 
   async getReport(key: string, expectedContentType: string): Promise<Uint8Array> {
-    if (!/^tenants\/[0-9a-f-]{36}\/reports\/[0-9a-f-]{36}\/[0-9a-f]{64}\.(csv|xlsx|pdf)$/.test(key))
-      throw new Error('REPORT_OBJECT_KEY_INVALID');
+    validateStorageKey(key, 'report');
     const result = await this.client.send(new GetObjectCommand({ Bucket: this.bucket, Key: key }), {
       abortSignal: AbortSignal.timeout(30_000),
     });
@@ -81,6 +101,7 @@ export class S3StorageAdapter implements StorageHealth {
   }
 
   async getPdf(key: string): Promise<Uint8Array> {
+    validateStorageKey(key, 'document');
     const result = await this.client.send(new GetObjectCommand({ Bucket: this.bucket, Key: key }), {
       abortSignal: AbortSignal.timeout(10_000),
     });
@@ -95,16 +116,14 @@ export class S3StorageAdapter implements StorageHealth {
   }
 
   async deleteUncommittedPdf(key: string): Promise<void> {
-    if (!/^tenants\/[0-9a-f-]{36}\/documents\/[0-9a-f-]{36}\/[0-9a-f]{64}\.pdf$/.test(key))
-      throw new Error('DOCUMENT_OBJECT_KEY_INVALID');
+    validateStorageKey(key, 'document');
     await this.client.send(new DeleteObjectCommand({ Bucket: this.bucket, Key: key }), {
       abortSignal: AbortSignal.timeout(10_000),
     });
   }
 
   async deleteUncommittedReport(key: string): Promise<void> {
-    if (!/^tenants\/[0-9a-f-]{36}\/reports\/[0-9a-f-]{36}\/[0-9a-f]{64}\.(csv|xlsx|pdf)$/.test(key))
-      throw new Error('REPORT_OBJECT_KEY_INVALID');
+    validateStorageKey(key, 'report');
     await this.client.send(new DeleteObjectCommand({ Bucket: this.bucket, Key: key }), {
       abortSignal: AbortSignal.timeout(10_000),
     });

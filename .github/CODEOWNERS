@@ -1,0 +1,10 @@
+/.github/workflows/ @BALLOPROTEL
+/.github/CODEOWNERS @BALLOPROTEL
+/pnpm-lock.yaml @BALLOPROTEL
+/pnpm-workspace.yaml @BALLOPROTEL
+/package.json @BALLOPROTEL
+/packages/database/prisma/ @BALLOPROTEL
+/packages/config/ @BALLOPROTEL
+/apps/api/src/modules/iam/ @BALLOPROTEL
+/packages/infrastructure/ @BALLOPROTEL
+/apps/worker/ @BALLOPROTEL

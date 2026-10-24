@@ -26,6 +26,8 @@ export class LocalMessagingRuntime implements OnModuleDestroy {
       SELECT to_regclass('public.message_templates')::text AS table_name
     `;
     if (!schema[0]?.table_name) {
+      if (this.infrastructure.nodeEnvironment === 'production')
+        throw new Error('MESSAGING_SCHEMA_REQUIRED');
       this.logger.warn('Messaging migration is not applied; local delivery remains disabled');
       return;
     }

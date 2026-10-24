@@ -19,7 +19,20 @@ const actor = (context: RequestContext): ReportActor => ({
 });
 function mapped(error: unknown): never {
   if (error instanceof z.ZodError) throw error;
-  const code = error instanceof Error ? error.message : 'REPORT_UNAVAILABLE';
+  const allowed = new Set([
+    'AUTH_FORBIDDEN',
+    'REPORT_FILTER_NOT_FOUND',
+    'REPORT_ROW_LIMIT_EXCEEDED',
+    'REPORT_FORMAT_UNSUPPORTED',
+    'REPORT_IDEMPOTENCY_CONFLICT',
+    'REPORT_CONCURRENCY_LIMIT',
+    'REPORT_EXPORT_NOT_FOUND',
+    'REPORT_EXPORT_EXPIRED',
+    'REPORT_EXPORT_NOT_READY',
+    'REPORT_CHECKSUM_MISMATCH',
+  ]);
+  const code =
+    error instanceof Error && allowed.has(error.message) ? error.message : 'REPORT_UNAVAILABLE';
   const status = code.endsWith('NOT_FOUND')
     ? 404
     : code.includes('CONFLICT') || code.includes('CONCURRENCY')
@@ -28,7 +41,9 @@ function mapped(error: unknown): never {
         ? 410
         : code.includes('LIMIT')
           ? 422
-          : 403;
+          : code === 'REPORT_UNAVAILABLE'
+            ? 503
+            : 403;
   throw new IamError(code, status);
 }
 @Injectable()
@@ -59,7 +74,7 @@ export class ReportsService {
   async history(context: RequestContext, query: unknown) {
     const value = z
       .strictObject({
-        page: z.coerce.number().int().positive().default(1),
+        page: z.coerce.number().int().positive().max(10000).default(1),
         pageSize: z.coerce.number().int().min(1).max(100).default(20),
       })
       .parse(query);
