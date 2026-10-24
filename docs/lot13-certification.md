@@ -68,7 +68,7 @@ Le premier E2E a démontré une régression de notre CSP : `default-src 'self'` 
 | 25  | Tenant isolation                 | Tenant de session/membership ; FK tenant-aware ; suites People à Reports et worker                                                                           |
 | 26  | Mass assignment                  | DTO stricts, injections tenant/status/rôle non autorisées refusées ; fixtures d'intégration existantes                                                       |
 | 27  | Input validation                 | UUID/email/chaînes/listes bornés, pages plafonnées, prototype properties et query dupliquée rejetés                                                          |
-| 28  | Body limits                      | JSON 64 KiB, forms 16 KiB/50 paramètres ; 413 et compression 415 testés                                                                                      |
+| 28  | Body limits                      | JSON 4 MiB/8192 nœuds/profondeur 12, forms 16 KiB/50 paramètres ; lots de 1000 notes, 413 et compression 415 testés                                          |
 | 29  | Rate limiting                    | Redis IP/identifier auth/QR/webhook ; quotas route+tenant+user exports/communications, isolation testée                                                      |
 | 30  | Trust proxy                      | Modes explicites direct/loopback ; en-têtes Forwarded d'un peer direct ignorés ; topologie Render à valider ultérieurement                                   |
 | 31  | HTTP hardening                   | Délais LOT12 conservés, request timeout 120s, 100 headers, limite native Node des tailles ; pas de stress massif                                             |

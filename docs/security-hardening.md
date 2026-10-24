@@ -12,7 +12,7 @@ Next vérifie ses origines publiques et API HTTPS au démarrage de son serveur p
 
 ## HTTP et navigateur
 
-JSON : 64 KiB ; formulaires : 16 KiB/50 paramètres ; compression de requête désactivée ; profondeur 12 et 2048 nœuds maximum. Les paramètres query dupliqués et propriétés prototype dangereuses sont rejetés. Une taille excessive est HTTP 413 ; compression non supportée HTTP 415. Les DTO Zod restent stricts et les pages sont bornées.
+JSON : 4 MiB ; formulaires : 16 KiB/50 paramètres ; compression de requête désactivée ; profondeur 12 et 8192 nœuds maximum. Le budget générique couvre les 1000 notes autorisées par `gradeBulkInput` (5003 nœuds), avec commentaires de 500 caractères, y compris Unicode et échappement JSON jusqu'à six octets par caractère. Il ne dispense aucune route du contrôle récursif. Les paramètres query dupliqués et propriétés prototype dangereuses sont rejetés. Une taille excessive est HTTP 413 ; compression non supportée HTTP 415. Les DTO Zod restent stricts et les pages sont bornées.
 
 Origines exactes, CSRF HMAC + cookie/header et contrôles de session/RBAC sont conservés. Seul POST `/api/v1/webhooks/brevo` est exempté du contrôle navigateur, avec JSON, authentification provider et limite distribuée. Les cookies production sont HttpOnly/Secure/Strict, sans Domain ; refresh restreint à `/api/v1/auth`. JWT EdDSA uniquement, issuer/audience/durée/session validés, taille ≤4096 et header alg/typ seuls.
 

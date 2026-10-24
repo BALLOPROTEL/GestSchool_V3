@@ -844,7 +844,7 @@ describe('LOT 9 rankings, snapshots, corrections and irreversible locks', () => 
       404,
     );
   });
-  it('handles a 301-student class with bulk writes and a bounded class calculation', async () => {
+  it('handles 1000 bulk grades with full Unicode comments and a bounded class calculation', async () => {
     const graph = await h.graph(foreign.tenantId, foreignAdmin.browser);
     const period = await h.db.academicPeriod.create({
       data: {
@@ -884,7 +884,8 @@ describe('LOT 9 rankings, snapshots, corrections and irreversible locks', () => 
         academicPeriodId: period.id,
       },
     });
-    const ids = Array.from({ length: 300 }, () => randomUUID());
+    const ids = Array.from({ length: 999 }, () => randomUUID());
+    const comment = '界'.repeat(500);
     await h.db.student.createMany({
       data: ids.map((id) => ({
         id,
@@ -906,7 +907,7 @@ describe('LOT 9 rankings, snapshots, corrections and irreversible locks', () => 
     const created = await foreignAdmin.browser.send<AssessmentView>(
       'assessments',
       {
-        title: 'Charge 301',
+        title: 'Charge 1000',
         classSubjectId: link.id,
         academicPeriodId: period.id,
         assessedOn: '2026-03-15',
@@ -924,12 +925,14 @@ describe('LOT 9 rankings, snapshots, corrections and irreversible locks', () => 
           studentId,
           score: '37.5',
           outcome: 'SCORED',
+          comment,
         })),
       },
       'PUT',
     );
     expect(saved.status).toBe(200);
-    expect(saved.body.grades).toHaveLength(301);
+    expect(saved.body.grades).toHaveLength(1000);
+    expect(saved.body.grades.every((grade) => grade.comment === comment)).toBe(true);
     let current = await foreignAdmin.browser.send<AssessmentView>(
       `assessments/${created.body.id}/submit`,
       { expectedVersion: saved.body.assessment.version },
@@ -949,19 +952,19 @@ describe('LOT 9 rankings, snapshots, corrections and irreversible locks', () => 
       `results/class?classId=${graph.classroom.id}&academicPeriodId=${period.id}`,
     );
     expect(result.status).toBe(200);
-    expect(result.body.population).toBe(301);
+    expect(result.body.population).toBe(1000);
     expect(
       result.body.students.every(
         (student) => student.overallAverage === '15.00' && student.rank === 1,
       ),
     ).toBe(true);
-    expect(await h.db.grade.count({ where: { assessmentId: created.body.id } })).toBe(301);
+    expect(await h.db.grade.count({ where: { assessmentId: created.body.id } })).toBe(1000);
     const reports = await independent.browser.send<ReportCardView[]>(
       'report-cards/publish',
       { classId: graph.classroom.id, academicPeriodId: period.id },
       'POST',
     );
     expect(reports.status).toBe(200);
-    expect(reports.body).toHaveLength(301);
+    expect(reports.body).toHaveLength(1000);
   }, 60000);
 });

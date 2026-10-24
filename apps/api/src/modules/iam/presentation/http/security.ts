@@ -34,6 +34,10 @@ export interface IamRequest extends Request {
 }
 const PUBLIC = 'iam:public';
 const PERMISSION = 'iam:permission';
+// gradeBulkInput supports 1000 rows (5003 visited nodes) with 500-character
+// comments. JSON escaping can use six bytes per character, so allow 4 MiB.
+const JSON_BODY_LIMIT = '4mb';
+const MAX_BODY_NODES = 8192;
 export const Public = () => SetMetadata(PUBLIC, true);
 export const RequirePermission = (
   permission: string,
@@ -128,7 +132,7 @@ export function configureIamHttp(app: INestApplication): void {
     next();
   });
   const express = app as NestExpressApplication;
-  express.useBodyParser('json', { limit: '64kb', inflate: false, strict: true });
+  express.useBodyParser('json', { limit: JSON_BODY_LIMIT, inflate: false, strict: true });
   express.useBodyParser('urlencoded', {
     limit: '16kb',
     inflate: false,
@@ -141,7 +145,7 @@ export function configureIamHttp(app: INestApplication): void {
     const forbidden = new Set(['__proto__', 'prototype', 'constructor']);
     let nodes = 0;
     const unsafe = (value: unknown, depth = 0): boolean => {
-      if (++nodes > 2048 || depth > 12) return true;
+      if (++nodes > MAX_BODY_NODES || depth > 12) return true;
       return (
         value !== null &&
         typeof value === 'object' &&

@@ -2,8 +2,10 @@ import 'reflect-metadata';
 import { generateKeyPairSync, randomBytes, randomUUID, createPrivateKey } from 'node:crypto';
 import {
   Controller,
+  Body,
   Get,
   Post,
+  Put,
   Req,
   Res,
   Module,
@@ -14,6 +16,7 @@ import { gzipSync } from 'node:zlib';
 import type { Response } from 'express';
 import { NestFactory } from '@nestjs/core';
 import { SignJWT } from 'jose';
+import { gradeBulkInput } from '@gestschool/contracts';
 import { beforeAll, afterAll, describe, expect, it, vi } from 'vitest';
 import { loadIamConfig } from './modules/iam/infrastructure/iam-config.js';
 import { IamCrypto } from './modules/iam/infrastructure/crypto.js';
@@ -60,6 +63,9 @@ class Probe {
   }
   @Post() post() {
     return { ok: true };
+  }
+  @Put('grades') grades(@Body() body: unknown) {
+    return { count: gradeBulkInput.parse(body).grades.length };
   }
   @Get('error') error() {
     throw new Error(`postgresql://user:${canary}@internal/database`);
@@ -178,11 +184,88 @@ describe('LOT13 HTTP boundaries', () => {
     const response = await fetch(`${base}/api/v1/probe`, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ canary, value: 'x'.repeat(70_000) }),
+      body: JSON.stringify({ canary, value: 'x'.repeat(4 * 1024 * 1024) }),
     });
     expect(response.status).toBe(413);
     expect(await response.text()).not.toContain(canary);
   });
+  it.each([
+    { count: 410, comment: null },
+    { count: 1000, comment: null },
+    { count: 1000, comment: 'é界'.repeat(250) },
+    { count: 1000, comment: '\u0000'.repeat(500) },
+  ])('accepts a supported grade sheet over HTTP (%#)', async ({ count, comment }) => {
+    const response = await fetch(`${base}/api/v1/probe/grades`, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify({
+        expectedVersion: 1,
+        grades: Array.from({ length: count }, () => ({
+          studentId: randomUUID(),
+          score: '10',
+          outcome: 'SCORED',
+          comment,
+        })),
+      }),
+    });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ count });
+  });
+  it('still enforces the 1000-grade contract after the generic body guard', async () => {
+    const response = await fetch(`${base}/api/v1/probe/grades`, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify({
+        expectedVersion: 1,
+        grades: Array.from({ length: 1001 }, () => ({
+          studentId: randomUUID(),
+          score: '10',
+          outcome: 'SCORED',
+          comment: null,
+        })),
+      }),
+    });
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({ code: 'AUTH_INVALID_REQUEST' });
+  });
+  it.each([
+    { length: 8190, status: 201 },
+    { length: 8191, status: 400 },
+  ])('bounds visited body nodes (%#)', async ({ length, status }) => {
+    const response = await fetch(`${base}/api/v1/probe`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ values: Array.from({ length }, () => null) }),
+    });
+    expect(response.status).toBe(status);
+  });
+  it.each([
+    { depth: 12, status: 201 },
+    { depth: 13, status: 400 },
+  ])('bounds nested body depth (%#)', async ({ depth, status }) => {
+    let body: unknown = null;
+    for (let index = 0; index < depth; index++) body = { nested: body };
+    const response = await fetch(`${base}/api/v1/probe`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body),
+    });
+    expect(response.status).toBe(status);
+  });
+  it.each(['__proto__', 'prototype', 'constructor'])(
+    'rejects dangerous properties late in a large body (%s)',
+    async (key) => {
+      const response = await fetch(`${base}/api/v1/probe`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          values: [...Array.from({ length: 5000 }, () => null), { [key]: true }],
+        }),
+      });
+      expect(response.status).toBe(400);
+      expect(await response.json()).toMatchObject({ code: 'AUTH_INVALID_REQUEST' });
+    },
+  );
   it('sanitizes exceptions and logs without stack, host, credentials or canary', async () => {
     const logged = vi.spyOn(Logger.prototype, 'error');
     const output = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
