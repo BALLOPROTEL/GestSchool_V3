@@ -1,6 +1,15 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "globalEnv": [
+    "APP_ENV",
+    "APP_PUBLIC_ORIGIN",
+    "API_HOST",
+    "PORT",
+    "TRUST_PROXY",
+    "VERCEL",
+    "VERCEL_ENV",
+    "MESSAGING_*",
+    "BREVO_*",
     "IAM_*",
     "API_INTERNAL_URL",
     "API_PORT",

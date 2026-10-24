@@ -7,7 +7,18 @@ const steps = [
     ['--filter', '@gestschool/config...', '--filter', '@gestschool/infrastructure...', 'build'],
   ],
   ['node', ['scripts/security-secrets.mjs']],
-  ['pnpm', ['--filter', '@gestschool/config', 'exec', 'vitest', 'run', 'src/security.test.ts']],
+  [
+    'pnpm',
+    [
+      '--filter',
+      '@gestschool/config',
+      'exec',
+      'vitest',
+      'run',
+      'src/security.test.ts',
+      'src/messaging.test.ts',
+    ],
+  ],
   [
     'pnpm',
     [
@@ -34,6 +45,7 @@ const steps = [
       'src/storage/storage-security.test.ts',
       'src/documents/renderer.test.ts',
       'src/reports/serializers.test.ts',
+      'src/messaging/provider.test.ts',
     ],
   ],
   [
@@ -48,6 +60,7 @@ const steps = [
     ],
   ],
   ['node', ['--test', 'scripts/security-web.test.mjs']],
+  ['node', ['--test', 'scripts/staging-targets.test.mjs']],
   ['node', ['--test', 'scripts/security-runtime.test.mjs']],
   ['pnpm', ['--filter', '@gestschool/api', 'test:iam', 'tests/security.test.ts']],
 ];

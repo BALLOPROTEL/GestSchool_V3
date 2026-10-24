@@ -36,7 +36,7 @@ describe('messaging environment boundaries', () => {
   });
 
   it('accepts production only with explicit secrets and approved locale templates', () => {
-    const config = loadMessagingConfig({
+    const environment = {
       NODE_ENV: 'production',
       MESSAGING_PROVIDER: 'brevo',
       APP_PUBLIC_ORIGIN: 'https://app.example.com',
@@ -47,8 +47,32 @@ describe('messaging environment boundaries', () => {
       BREVO_WHATSAPP_SENDER: '33612345678',
       BREVO_WHATSAPP_TEMPLATE_IDS_JSON: '{"fr":1,"en":2,"ar":3}',
       BREVO_WEBHOOK_SECRET: randomBytes(32).toString('hex'),
-    });
+    };
+    const config = loadMessagingConfig(environment);
     expect(config.mode).toBe('brevo');
     expect(config.appPublicOrigin).toBe('https://app.example.com');
+    for (const recipient of [
+      undefined,
+      '<EMAIL_TEST>',
+      'not-an-email',
+      'fixture@example.invalid',
+    ]) {
+      expect(
+        loadMessagingConfig({
+          ...environment,
+          APP_ENV: 'staging',
+          IAM_ENV: 'staging',
+          BREVO_TEST_RECIPIENT: recipient,
+        }).stagingEmailRecipient,
+      ).toBeNull();
+    }
+    expect(
+      loadMessagingConfig({
+        ...environment,
+        APP_ENV: 'staging',
+        IAM_ENV: 'staging',
+        BREVO_TEST_RECIPIENT: 'controlled@example.com',
+      }).stagingEmailRecipient,
+    ).toBe('controlled@example.com');
   });
 });

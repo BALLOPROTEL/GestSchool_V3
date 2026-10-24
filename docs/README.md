@@ -52,3 +52,7 @@ Le LOT 11 ajoute messagerie/notifications, capture privée DEV/TEST et adapter B
 ## Sécurité LOT13
 
 Le [rapport de certification locale](lot13-certification.md) détaille les 88 points de revue, résultats, premiers échecs et risques résiduels. Voir l’[audit](security-audit-lot13.md), le [modèle de menace](security-threat-model.md), les [contrôles de durcissement](security-hardening.md) et la [checklist de production future](security-production-checklist.md). Aucun déploiement LOT14/15 n’est effectué.
+
+## Préparation LOT14
+
+L'[audit de staging](lot14-staging.md) consigne le checkpoint GO définitif LOT13 après merge et CI main. Le [runbook](deployment/staging.md), le [plan de cutover V2→V3 non exécuté](deployment/cutover-v2-v3.md) et le [rapport LOT14](lot14-certification.md) séparent préparation locale et preuves distantes encore nécessaires. Aucun GO staging, remplacement V2 ou LOT15 n'est accordé par cette préparation.

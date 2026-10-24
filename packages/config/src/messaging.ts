@@ -6,6 +6,7 @@ import {
   requireEncryptionKey,
   requirePublicHttps,
   requireStrongSecret,
+  validateDeploymentEnvironment,
 } from './security.js';
 
 const origin = z.url().refine((value) => new URL(value).origin === value);
@@ -22,9 +23,12 @@ export interface MessagingConfig {
   apiKey: string | null;
   webhookSecret: string | null;
   tokenKey: string;
+  // Present only for staging: null disables all real sends until a test inbox is authorized.
+  stagingEmailRecipient?: string | null;
 }
 
 export function loadMessagingConfig(environment: NodeJS.ProcessEnv = process.env): MessagingConfig {
+  validateDeploymentEnvironment(environment);
   const nodeEnvironment = z
     .enum(['development', 'test', 'production'])
     .parse(environment['NODE_ENV'] ?? 'development');
@@ -107,5 +111,15 @@ export function loadMessagingConfig(environment: NodeJS.ProcessEnv = process.env
     apiKey,
     webhookSecret,
     tokenKey,
+    ...(environment['APP_ENV'] === 'staging'
+      ? {
+          stagingEmailRecipient: (() => {
+            const result = email.safeParse(
+              environment['BREVO_TEST_RECIPIENT']?.trim().toLowerCase(),
+            );
+            return result.success && !result.data.endsWith('.invalid') ? result.data : null;
+          })(),
+        }
+      : {}),
   };
 }

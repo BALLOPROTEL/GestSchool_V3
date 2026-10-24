@@ -24,7 +24,7 @@ const bootstrap = async (): Promise<void> => {
 
   const configuration = application.get<InfrastructureConfiguration>(INFRASTRUCTURE_CONFIGURATION);
 
-  await application.listen(configuration.apiPort, '127.0.0.1');
+  await application.listen(configuration.apiPort, configuration.apiHost);
 };
 
 await bootstrap();

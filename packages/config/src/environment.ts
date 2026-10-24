@@ -16,6 +16,7 @@ const redisUrl = z.url().refine(
 const booleanValue = z.enum(['true', 'false']).transform((value) => value === 'true');
 
 const environmentSchema = z.object({
+  API_HOST: z.enum(['127.0.0.1', '0.0.0.0']).default('127.0.0.1'),
   API_PORT: z.coerce.number().int().min(1).max(65_535).default(3100),
   DATABASE_URL: postgresUrl,
   NODE_ENV: z.enum(['development', 'test', 'production']),
@@ -34,6 +35,7 @@ const environmentSchema = z.object({
 });
 
 export type InfrastructureConfig = Readonly<{
+  apiHost: '127.0.0.1' | '0.0.0.0';
   apiPort: number;
   databaseUrl: string;
   nodeEnvironment: 'development' | 'test' | 'production';
@@ -51,7 +53,10 @@ export type InfrastructureConfig = Readonly<{
 export function loadInfrastructureConfig(
   environment: NodeJS.ProcessEnv = process.env,
 ): InfrastructureConfig {
-  const result = environmentSchema.safeParse(environment);
+  const result = environmentSchema.safeParse({
+    ...environment,
+    API_PORT: environment['API_PORT'] ?? environment['PORT'],
+  });
 
   if (!result.success) {
     const details = result.error.issues
@@ -63,6 +68,7 @@ export function loadInfrastructureConfig(
   validateProductionInfrastructure(environment);
 
   return {
+    apiHost: result.data.API_HOST,
     apiPort: result.data.API_PORT,
     databaseUrl: result.data.DATABASE_URL,
     nodeEnvironment: result.data.NODE_ENV,

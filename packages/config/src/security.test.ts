@@ -8,9 +8,43 @@ import {
   requireStrongSecret,
   safeInternalRedirect,
   redactLog,
+  validateDeploymentEnvironment,
 } from './security.js';
 
 const secret = () => randomBytes(32).toString('hex');
+describe('LOT14 environment separation', () => {
+  it.each(['development', 'test', 'staging', 'production'])(
+    'accepts the explicit %s environment',
+    (mode) => {
+      const remote = mode === 'staging' || mode === 'production';
+      expect(() =>
+        validateDeploymentEnvironment({
+          APP_ENV: mode,
+          NODE_ENV: remote ? 'production' : mode,
+          IAM_ENV: remote ? mode : 'local',
+        }),
+      ).not.toThrow();
+    },
+  );
+  it.each([
+    { NODE_ENV: 'production', IAM_ENV: 'staging' },
+    { APP_ENV: 'staging', NODE_ENV: 'development', IAM_ENV: 'local' },
+    { APP_ENV: 'staging', NODE_ENV: 'test', IAM_ENV: 'staging' },
+    { APP_ENV: 'staging', NODE_ENV: 'production', IAM_ENV: 'local' },
+    { APP_ENV: 'staging', NODE_ENV: 'production', IAM_ENV: 'production' },
+    { APP_ENV: 'staging', NODE_ENV: 'production' },
+    { APP_ENV: 'production', NODE_ENV: 'production', IAM_ENV: 'staging' },
+    { APP_ENV: 'unknown', NODE_ENV: 'development', IAM_ENV: 'local' },
+  ])('rejects environment drift (%#)', (environment) => {
+    expect(() => validateDeploymentEnvironment(environment)).toThrow();
+  });
+  it('rejects staging-to-DEV fallback before loading infrastructure, messaging or key files', () => {
+    const environment = { APP_ENV: 'staging', NODE_ENV: 'development', IAM_ENV: 'local' };
+    expect(() => loadMessagingConfig(environment)).toThrow(/APP_ENV/);
+    // Supply a valid local shape to reach the deployment validation.
+    expect(() => loadInfrastructureConfig({ ...production(), ...environment })).toThrow(/APP_ENV/);
+  });
+});
 function production(): NodeJS.ProcessEnv {
   return {
     NODE_ENV: 'production',

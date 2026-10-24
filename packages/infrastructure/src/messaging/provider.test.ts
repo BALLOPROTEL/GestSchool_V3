@@ -24,6 +24,48 @@ const config: MessagingConfig = {
 afterEach(() => vi.unstubAllGlobals());
 
 describe('messaging providers', () => {
+  it('blocks all real staging email and WhatsApp calls until an exact test inbox is authorized', async () => {
+    const network = vi.fn(
+      async () => new Response(JSON.stringify({ messageId: 'staging-test' }), { status: 201 }),
+    );
+    vi.stubGlobal('fetch', network);
+    const email = {
+      messageId: 'staging',
+      idempotencyKey: 'staging',
+      to: 'controlled@example.com',
+      subject: 'Test',
+      html: '<p>Test</p>',
+    };
+    const disabled = new BrevoMessagingProvider({ ...config, stagingEmailRecipient: null });
+    expect(() => disabled.sendEmail(email)).toThrow('STAGING_RECIPIENT_NOT_AUTHORIZED');
+    expect(() =>
+      disabled.sendWhatsApp({
+        messageId: 'staging',
+        to: '+33612345678',
+        text: 'Test',
+        locale: 'fr',
+      }),
+    ).toThrow('STAGING_CHANNEL_NOT_AUTHORIZED');
+    expect(network).not.toHaveBeenCalled();
+    const allowed = new BrevoMessagingProvider({
+      ...config,
+      stagingEmailRecipient: 'controlled@example.com',
+    });
+    expect(() => allowed.sendEmail({ ...email, to: 'another@example.com' })).toThrow(
+      'STAGING_RECIPIENT_NOT_AUTHORIZED',
+    );
+    expect(() =>
+      allowed.sendWhatsApp({
+        messageId: 'staging',
+        to: '+33612345678',
+        text: 'Test',
+        locale: 'fr',
+      }),
+    ).toThrow('STAGING_CHANNEL_NOT_AUTHORIZED');
+    expect(network).not.toHaveBeenCalled();
+    await allowed.sendEmail(email);
+    expect(network).toHaveBeenCalledTimes(1);
+  });
   it('forces local mode under NODE_ENV=test even with Brevo configuration', () => {
     vi.stubEnv('NODE_ENV', 'test');
     expect(createMessagingProvider(config).name).toBe('LOCAL');
