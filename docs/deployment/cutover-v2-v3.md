@@ -20,3 +20,7 @@ V2 : `https://gestschool.vercel.app/`, ancienne démo selon le propriétaire, sa
 ## Critères de décision
 
 GO LOT14 distant complet, ressources de production préparées et approuvées dans une mission distincte, sauvegarde/restore prouvés, propriétaire disponible pour décision/rollback. Une seule URL staging accessible, un build local ou une CI verte ne suffisent pas. LOT15 et le cutover restent hors de cette exécution.
+
+## Checkpoint de reprise après commit de préparation
+
+Le commit `050935d2882ad7a3a66b9a65a3ea016a42ed7c63` sauvegarde la préparation LOT14 sur `feat/lot14-staging-certification` et sa branche distante. Il n'autorise ni ne réalise le cutover. À la reprise, aucun staging distant n'est créé faute d'installation/authentification Vercel/Render ; le stockage staging et le destinataire Brevo restent des actions manuelles. Aucune URL staging certifiée n'est disponible. L'arrêt avant l'étape 4 reste applicable ; le projet et le domaine V2 ne sont pas modifiés.
