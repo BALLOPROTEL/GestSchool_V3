@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { loadMessagingConfig } from './messaging.js';
+import { randomBytes } from 'node:crypto';
 
 const key = Buffer.alloc(32, 1).toString('base64');
 
@@ -38,16 +39,16 @@ describe('messaging environment boundaries', () => {
     const config = loadMessagingConfig({
       NODE_ENV: 'production',
       MESSAGING_PROVIDER: 'brevo',
-      APP_PUBLIC_ORIGIN: 'https://app.example.invalid',
-      MESSAGING_TOKEN_KEY: key,
-      BREVO_API_KEY: 'xkeysib-test-value-long-enough',
-      BREVO_EMAIL_SENDER: 'sender@example.invalid',
+      APP_PUBLIC_ORIGIN: 'https://app.example.com',
+      MESSAGING_TOKEN_KEY: randomBytes(32).toString('base64'),
+      BREVO_API_KEY: randomBytes(32).toString('hex'),
+      BREVO_EMAIL_SENDER: 'sender@example.com',
       BREVO_EMAIL_SENDER_NAME: 'GestSchool',
       BREVO_WHATSAPP_SENDER: '33612345678',
       BREVO_WHATSAPP_TEMPLATE_IDS_JSON: '{"fr":1,"en":2,"ar":3}',
-      BREVO_WEBHOOK_SECRET: 'test-webhook-secret-at-least-32-bytes',
+      BREVO_WEBHOOK_SECRET: randomBytes(32).toString('hex'),
     });
     expect(config.mode).toBe('brevo');
-    expect(config.appPublicOrigin).toBe('https://app.example.invalid');
+    expect(config.appPublicOrigin).toBe('https://app.example.com');
   });
 });

@@ -35,7 +35,8 @@ export class RateLimiter {
     }
   }
   async check(endpoint: string, ip: string, identifier?: string): Promise<void> {
-    const sensitive = /login|forgot-password|reset-password|refresh|activation|mfa/.test(endpoint);
+    const sensitive =
+      /login|forgot-password|reset-password|refresh|activation|mfa|webhooks\/brevo/.test(endpoint);
     if (!sensitive) return;
     const refresh = endpoint.endsWith('/refresh');
     const limits: [string, number][] = [[`ip:${tokenHash(ip)}`, refresh ? 120 : 40]];
@@ -51,6 +52,20 @@ export class RateLimiter {
         if (count > limit) throw new IamError('AUTH_RATE_LIMITED', 429);
         if (!refresh && count > 3) await setTimeout(Math.min(600, (count - 3) * 75));
       }
+    } catch (error) {
+      if (error instanceof IamError) throw error;
+      throw new IamError('AUTH_UNAVAILABLE', 503);
+    }
+  }
+  async checkTenantAction(endpoint: string, tenantId: string, userId: string): Promise<void> {
+    try {
+      const count = Number(
+        await this.client.eval(countScript, {
+          keys: [`${this.prefix}:action:${tokenHash(endpoint)}:${tenantId}:${userId}`],
+          arguments: ['60000'],
+        }),
+      );
+      if (count > 20) throw new IamError('AUTH_RATE_LIMITED', 429);
     } catch (error) {
       if (error instanceof IamError) throw error;
       throw new IamError('AUTH_UNAVAILABLE', 503);

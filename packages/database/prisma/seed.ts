@@ -3,6 +3,9 @@ import { loadInfrastructureConfig } from '@gestschool/config/environment';
 import { createPrismaClient } from '../src/client.js';
 import { seedIam } from './iam-seed.js';
 
+if (!['development', 'test'].includes(process.env['NODE_ENV'] ?? ''))
+  throw new Error('DEV_SEED_FORBIDDEN');
+
 const config = loadInfrastructureConfig();
 const prisma = createPrismaClient(config.databaseUrl);
 

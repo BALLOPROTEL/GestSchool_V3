@@ -3,8 +3,8 @@
 Le monorepo est organisé autour de trois applications et de six packages internes :
 
 - `apps/web` : interface Next.js du LOT 1, localisée en français, anglais et arabe ;
-- `apps/api` : sondes de santé, IAM LOT 4, annuaires LOT 5, référentiel académique LOT 6, inscriptions LOT 7, Finance LOT 8, résultats LOT 9 et documents LOT 10 ;
-- `apps/worker` : contexte NestJS sans serveur HTTP, outbox et génération documentaire BullMQ/Chromium ;
+- `apps/api` : sondes de santé, IAM LOT 4, annuaires LOT 5, référentiel académique LOT 6, inscriptions LOT 7, Finance LOT 8, résultats LOT 9, documents LOT 10, messagerie LOT 11 et dashboards/rapports LOT 12, durcis au LOT13 ;
+- `apps/worker` : contexte NestJS sans serveur HTTP, outbox, génération documentaire, messagerie et exports via BullMQ/Chromium ;
 - `packages/config` : configurations TypeScript communes ;
 - `packages/ui` : tokens et composants visuels réutilisables du LOT 1 ;
 - `packages/database` : propriétaire unique du schéma Prisma 7.10, des migrations, du client, du
@@ -46,5 +46,9 @@ affectations enseignants. Le LOT 7 fournit le cycle d'inscription et ses histori
 connecte les frais, factures, paiements, reçus métier et sessions de caisse. Le LOT 9 branche les
 évaluations, notes, moyennes, rangs et bulletins historiques. Le LOT 10 ajoute six types de
 documents officiels, des PDF privés, une file documentaire et la vérification publique par QR.
-Les autres écrans restent en mocks : aucun paiement en ligne ni connecteur d'envoi n'est implémenté. Consultez
+Le LOT 11 ajoute messagerie/notifications, capture privée DEV/TEST et adapter Brevo ; le LOT 12 fournit dashboards et exports CSV/XLSX/PDF. Le LOT 13 durcit ces composants. Les autres écrans restent en mocks et aucun paiement en ligne n’est implémenté. Consultez
 [`infrastructure/local-development.md`](infrastructure/local-development.md) pour le workflow local.
+
+## Sécurité LOT13
+
+Le [rapport de certification locale](lot13-certification.md) détaille les 88 points de revue, résultats, premiers échecs et risques résiduels. Voir l’[audit](security-audit-lot13.md), le [modèle de menace](security-threat-model.md), les [contrôles de durcissement](security-hardening.md) et la [checklist de production future](security-production-checklist.md). Aucun déploiement LOT14/15 n’est effectué.

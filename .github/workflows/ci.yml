@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   quality:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       DATABASE_URL: postgresql://gestschool:gestschool-ci-only@127.0.0.1:5432/gestschool
       NODE_ENV: test
@@ -20,7 +20,7 @@ jobs:
       DOCUMENT_PUBLIC_ORIGIN: http://127.0.0.1:3000
     services:
       redis:
-        image: redis:8.10.1-alpine3.23
+        image: redis:8.10.1-alpine3.23@sha256:ef216d85ec44f4fdf7c0e6df2d1757a4734ed32fbb278cabd3181b5a27353b79
         ports:
           - 6379:6379
         options: >-
@@ -29,7 +29,7 @@ jobs:
           --health-timeout 3s
           --health-retries 12
       postgres:
-        image: postgres:18.6-trixie
+        image: postgres:18.6-trixie@sha256:edb0c08dc33befd0262ab3b5cf1c4f3f8cfd8b09e88c05b45adee29d6761ddb6
         env:
           POSTGRES_DB: gestschool
           POSTGRES_PASSWORD: gestschool-ci-only
@@ -43,15 +43,18 @@ jobs:
           --health-retries 12
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v5
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5 (peeled commit)
         with:
           version: 10.24.0
 
       - name: Set up Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 24.20.0
           cache: pnpm
@@ -107,6 +110,14 @@ jobs:
       - name: Check formatting
         run: pnpm format:check
 
+      - name: Security hardening certification
+        run: |
+          pnpm security:secrets --history
+          pnpm security:test
+
+      - name: Audit production dependencies
+        run: pnpm audit --prod --audit-level=high
+
       - name: Lint
         run: pnpm lint
 
@@ -118,7 +129,7 @@ jobs:
         run: pnpm test
 
       - name: Build
-        run: pnpm build
+        run: pnpm security:bundle
 
       - name: Certify IAM, directories, academics, enrollments, finance, results and official documents
         run: pnpm iam:test

@@ -1,6 +1,10 @@
+import { requirePublicHttps } from '@gestschool/config/security';
+
 export function documentPublicOrigin(environment: NodeJS.ProcessEnv = process.env): string {
   const value = environment['DOCUMENT_PUBLIC_ORIGIN'];
   if (!value) throw new Error('DOCUMENT_PUBLIC_ORIGIN is required');
+  if (environment['NODE_ENV'] === 'production')
+    requirePublicHttps(value, 'DOCUMENT_PUBLIC_ORIGIN', true);
   const url = new URL(value);
   if (
     url.username ||

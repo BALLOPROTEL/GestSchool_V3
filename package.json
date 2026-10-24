@@ -9,6 +9,9 @@
     "pnpm": ">=10.24.0 <11"
   },
   "scripts": {
+    "security:test": "node scripts/security-test.mjs",
+    "security:secrets": "node scripts/security-secrets.mjs",
+    "security:bundle": "node scripts/security-bundle.mjs",
     "dev": "pnpm iam:keys && pnpm --filter @gestschool/database... --filter @gestschool/infrastructure... build && node --env-file=.env.example --env-file-if-exists=.env node_modules/turbo/bin/turbo run dev",
     "build": "turbo run build",
     "lint": "oxlint . --deny-warnings",

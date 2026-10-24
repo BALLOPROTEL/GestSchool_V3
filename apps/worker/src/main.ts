@@ -45,7 +45,7 @@ const bootstrap = async (): Promise<void> => {
 
 try {
   await bootstrap();
-} catch (error) {
-  logger.error(error instanceof Error ? error.message : 'Worker startup failed');
+} catch {
+  logger.error('WORKER_STARTUP_FAILED');
   process.exitCode = 1;
 }

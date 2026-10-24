@@ -16,7 +16,15 @@
     "S3_SECRET_ACCESS_KEY"
   ],
   "ui": "stream",
-  "globalPassThroughEnv": ["LD_LIBRARY_PATH"],
+  "globalPassThroughEnv": [
+    "LD_LIBRARY_PATH",
+    "PLAYWRIGHT_BROWSERS_PATH",
+    "COREPACK_HOME",
+    "XDG_CACHE_HOME",
+    "NODE_EXTRA_CA_CERTS",
+    "SSL_CERT_FILE",
+    "NODE_USE_ENV_PROXY"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],

@@ -69,6 +69,7 @@ export default defineConfig({
     },
     {
       command: 'pnpm start --hostname 127.0.0.1 --port 3000',
+      env: { NODE_ENV: 'test' },
       url: 'http://127.0.0.1:3000',
       reuseExistingServer: false,
       timeout: 120_000,

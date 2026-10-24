@@ -1,5 +1,5 @@
 import { Queue, Worker } from 'bullmq';
-import { MESSAGING_QUEUE, messagingJobData } from '@gestschool/contracts';
+import { MESSAGING_QUEUE, messagingJobData, messagingEventTypes } from '@gestschool/contracts';
 import { bullmqConnection } from '../documents/queue.js';
 
 export const messagingRetryPolicy = {
@@ -31,11 +31,14 @@ export function createMessagingWorker(
 ) {
   return new Worker(
     MESSAGING_QUEUE,
-    (job) =>
-      send(messagingJobData.parse(job.data as unknown), {
+    (job) => {
+      if (!(messagingEventTypes as readonly string[]).includes(job.name))
+        throw new Error('MESSAGING_JOB_NAME_INVALID');
+      return send(messagingJobData.parse(job.data as unknown), {
         attempt: job.attemptsMade + 1,
         maxAttempts: typeof job.opts.attempts === 'number' ? job.opts.attempts : 1,
-      }),
+      });
+    },
     {
       connection: bullmqConnection(redisUrl),
       concurrency: 2,

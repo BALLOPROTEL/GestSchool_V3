@@ -5,7 +5,7 @@ import { IamError } from '../../iam/domain/context.js';
 import { NotificationsDatabase } from '../infrastructure/notifications.database.js';
 
 const querySchema = z.strictObject({
-  page: z.coerce.number().int().min(1).default(1),
+  page: z.coerce.number().int().min(1).max(10000).default(1),
   pageSize: z.coerce.number().int().min(1).max(50).default(20),
   status: z.enum(['UNREAD', 'READ']).optional(),
 });

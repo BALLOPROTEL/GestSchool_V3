@@ -1,6 +1,12 @@
 import { z } from 'zod';
 import { readFileSync } from 'node:fs';
 import { createHmac } from 'node:crypto';
+import {
+  parseSecretJson,
+  requireEncryptionKey,
+  requirePublicHttps,
+  requireStrongSecret,
+} from './security.js';
 
 const origin = z.url().refine((value) => new URL(value).origin === value);
 const email = z.email();
@@ -37,6 +43,8 @@ export function loadMessagingConfig(environment: NodeJS.ProcessEnv = process.env
   );
   if (nodeEnvironment === 'production' && !appPublicOrigin.startsWith('https://'))
     throw new Error('Production messaging links require HTTPS');
+  if (nodeEnvironment === 'production')
+    requirePublicHttps(appPublicOrigin, 'APP_PUBLIC_ORIGIN', true);
 
   const templateIdsInput: unknown = JSON.parse(
     environment['BREVO_WHATSAPP_TEMPLATE_IDS_JSON'] ?? '{}',
@@ -70,6 +78,23 @@ export function loadMessagingConfig(environment: NodeJS.ProcessEnv = process.env
       .parse(whatsAppSender);
     if (!whatsAppTemplateIds.fr || !whatsAppTemplateIds.en || !whatsAppTemplateIds.ar)
       throw new Error('Brevo requires approved FR/EN/AR WhatsApp template IDs');
+  }
+  if (nodeEnvironment === 'production') {
+    requireEncryptionKey(tokenKey, 'MESSAGING_TOKEN_KEY');
+    requireStrongSecret(apiKey ?? undefined, 'BREVO_API_KEY');
+    requireStrongSecret(webhookSecret ?? undefined, 'BREVO_WEBHOOK_SECRET');
+    if (emailSender?.endsWith('.invalid'))
+      throw new Error('Production forbids example sender credentials');
+    if (
+      environment['IAM_CSRF_KEY'] === tokenKey ||
+      Object.values(
+        parseSecretJson(environment['IAM_MFA_KEYS_JSON'] ?? '{}', 'IAM_MFA_KEYS_JSON') as Record<
+          string,
+          unknown
+        >,
+      ).includes(tokenKey)
+    )
+      throw new Error('Messaging and IAM encryption keys must be independent');
   }
 
   return {

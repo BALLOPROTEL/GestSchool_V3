@@ -93,7 +93,7 @@ describe('token and MFA cryptography', () => {
       IAM_MFA_KEYS_JSON: JSON.stringify(keys.mfaKeys),
       IAM_MFA_KEY_ID: keys.mfaKeyId,
       IAM_CSRF_KEY: keys.csrfKey,
-      IAM_ALLOWED_ORIGINS: 'https://school.example.invalid',
+      IAM_ALLOWED_ORIGINS: 'https://school.example.com',
     };
     expect(loadIamConfig(production).secure).toBe(true);
     expect(() => loadIamConfig({ NODE_ENV: 'production', IAM_ENV: 'local' })).toThrow();

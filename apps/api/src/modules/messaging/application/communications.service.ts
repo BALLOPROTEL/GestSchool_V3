@@ -5,7 +5,7 @@ import { IamError, type RequestContext } from '../../iam/domain/context.js';
 import { MessagingDatabase } from '../infrastructure/messaging.database.js';
 
 const filters = z.strictObject({
-  page: z.coerce.number().int().min(1).default(1),
+  page: z.coerce.number().int().min(1).max(10000).default(1),
   pageSize: z.coerce.number().int().min(1).max(50).default(20),
   channel: z.enum(['EMAIL', 'WHATSAPP', 'IN_APP']).optional(),
   status: z

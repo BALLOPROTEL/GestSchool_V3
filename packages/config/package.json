@@ -14,6 +14,10 @@
     "test": "vitest run"
   },
   "exports": {
+    "./security": {
+      "types": "./src/security.ts",
+      "default": "./dist/security.js"
+    },
     "./environment": {
       "types": "./src/environment.ts",
       "default": "./dist/environment.js"
@@ -29,7 +33,7 @@
     "./typescript/react-library": "./typescript/react-library.json"
   },
   "dependencies": {
-    "zod": "4.5.4"
+    "zod": "4.6.6"
   },
   "devDependencies": {
     "vitest": "5.0.0"

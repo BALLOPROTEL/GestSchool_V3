@@ -19,8 +19,14 @@ export class DashboardService {
       return await this.repository.summary(actor, dashboardQuery.parse(query));
     } catch (error) {
       if (error instanceof ZodError) throw error;
-      const code = error instanceof Error ? error.message : 'DASHBOARD_UNAVAILABLE';
-      throw new IamError(code, code.endsWith('NOT_FOUND') ? 404 : 403);
+      const message = error instanceof Error ? error.message : '';
+      const code = ['AUTH_FORBIDDEN', 'REPORT_FILTER_NOT_FOUND'].includes(message)
+        ? message
+        : 'DASHBOARD_UNAVAILABLE';
+      throw new IamError(
+        code,
+        code.endsWith('NOT_FOUND') ? 404 : code === 'DASHBOARD_UNAVAILABLE' ? 503 : 403,
+      );
     }
   }
 }

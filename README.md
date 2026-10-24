@@ -7,8 +7,11 @@ sur PostgreSQL, avec validation, scopes et audit. Le LOT 6 connecte le référen
 les coefficients par classe et les affectations enseignants. Le LOT 7 branche les inscriptions,
 réinscriptions, transferts, capacités et historiques scolaires. Le LOT 8 connecte les frais,
 factures, paiements, reçus métier et sessions de caisse. Le LOT 9 ajoute les évaluations,
-notes, moyennes, rangs et bulletins historiques. Les autres écrans restent des démonstrations ;
-aucun LOT 10, PDF/QR ni traitement asynchrone métier n'est ajouté.
+notes, moyennes, rangs et bulletins historiques. Le LOT 10 ajoute les documents PDF privés et QR,
+le LOT 11 la messagerie/notifications et l'outbox, et le LOT 12 les dashboards, rapports et exports
+CSV/XLSX/PDF. Le LOT 13 durcit la configuration, HTTP/IAM, les workers, le stockage et la supply chain ;
+sa validation est détaillée dans les documents sécurité. Les LOT14 staging et LOT15 production ne
+sont ni déployés ni certifiés par ce travail.
 
 ## Prérequis
 
@@ -44,6 +47,10 @@ pnpm format:check
 pnpm typecheck
 pnpm test
 pnpm test:e2e
+pnpm security:test
+pnpm security:secrets --history
+pnpm security:bundle
+pnpm audit --prod
 pnpm infra:down
 ```
 
@@ -64,6 +71,10 @@ Consultez [`docs/README.md`](docs/README.md) pour le périmètre courant et
 [`docs/design/template-audit.md`](docs/design/template-audit.md) pour l'audit du contrat visuel.
 Le guide complet de l'infrastructure se trouve dans
 [`docs/infrastructure/local-development.md`](docs/infrastructure/local-development.md).
+Le durcissement et ses limites sont documentés dans
+[`docs/security-hardening.md`](docs/security-hardening.md), avec le
+[modèle de menace](docs/security-threat-model.md), l'[audit LOT13](docs/security-audit-lot13.md)
+et la [checklist production future](docs/security-production-checklist.md).
 Le modèle PostgreSQL et ses règles d'intégrité sont décrits dans
 [`docs/database/data-model.md`](docs/database/data-model.md).
 Le démarrage des comptes fictifs, les secrets locaux et les garanties IAM sont décrits dans

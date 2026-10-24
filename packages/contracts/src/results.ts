@@ -97,7 +97,7 @@ export const resultQuery = z.strictObject({
   classSubjectId: z.uuid().optional(),
   studentId: z.uuid().optional(),
   status: z.enum(resultStatuses).optional(),
-  page: z.coerce.number().int().min(1).default(1),
+  page: z.coerce.number().int().min(1).max(10000).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(30),
 });
 export const classPeriodInput = z.strictObject({ classId: z.uuid(), academicPeriodId: z.uuid() });

@@ -1,4 +1,4 @@
-import { deny, type RequestContext, type RequestMetadata } from '../domain/context.js';
+import { IamError, deny, type RequestContext, type RequestMetadata } from '../domain/context.js';
 import { IamCrypto, opaqueToken, Passwords, tokenHash } from '../infrastructure/crypto.js';
 import type { IamRepository } from '../infrastructure/iam.repository.js';
 import { MembershipsService } from './memberships.service.js';
@@ -79,37 +79,44 @@ export class MfaService {
     const purpose = enrollment ? 'MFA_ENROLL' : 'MFA_LOGIN';
     const token = await this.repository.token(tokenHash(challenge), purpose);
     if (!token) deny('AUTH_TOKEN_INVALID', 400);
-    return this.repository.atomic(token.userId, async (repository) => {
-      const current = await repository.token(tokenHash(challenge), purpose);
-      const user = await repository.user(token.userId);
-      if (!current?.membershipId || !user?.identity?.activatedAt || user.disabledAt)
-        deny('AUTH_TOKEN_INVALID', 400);
-      const encrypted = enrollment ? current.encryptedSecret : user.identity.mfaSecret;
-      if (!encrypted || (enrollment && user.identity.mfaEnabledAt)) deny('AUTH_MFA_INVALID', 401);
-      const counter = this.crypto.counter(this.crypto.decrypt(encrypted, user.id), code);
-      if (counter === null || (!enrollment && counter <= user.identity.mfaLastCounter))
-        deny('AUTH_MFA_INVALID', 401);
-      const membership = await new MembershipsService(repository).select(
-        user.id,
-        current.membershipId,
-      );
-      if (enrollment) {
-        await repository.setMfa(user.id, encrypted, counter);
-        await repository.revoke(user.id);
-        await repository.audit('mfa.enabled', metadata, user.id, membership.tenantId);
-      } else if ((await repository.advanceMfa(user.id, counter)).count !== 1)
-        deny('AUTH_MFA_INVALID', 401);
-      await repository.useToken(current.id);
-      const result = await this.sessions.create(repository, user.id, membership, metadata, true);
-      await repository.audit(
-        'login.succeeded',
-        metadata,
-        user.id,
-        membership.tenantId,
-        result.body.session.sessionId,
-      );
-      return result;
-    });
+    try {
+      return await this.repository.atomic(token.userId, async (repository) => {
+        const current = await repository.token(tokenHash(challenge), purpose);
+        const user = await repository.user(token.userId);
+        if (!current?.membershipId || !user?.identity?.activatedAt || user.disabledAt)
+          deny('AUTH_TOKEN_INVALID', 400);
+        const encrypted = enrollment ? current.encryptedSecret : user.identity.mfaSecret;
+        if (!encrypted || (enrollment && user.identity.mfaEnabledAt)) deny('AUTH_MFA_INVALID', 401);
+        const counter = this.crypto.counter(this.crypto.decrypt(encrypted, user.id), code);
+        if (counter === null || (!enrollment && counter <= user.identity.mfaLastCounter)) {
+          deny('AUTH_MFA_INVALID', 401);
+        }
+        const membership = await new MembershipsService(repository).select(
+          user.id,
+          current.membershipId,
+        );
+        if (enrollment) {
+          await repository.setMfa(user.id, encrypted, counter);
+          await repository.revoke(user.id);
+          await repository.audit('mfa.enabled', metadata, user.id, membership.tenantId);
+        } else if ((await repository.advanceMfa(user.id, counter)).count !== 1)
+          deny('AUTH_MFA_INVALID', 401);
+        await repository.useToken(current.id);
+        const result = await this.sessions.create(repository, user.id, membership, metadata, true);
+        await repository.audit(
+          'login.succeeded',
+          metadata,
+          user.id,
+          membership.tenantId,
+          result.body.session.sessionId,
+        );
+        return result;
+      });
+    } catch (error) {
+      if (error instanceof IamError && error.code === 'AUTH_MFA_INVALID')
+        await this.repository.audit('mfa.failed', metadata, token.userId);
+      throw error;
+    }
   }
   async disable(context: RequestContext, password: string, code: string): Promise<void> {
     const initial = await this.repository.user(context.userId);

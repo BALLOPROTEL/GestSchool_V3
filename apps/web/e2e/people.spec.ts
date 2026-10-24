@@ -68,6 +68,36 @@ async function create(page: Page, route: string, add: string, firstName: string,
   await expect(page.getByRole('row').filter({ hasText: `${firstName} ${lastName}` })).toBeVisible();
 }
 
+test('LOT13 stores and renders hostile name text without creating executable DOM', async ({
+  page,
+}, info) => {
+  test.skip(
+    info.project.name !== '1440x900',
+    'The stored-XSS flow uses one desktop browser; existing responsive tests cover the other widths.',
+  );
+  test.slow();
+  const account = fixtures().people[info.project.name];
+  if (!account) throw new Error('Missing fixture');
+  await login(page, account.crud, true);
+  let dialogs = 0;
+  page.on('dialog', async (dialog) => {
+    dialogs++;
+    await dialog.dismiss();
+  });
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  for (const [index, payload] of [
+    '<script>alert(1)</script>',
+    '"><img src=x onerror=alert(1)>',
+  ].entries()) {
+    await create(page, 'students', 'Ajouter un élève', payload, `Security-${index}-${Date.now()}`);
+    await expect(page.locator('img[src="x"]')).toHaveCount(0);
+    await expect(page.locator('script').filter({ hasText: 'alert(1)' })).toHaveCount(0);
+  }
+  expect(dialogs).toBe(0);
+  expect(errors).toEqual([]);
+});
+
 test('LOT 5 real CRUD, relationships and archive restore on mobile and desktop', async ({
   page,
 }, info) => {

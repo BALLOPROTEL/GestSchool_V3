@@ -1,4 +1,10 @@
 import { readFileSync } from 'node:fs';
+import { createPrivateKey, createPublicKey } from 'node:crypto';
+import {
+  parseSecretJson,
+  requireEncryptionKey,
+  requirePublicHttps,
+} from '@gestschool/config/security';
 import { fileURLToPath } from 'node:url';
 import { z } from 'zod';
 
@@ -31,18 +37,19 @@ export function loadIamConfig(environment: NodeJS.ProcessEnv = process.env): Iam
     ? {
         privateKey: environment['IAM_JWT_PRIVATE_KEY'],
         publicKey: environment['IAM_JWT_PUBLIC_KEY'],
-        mfaKeys: JSON.parse(environment['IAM_MFA_KEYS_JSON']),
+        mfaKeys: parseSecretJson(environment['IAM_MFA_KEYS_JSON'], 'IAM_MFA_KEYS_JSON'),
         mfaKeyId: environment['IAM_MFA_KEY_ID'],
         csrfKey: environment['IAM_CSRF_KEY'],
       }
     : encodedKeys && local
-      ? JSON.parse(encodedKeys)
+      ? parseSecretJson(encodedKeys, 'IAM_KEYS_JSON')
       : local
-        ? JSON.parse(
+        ? parseSecretJson(
             readFileSync(
               fileURLToPath(new URL('../../../../../../.local/iam.keys.json', import.meta.url)),
               'utf8',
             ),
+            'Local IAM keys',
           )
         : null;
   const keys = keySchema.parse(raw);
@@ -52,6 +59,26 @@ export function loadIamConfig(environment: NodeJS.ProcessEnv = process.env): Iam
     Object.values(keys.mfaKeys).some((value) => Buffer.from(value, 'base64').length !== 32)
   )
     throw new Error('IAM requires independent 256-bit encryption and CSRF keys');
+  if (!local) {
+    const values = [keys.csrfKey, ...Object.values(keys.mfaKeys)];
+    for (const value of values) requireEncryptionKey(value, 'IAM key');
+    if (new Set(values).size !== values.length)
+      throw new Error('IAM encryption and CSRF keys must be independent');
+  }
+  try {
+    const privateKey = createPrivateKey(keys.privateKey);
+    const publicKey = createPublicKey(keys.publicKey);
+    if (
+      privateKey.asymmetricKeyType !== 'ed25519' ||
+      publicKey.asymmetricKeyType !== 'ed25519' ||
+      !createPublicKey(privateKey)
+        .export({ type: 'spki', format: 'der' })
+        .equals(publicKey.export({ type: 'spki', format: 'der' }))
+    )
+      throw new Error();
+  } catch {
+    throw new Error('IAM requires a matching Ed25519 key pair');
+  }
   const origins = (
     environment['IAM_ALLOWED_ORIGINS'] ??
     (local ? 'http://localhost:3000,http://127.0.0.1:3000' : '')
@@ -75,6 +102,7 @@ export function loadIamConfig(environment: NodeJS.ProcessEnv = process.env): Iam
     throw new Error(
       'IAM requires exact HTTP origins locally and HTTPS origins in staging/production',
     );
+  if (!local) for (const origin of origins) requirePublicHttps(origin, 'IAM_ALLOWED_ORIGINS', true);
   return {
     keys,
     origins,

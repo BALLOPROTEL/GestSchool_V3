@@ -73,13 +73,24 @@ export class IamCrypto {
   }
   async verify(token: string): Promise<AccessClaims> {
     try {
-      const { payload } = await jwtVerify(token, createPublicKey(this.config.keys.publicKey), {
-        algorithms: ['EdDSA'],
-        issuer: this.config.issuer,
-        audience: this.config.audience,
-        requiredClaims: ['sub', 'sid', 'tid', 'mid', 'iat', 'exp'],
-        maxTokenAge: this.config.accessSeconds,
-      });
+      if (token.length > 4096 || !/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(token))
+        throw new Error('Invalid compact JWT');
+      const { payload, protectedHeader } = await jwtVerify(
+        token,
+        createPublicKey(this.config.keys.publicKey),
+        {
+          algorithms: ['EdDSA'],
+          issuer: this.config.issuer,
+          audience: this.config.audience,
+          requiredClaims: ['sub', 'sid', 'tid', 'mid', 'iat', 'exp'],
+          maxTokenAge: this.config.accessSeconds,
+        },
+      );
+      if (
+        protectedHeader.typ !== 'JWT' ||
+        Object.keys(protectedHeader).some((key) => !['alg', 'typ'].includes(key))
+      )
+        throw new Error('Invalid JWT header');
       return claimsSchema.parse(payload);
     } catch {
       throw new IamError('AUTH_SESSION_EXPIRED');
@@ -141,6 +152,7 @@ export class IamCrypto {
     return `${nonce}.${this.csrfMac(nonce)}`;
   }
   validCsrf(value: string): boolean {
+    if (!/^[A-Za-z0-9_-]{43}\.[A-Za-z0-9_-]{43}$/.test(value)) return false;
     const [nonce, mac, extra] = value.split('.');
     return Boolean(nonce && mac && !extra && safeEqual(this.csrfMac(nonce), mac));
   }

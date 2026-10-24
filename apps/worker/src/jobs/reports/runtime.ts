@@ -26,6 +26,7 @@ export class ReportsRuntime implements OnModuleDestroy {
       SELECT to_regclass('public.report_exports')::text table_name
     `;
     if (!schema[0]?.table_name) {
+      if (this.config.nodeEnvironment === 'production') throw new Error('REPORT_SCHEMA_REQUIRED');
       this.logger.warn('Reports migration is not applied; reports worker remains disabled');
       return;
     }

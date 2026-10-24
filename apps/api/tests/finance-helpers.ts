@@ -70,6 +70,7 @@ export async function financeHarness() {
     errors: string[] = [];
   process.env['IAM_REDIS_PREFIX'] = `gestschool:finance:test:${randomUUID()}`;
   const app = await NestFactory.create(FinanceTestModule, {
+    abortOnError: false,
     logger: {
       log() {},
       warn(value: unknown) {

@@ -21,6 +21,7 @@ export function createReportsWorker(
     REPORTS_QUEUE,
     async (job, token) => {
       try {
+        if (job.name !== REPORT_EXPORT_EVENT) throw new Error('REPORT_JOB_NAME_INVALID');
         await run(reportJobData.parse(job.data as unknown));
       } catch (error) {
         if (error instanceof Error && error.message === 'REPORT_LEASE_BUSY') {

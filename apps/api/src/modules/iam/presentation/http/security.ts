@@ -13,6 +13,7 @@ import {
   type INestApplication,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import type { Request, Response, CookieOptions } from 'express';
 import type { AccessScope } from '@gestschool/contracts';
 import { ZodError } from 'zod';
@@ -67,15 +68,28 @@ export function requestContext(request: IamRequest): RequestContext {
 
 export function configureIamHttp(app: INestApplication): void {
   const iam = app.get(IamRuntime);
+  const server = app.getHttpAdapter().getInstance() as {
+    disable: (name: string) => void;
+    set: (name: string, value: unknown) => void;
+  };
+  server.disable('x-powered-by');
+  server.set('trust proxy', process.env['TRUST_PROXY'] === 'loopback' ? 'loopback' : false);
   app.use((request: IamRequest, response: Response, next: () => void) => {
     request.metadata = {
       requestId: randomUUID(),
-      ipAddress: request.socket.remoteAddress ?? 'unknown',
+      ipAddress: request.ip ?? request.socket.remoteAddress ?? 'unknown',
       userAgent: (request.get('user-agent') ?? '').slice(0, 512),
     };
     response.setHeader('X-Request-ID', request.metadata.requestId);
     response.setHeader('X-Content-Type-Options', 'nosniff');
     response.setHeader('Referrer-Policy', 'no-referrer');
+    response.setHeader('X-Frame-Options', 'DENY');
+    response.setHeader(
+      'Content-Security-Policy',
+      "default-src 'none'; frame-ancestors 'none'; base-uri 'none'",
+    );
+    response.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+    if (iam.config.secure) response.setHeader('Strict-Transport-Security', 'max-age=31536000');
     if (!request.path.startsWith('/api/v1')) {
       next();
       return;
@@ -109,6 +123,42 @@ export function configureIamHttp(app: INestApplication): void {
       );
       response.setHeader('Access-Control-Max-Age', '600');
       response.status(204).end();
+      return;
+    }
+    next();
+  });
+  const express = app as NestExpressApplication;
+  express.useBodyParser('json', { limit: '64kb', inflate: false, strict: true });
+  express.useBodyParser('urlencoded', {
+    limit: '16kb',
+    inflate: false,
+    extended: false,
+    parameterLimit: 50,
+  });
+  app.use((request: IamRequest, response: Response, next: () => void) => {
+    const params = new URL(request.originalUrl, 'http://internal').searchParams;
+    const keys = [...params.keys()];
+    const forbidden = new Set(['__proto__', 'prototype', 'constructor']);
+    let nodes = 0;
+    const unsafe = (value: unknown, depth = 0): boolean => {
+      if (++nodes > 2048 || depth > 12) return true;
+      return (
+        value !== null &&
+        typeof value === 'object' &&
+        Object.entries(value).some(
+          ([key, nested]) => forbidden.has(key) || unsafe(nested, depth + 1),
+        )
+      );
+    };
+    if (
+      keys.length > 50 ||
+      new Set(keys).size !== keys.length ||
+      keys.some((key) => forbidden.has(key)) ||
+      unsafe(request.body)
+    ) {
+      response
+        .status(400)
+        .json({ code: 'AUTH_INVALID_REQUEST', status: 400, requestId: request.metadata.requestId });
       return;
     }
     next();
@@ -180,6 +230,15 @@ export class SessionGuard implements CanActivate {
     const request = context.switchToHttp().getRequest<IamRequest>();
     if (!request.claims) deny('AUTH_REQUIRED', 401);
     request.context = await this.iam.sessions.context(request.claims, request.metadata);
+    if (!['GET', 'HEAD', 'OPTIONS'].includes(request.method)) {
+      const endpoint = request.route?.path as string | undefined;
+      if (endpoint?.includes('exports') || endpoint?.includes('communications'))
+        await this.iam.limiter.checkTenantAction(
+          endpoint,
+          request.context.tenantId,
+          request.context.userId,
+        );
+    }
     return true;
   }
 }
@@ -225,7 +284,12 @@ export class IamExceptionFilter implements ExceptionFilter {
           ? 400
           : exception instanceof HttpException
             ? exception.getStatus()
-            : 500;
+            : exception &&
+                typeof exception === 'object' &&
+                'status' in exception &&
+                [400, 413, 415].includes(Number(exception.status))
+              ? Number(exception.status)
+              : 500;
     const code =
       exception instanceof IamError
         ? exception.code
@@ -233,7 +297,11 @@ export class IamExceptionFilter implements ExceptionFilter {
           ? 'AUTH_INVALID_REQUEST'
           : status === 404
             ? 'NOT_FOUND'
-            : 'AUTH_UNAVAILABLE';
+            : status === 413
+              ? 'PAYLOAD_TOO_LARGE'
+              : status === 415
+                ? 'UNSUPPORTED_MEDIA_TYPE'
+                : 'AUTH_UNAVAILABLE';
     const requestId = request.metadata?.requestId ?? randomUUID();
     if (status >= 500) this.logger.error(JSON.stringify({ code, requestId }));
     if (status === 429) response.setHeader('Retry-After', '60');
