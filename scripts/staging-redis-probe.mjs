@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { lookup } from 'node:dns/promises';
 import { connect as tcpConnect } from 'node:net';
 import { connect as tlsConnect } from 'node:tls';
+import { createRequire } from 'node:module';
 import { pathToFileURL } from 'node:url';
 
 const timeout = 3_000;
@@ -199,9 +200,107 @@ export async function probeInfrastructure(
   }
 }
 
+const workerTables = [
+  '_prisma_migrations',
+  'outbox_events',
+  'documents',
+  'message_templates',
+  'report_exports',
+];
+const workerInspection = {
+  messaging: async (environment) => {
+    const { loadMessagingConfig } = await import('../packages/config/dist/messaging.js');
+    loadMessagingConfig(environment);
+  },
+  schema: async (environment) => {
+    const { loadInfrastructureConfig } = await import('../packages/config/dist/environment.js');
+    const { Client } = createRequire(
+      new URL('../packages/infrastructure/package.json', import.meta.url),
+    )('pg');
+    const client = new Client({
+      connectionString: loadInfrastructureConfig(environment).databaseUrl,
+      connectionTimeoutMillis: 2_000,
+      query_timeout: 2_000,
+    });
+    try {
+      await client.connect();
+      const result = await client.query(`SELECT
+        to_regclass('public._prisma_migrations') IS NOT NULL AS _prisma_migrations,
+        to_regclass('public.outbox_events') IS NOT NULL AS outbox_events,
+        to_regclass('public.documents') IS NOT NULL AS documents,
+        to_regclass('public.message_templates') IS NOT NULL AS message_templates,
+        to_regclass('public.report_exports') IS NOT NULL AS report_exports`);
+      return result.rows[0];
+    } finally {
+      await client.end().catch(() => undefined);
+    }
+  },
+};
+
+export async function probeWorkerPreflight(
+  environment = process.env,
+  inspect = workerInspection,
+  emit = (line) => process.stdout.write(`${line}\n`),
+) {
+  if (
+    environment.APP_ENV !== 'staging' ||
+    environment.NODE_ENV !== 'production' ||
+    environment.IAM_ENV !== 'staging'
+  )
+    return 64;
+  let check = 'LOT14_MESSAGING_CONFIG';
+  try {
+    await inspect.messaging(environment);
+    emit(JSON.stringify({ check, status: 'PASS' }));
+    check = 'LOT14_WORKER_SCHEMA';
+    const observed = await inspect.schema(environment);
+    const tables = {};
+    for (const name of workerTables) {
+      if (typeof observed?.[name] !== 'boolean') throw new Error();
+      tables[name] = observed[name];
+    }
+    const ready = Object.values(tables).every(Boolean);
+    emit(JSON.stringify({ check, status: ready ? 'PASS' : 'FAIL', tables }));
+    return ready ? 0 : 1;
+  } catch (error) {
+    const output = { check, status: 'FAIL' };
+    if (check === 'LOT14_MESSAGING_CONFIG') {
+      const names = [
+        'BREVO_API_KEY',
+        'BREVO_WEBHOOK_SECRET',
+        'BREVO_EMAIL_SENDER',
+        'MESSAGING_TOKEN_KEY',
+        'MESSAGING_PROVIDER',
+        'APP_PUBLIC_ORIGIN',
+        'IAM_MFA_KEYS_JSON',
+      ];
+      const fields = new Set();
+      for (const issue of Array.isArray(error?.issues) ? error.issues : []) {
+        const name = issue?.path?.[0];
+        if (names.includes(name)) fields.add(name);
+      }
+      const message = typeof error?.message === 'string' ? error.message : '';
+      for (const name of names) if (message.startsWith(`${name} `)) fields.add(name);
+      if (
+        [
+          'Messaging token encryption requires a 256-bit key',
+          'Messaging and IAM encryption keys must be independent',
+        ].includes(message)
+      )
+        fields.add('MESSAGING_TOKEN_KEY');
+      if (message === 'Production messaging requires Brevo') fields.add('MESSAGING_PROVIDER');
+      output.variables = [...fields].toSorted();
+    }
+    emit(JSON.stringify(output));
+    return 1;
+  }
+}
+
 if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) {
   let code = await probeRedis();
   if (code === 0 && process.argv.includes('--infrastructure')) code = await probeInfrastructure();
+  if (code === 0 && process.argv.includes('--worker-preflight'))
+    code = await probeWorkerPreflight();
   // Flush the small, sanitized output, then bound CLI lifetime even if OS DNS is pending.
   process.stdout.write('', () => process.exit(code));
 }

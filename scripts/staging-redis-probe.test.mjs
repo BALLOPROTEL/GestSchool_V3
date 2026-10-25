@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { test } from 'node:test';
-import { probeInfrastructure, probeRedis } from './staging-redis-probe.mjs';
+import { probeInfrastructure, probeRedis, probeWorkerPreflight } from './staging-redis-probe.mjs';
 
 const environment = {
   APP_ENV: 'staging',
@@ -178,4 +178,108 @@ test('readiness inspection never emits error details or runs outside staging', a
     64,
   );
   assert.equal(output.length, 1);
+});
+
+const schemaTables = {
+  _prisma_migrations: true,
+  outbox_events: true,
+  documents: true,
+  message_templates: true,
+  report_exports: true,
+};
+
+test('worker preflight reports only present/absent tables without modifying data', async () => {
+  for (const present of [true, false]) {
+    const output = [];
+    const tables = { ...schemaTables, message_templates: present };
+    const inspection = {
+      messaging: async () => undefined,
+      schema: async () => ({ ...tables, secret: environment.REDIS_URL }),
+    };
+    assert.equal(
+      await probeWorkerPreflight(environment, inspection, (s) => output.push(s)),
+      present ? 0 : 1,
+    );
+    assert.deepEqual(
+      output.map((s) => JSON.parse(s)),
+      [
+        { check: 'LOT14_MESSAGING_CONFIG', status: 'PASS' },
+        { check: 'LOT14_WORKER_SCHEMA', status: present ? 'PASS' : 'FAIL', tables },
+      ],
+    );
+    assert.ok(!output.join('\n').includes(environment.REDIS_URL));
+  }
+});
+
+test('missing messaging credentials are named without echoing values or inspecting schema', async () => {
+  const output = [];
+  let schemaCalled = false;
+  const error = Object.assign(new Error(environment.REDIS_URL), {
+    issues: [
+      { path: ['BREVO_API_KEY'], input: environment.REDIS_URL },
+      { path: ['BREVO_WEBHOOK_SECRET'] },
+      { path: [environment.REDIS_URL] },
+    ],
+  });
+  const inspection = {
+    messaging: async () => {
+      throw error;
+    },
+    schema: async () => {
+      schemaCalled = true;
+      return schemaTables;
+    },
+  };
+  assert.equal(await probeWorkerPreflight(environment, inspection, (s) => output.push(s)), 1);
+  assert.equal(schemaCalled, false);
+  assert.deepEqual(
+    output.map((s) => JSON.parse(s)),
+    [
+      {
+        check: 'LOT14_MESSAGING_CONFIG',
+        status: 'FAIL',
+        variables: ['BREVO_API_KEY', 'BREVO_WEBHOOK_SECRET'],
+      },
+    ],
+  );
+});
+
+test('worker preflight refuses production before loading configuration or database', async () => {
+  let called = false;
+  const inspect = {
+    messaging: async () => {
+      called = true;
+    },
+    schema: async () => {
+      called = true;
+    },
+  };
+  const output = [];
+  assert.equal(
+    await probeWorkerPreflight({ ...environment, APP_ENV: 'production' }, inspect, (s) =>
+      output.push(s),
+    ),
+    64,
+  );
+  assert.equal(called, false);
+  assert.deepEqual(output, []);
+});
+
+test('schema failures do not echo SQL errors, credentials or unexpected database content', async () => {
+  for (const schema of [
+    async () => {
+      throw new Error(environment.REDIS_URL);
+    },
+    async () => ({ ...schemaTables, documents: environment.REDIS_URL }),
+  ]) {
+    const output = [];
+    assert.equal(
+      await probeWorkerPreflight(environment, { messaging: async () => undefined, schema }, (s) =>
+        output.push(s),
+      ),
+      1,
+    );
+    assert.deepEqual(JSON.parse(output.at(-1)), { check: 'LOT14_WORKER_SCHEMA', status: 'FAIL' });
+    assert.ok(!output.join('\n').includes(environment.REDIS_URL));
+  }
 });
