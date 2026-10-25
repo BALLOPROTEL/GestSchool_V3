@@ -1,70 +1,44 @@
-# LOT14 — Audit et architecture de staging
+# LOT14 — Architecture de staging entièrement gratuite
 
-État au 24 octobre 2026 : préparation locale, **aucun staging distant déployé ou certifié**. Branche de travail : `feat/lot14-staging-certification`. Le propriétaire autorise les créations staging ci-dessous, dans les comptes GestSchool existants ou le workspace Render personnel, en région européenne commune si disponible. Les accès authentifiés ne sont pas encore actifs dans cette session. Aucun secret ne doit être fourni en chat.
+Décision du 25 octobre 2026 : **zéro paiement et zéro carte avant validation client**. Cloudflare R2 est abandonné ; Supabase Storage Free est choisi. Les limites gratuites ci-dessous sont acceptées pour staging uniquement. Verdict actuel **NO-GO**, car les tests distants restent à exécuter.
 
-| Ressource autorisée      | Nom / cible souhaités, pas une ressource créée                                     |
-| ------------------------ | ---------------------------------------------------------------------------------- |
-| Projet Vercel web        | `gestschool-v3-staging`, root `apps/web`                                           |
-| Domaine Vercel           | `gestschool-v3-staging.vercel.app` si disponible, sinon domaine généré à rapporter |
-| API Render               | `gestschool-v3-api-staging`                                                        |
-| Worker Render            | `gestschool-v3-worker-staging`                                                     |
-| PostgreSQL Render        | `gestschool-v3-postgres-staging`                                                   |
-| Redis / Key Value Render | `gestschool-v3-redis-staging`                                                      |
-
-Brevo : réutiliser le compte GestSchool/LOT11, ne pas créer un second compte. Le destinataire fourni est littéralement `<EMAIL_TEST>`, donc **MANUAL ACTION REQUIRED, aucun email réel autorisé tant qu'une vraie adresse contrôlée ne le remplace**. La création/configuration staging est autorisée ; ni production finale, ni remplacement/suppression V2, ni LOT15 ne le sont.
-
-## Prérequis LOT13 acquis avant ce travail
-
-PR [#61](https://github.com/BALLOPROTEL/GestSchool_V3/pull/61) fusionnée, commit de merge et main certifié : `9db48741b1559d6444e247432fa5336e0ad9adaa`. [CI main #25](https://github.com/BALLOPROTEL/GestSchool_V3/actions/runs/40125118997), événement push, `completed / success`, toutes les étapes en succès. Tag annoté `lot-13-go` publié sur ce commit ; objet tag `d941b6c5b1ac0065a2c6f161329cc78c5231d700`. Arbre main propre au checkpoint. `lot-12-go` est resté strictement inchangé : objet `cd4a0cc3fa810b06bfd6174fedcab6ecae9f51ff`, commit `5208841520f5e7e994a8a5f18c76573fbf4da9d8`.
-
-L'audit s'appuie sur `security-production-checklist.md`, `security-hardening.md`, `lot13-certification.md` et les chargeurs de configuration, points d'entrée, contrôleurs de santé, adaptateurs S3, files et workers actuels. Le rapport historique LOT13 décrit sa certification locale initiale ; le checkpoint ci-dessus apporte la preuve post-merge distincte.
-
-## Architecture proposée, ressources non provisionnées
+| Composant  | Cible et état réel                                                                                                                                                            |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Web        | Vercel Hobby `gestschool-v3-staging`, team `protels-projects`, domaine réservé `gestschool-v3-staging.vercel.app`, pas de déploiement certifié                                |
+| API        | Render Web Service Free `gestschool-v3-api-staging`, Francfort, `https://gestschool-v3-api-staging.onrender.com`, prérequis applicatifs incomplets                            |
+| PostgreSQL | Render Free `dpg-dbei7tqvcj2c73d1qukg-a`, PG 18 à Francfort, disponible selon provider, expiration `2026-11-23T21:32:39Z`                                                     |
+| Redis      | Upstash Redis Free dédié ; URL TCP TLS enregistrée dans Render selon le propriétaire, connexion non certifiée                                                                 |
+| Worker     | Cible Render **Web Service Free** `gestschool-v3-worker-staging`, même branche, image Chromium + `/health` préparées, service pas encore créé                                 |
+| Storage    | Supabase Free `gestschool-v3-staging`, `rwmuksaafbnphurxaofq`, région réelle **eu-west-1** (projet existant réutilisé), bucket `gestschool-v3-staging-private` confirmé privé |
+| Brevo      | Compte PROTEL existant, aucun destinataire autorisé et aucun email réel                                                                                                       |
 
 ```mermaid
 flowchart TD
-  browser[Internet / navigateur] --> web[Vercel : Next.js staging]
-  web -->|rewrite HTTPS /api/v1| api[Service persistant : NestJS API]
-  api --> db[(PostgreSQL managed staging / TLS)]
-  api --> redis[(Redis managed staging / TLS)]
-  db -->|outbox / polling tenant| worker[Worker persistant séparé]
-  redis -->|BullMQ| worker
-  worker --> s3[Bucket S3 compatible privé staging]
-  worker --> brevo[Brevo : destinataires de test autorisés]
-  brevo -->|webhook HTTPS + bearer| api
-  api -->|téléchargement authentifié| s3
+  browser[Navigateur] --> web[Vercel Hobby web staging]
+  web -->|rewrite HTTPS même origin| api[Render API Free]
+  api --> db[(Render PostgreSQL Free)]
+  api --> redis[(Upstash Redis Free TLS)]
+  db -->|outbox et reprise| worker[Render Web Free worker + health]
+  redis --> worker
+  worker --> storage[Supabase Storage Free privé / S3]
+  api --> storage
+  worker --> brevo[Brevo, aucun envoi sans recipient autorisé]
 ```
 
-Vercel héberge uniquement le web. L'API et le worker nécessitent des processus persistants : Render est une cible proposée, non un fournisseur déjà utilisé. PostgreSQL, Redis, stockage et clés sont dédiés au staging. Le compte, la région, les plans et leurs coûts doivent être confirmés avant provisionnement. Aucune ressource de production n'est créée.
+Le navigateur conserve l'origin Vercel pour `/api/v1`, les cookies host-only/Strict, le CSRF et connect-src self. Aucune ouverture wildcard. Les origins doivent rester les deux adresses staging réelles ; aucune mutation V2.
 
-Le navigateur utilise le même origin Vercel pour `/api/v1` : cela conserve les cookies host-only, `SameSite=Strict`, le CSRF et `connect-src 'self'`. Un accès navigateur direct Vercel → domaine Render distinct changerait cette topologie et doit être recertifié. Aucune ouverture wildcard de CORS ou cookies cross-site n'est prévue.
+L'adaptateur S3 reste inchangé. Endpoint configuré `https://rwmuksaafbnphurxaofq.storage.supabase.co/storage/v1/s3`, région `eu-west-1`, path-style true. Les deux clés S3 et REDIS_URL ne sont pas lues par l'agent ; elles restent dans Render. Diagnostic temporaire `LOT14_STORAGE_PROBE=true` au build API préparé pour vérifier les quatre opérations S3, checksum/MIME, refus anonymes et suppression, sans clé dans les logs. Le hook doit être publié sur la branche avant toute exécution réelle.
 
-## Résultats de l'audit runtime
+Le worker n'ouvre HTTP que si `WORKER_HTTP_HEALTH_ENABLED=true`, APP_ENV staging et NODE_ENV production ; port Render, 200/503, pas de données métier. L'image inclut Chromium, ses librairies et les fontes du lockfile. Le port est ouvert après les trois runtimes, puis fermé avant arrêt des queues. Pas de serveur health factice indépendant d'un worker prêt.
 
-| Composant  | Constat / préparation                                                                                                                                                                                                                                                      | Preuve distante encore requise                                                                                                                                 |
-| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Web        | Next 16.4.1, Node 24, pnpm 10.24.0, monorepo avec dépendances workspace ; root Vercel `apps/web`, accès aux fichiers hors root requis. Le garde-fou initial s'exécutait au `phase-production-server` dans `next.config.ts` ; il vérifie maintenant aussi le build hébergé. | Build Vercel réel, réécriture HTTPS, cookies transmis, domaines et certificat                                                                                  |
-| API        | Écoute initialement fixée à loopback. `API_HOST=0.0.0.0` et le `PORT` fourni par le service sont maintenant configurables ; le défaut local reste loopback.                                                                                                                | Bind réseau, health/live et ready, chaîne proxy réellement observée                                                                                            |
-| Worker     | Contexte Nest sans HTTP, documents/messaging/reports, fermeture via SIGTERM et `application.close()`, leases/retries/reconciliation existants.                                                                                                                             | Déploiement séparé, Chromium et librairies système, délais d'arrêt, absence de jobs perdus                                                                     |
-| PostgreSQL | Prisma 7.10, `sslmode=verify-full` obligatoire en production. Seed DEV interdit en production.                                                                                                                                                                             | DB dédiée, CA valide, rôles migration/runtime, migrations deploy et bootstrap staging contrôlé                                                                 |
-| Redis      | `rediss:` avec auth, quotas fail-closed, BullMQ node-redis. Les noms des trois queues ne dépendent pas du préfixe IAM.                                                                                                                                                     | Instance dédiée ; ne pas compter sur `IAM_REDIS_PREFIX` pour isoler les queues. Vérifier commandes BullMQ, persistance et noeviction                           |
-| S3         | Endpoint HTTPS, clés tenant/UUID/checksum, bucket privé ; téléchargements par l'API, pas d'URL publique.                                                                                                                                                                   | ACL/policy, chiffrement, refus anonymes LIST/GET/PUT sur objet existant                                                                                        |
-| Brevo      | Production exige email sender, WhatsApp sender, templates WhatsApp FR/EN/AR et secrets indépendants. Le webhook utilise un bearer, pas une signature du body.                                                                                                              | Compte et sender validés, templates réellement approuvés, destinataires autorisés, delivery + callback/replay                                                  |
-| Proxy      | Seuls `direct` et `loopback` sont supportés. Une IP proxy privée distante n'est pas automatiquement fiable.                                                                                                                                                                | Topologie/CIDR fournisseur ; `direct` protège contre l'usurpation mais peut regrouper les quotas par proxy. Bloquant pour une certification d'IP client réelle |
+## Limites acceptées pour staging uniquement
 
-Les quatre environnements sont explicites avec `APP_ENV=development|test|staging|production`. Si `APP_ENV` est fourni, les modes Node et IAM doivent correspondre ; staging utilise `NODE_ENV=production`, `IAM_ENV=staging`. Les commandes locales historiques sans `APP_ENV` restent compatibles. Sur Vercel, un build distant exige un `APP_ENV` distant explicite. Un simple changement de label ne provisionne ni n'isole les données : ressources, comptes et secrets distincts restent obligatoires.
+Supabase Free : 1 GB, fichier maximum 50 MB, pause après inactivité, aucune garantie production/HA. Bucket public=false confirmé ; limite bucket null héritant du plafond global Free. Clés serveur S3 à portée projet et contournant RLS : isolation d'un projet V3 dédié essentielle.
 
-## GitHub observé en lecture seule
+Render Web Free : sommeil après 15 minutes d'inactivité, réveil lent, redémarrages, 750 heures partagées/mois. Les jobs Redis n'éveillent pas automatiquement le worker : réveil manuel avant certification. Filesystem éphémère, aucun document local comme fallback. PostgreSQL Free : temporaire 30 jours, 1 GB, sans backup fournisseur ; aucune donnée réelle. Upstash Free : quotas et polling BullMQ à surveiller ; pas d'upgrade ni pay-as-you-go.
 
-- Dépôt public, main par défaut ; les permissions générales du compte incluent admin, mais la lecture du sous-endpoint de protection retourne `403 Resource not accessible by integration`. Cela ne prouve ni l'absence de protection classique ni un droit d'écriture de cette intégration.
-- `GET /rules/branches/main` retourne `[]` : aucune règle de ruleset effective listée par cet endpoint.
-- Private vulnerability reporting était désactivé lors de l'audit. Secret scanning n'est pas attesté (`security_and_analysis: null`).
-- Dependabot est configuré pour npm et GitHub Actions, sans automerge. CODEOWNERS existe. Protection main, CI requise, blocage force-push et suppression, secret scanning et reporting privé doivent être vérifiés par le propriétaire dans les paramètres. Aucun réglage susceptible de bloquer le propriétaire n'a été changé.
+## État de revue
 
-## V2 et sources fournisseur
+Bucket confirmé privé, paramètres S3 publics enregistrés dans Render ; clés/Redis signalés configurés par le propriétaire. Sonde S3 et health worker testées localement, image validée (PDF FR/AR hors ligne non root sous 512 Mo) et recertification complète réussie : sécurité 187, unités 502, IAM/métiers 358, Reports 13, Messaging frais, E2E 114 PASS / 89 skips / 0 FAIL. Les quatre opérations S3 signées, refus anonymes, migrations/seed et 49 smoke restent non exécutés à distance. Les résultats détaillés et 45 points sont dans `lot14-certification.md`, la procédure dans `deployment/staging.md`.
 
-Lecture seule le 24 octobre 2026 de [gestschool.vercel.app](https://gestschool.vercel.app/) : titre « GestSchool - Al Manarat Islamiyat », page de connexion française. Aucun login, changement de projet/domaine, déploiement ou suppression. L'absence d'utilisateurs/données réelles à migrer est une donnée fournie par le propriétaire, pas une conclusion d'inspection de base V2.
-
-Documentation consultée : [Vercel monorepos](https://vercel.com/docs/monorepos), [Render web services](https://render.com/docs/web-services), [Render background workers](https://render.com/docs/background-workers). Render exige notamment une écoute HTTP sur `0.0.0.0`. Les références ne constituent pas une preuve de déploiement GestSchool.
-
-Le [runbook](deployment/staging.md), le [plan de cutover non exécuté](deployment/cutover-v2-v3.md) et le [rapport de certification](lot14-certification.md) détaillent les preuves et blocages. Aucun GO LOT14 ne peut être accordé sur les seuls tests locaux/CI.
+Les limites gratuites acceptées ne constituent plus un motif de NO-GO à elles seules ; les preuves applicatives manquantes restent bloquantes. Les fichiers restent non committés pour revue selon l'instruction antérieure ; aucun déploiement du nouveau code sans publication de la branche. Aucun merge, tag LOT14, paiement, carte, production finale ou LOT15. V2 Vercel et Supabase intacts. LOT13 reste acquis sur `9db48741b1559d6444e247432fa5336e0ad9adaa` / `lot-13-go`.

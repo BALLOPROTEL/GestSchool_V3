@@ -6,6 +6,8 @@
     "API_HOST",
     "PORT",
     "TRUST_PROXY",
+    "WORKER_HTTP_HEALTH_ENABLED",
+    "LOT14_STORAGE_PROBE",
     "VERCEL",
     "VERCEL_ENV",
     "MESSAGING_*",

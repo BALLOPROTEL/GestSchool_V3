@@ -21,6 +21,12 @@ V2 : `https://gestschool.vercel.app/`, ancienne démo selon le propriétaire, sa
 
 GO LOT14 distant complet, ressources de production préparées et approuvées dans une mission distincte, sauvegarde/restore prouvés, propriétaire disponible pour décision/rollback. Une seule URL staging accessible, un build local ou une CI verte ne suffisent pas. LOT15 et le cutover restent hors de cette exécution.
 
-## Checkpoint de reprise après commit de préparation
+## Checkpoint Supabase et stratégie gratuite — 25 octobre 2026
 
-Le commit `050935d2882ad7a3a66b9a65a3ea016a42ed7c63` sauvegarde la préparation LOT14 sur `feat/lot14-staging-certification` et sa branche distante. Il n'autorise ni ne réalise le cutover. À la reprise, aucun staging distant n'est créé faute d'installation/authentification Vercel/Render ; le stockage staging et le destinataire Brevo restent des actions manuelles. Aucune URL staging certifiée n'est disponible. L'arrêt avant l'étape 4 reste applicable ; le projet et le domaine V2 ne sont pas modifiés.
+Cloudflare R2 abandonné à la demande du propriétaire : aucun paiement ni carte avant validation client. Supabase Storage Free `gestschool-v3-staging` / `rwmuksaafbnphurxaofq` réutilisé en `eu-west-1` ; bucket `gestschool-v3-staging-private` confirmé privé. Les quatre paramètres S3 non secrets sont enregistrés dans Render ; clés S3 et URL TCP TLS Upstash signalées configurées par le propriétaire, sans lecture ni divulgation des valeurs. Aucune modification de l'adaptateur S3 existant.
+
+Le nouveau plan accepte un worker Render Web Service Free avec `/health`, le sommeil des services, Supabase 1 GB / fichiers 50 MB / pause possible / sans HA, PostgreSQL Free temporaire sans backup et les quotas Upstash. Ces limites sont acceptées pour staging uniquement ; elles ne remplacent pas les preuves de certification. Health worker, image Chromium et sonde S3 au build API sont préparés localement et attendent publication/revue ; aucun test S3 distant ou GO n'est encore revendiqué.
+
+HEAD initial `c61652023d03b8637a91f8a278aecf7e2629945f`, branche LOT14, fichiers non committés selon l'instruction antérieure. Le staging reste NO-GO tant que les tests indispensables manquent. Aucun merge main, tag LOT14, production finale ou LOT15. Le projet V2 Vercel, son domaine et Supabase `gestschool_v2BD` restent intacts. Le plan de cutover reste documentaire et l'arrêt avant l'étape 4 reste obligatoire.
+
+Recertification locale complète : 14 étapes PASS, E2E 114 PASS / 89 skips contractuels / 0 FAIL. Image worker vérifiée non root sous 512 Mo et configuration incomplète refusée. Ces preuves locales n'autorisent pas de cutover et ne remplacent pas les tests S3/HTTPS distants.

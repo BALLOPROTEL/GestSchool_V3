@@ -4,6 +4,7 @@ import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 
 import { EnvironmentVerifier } from './infrastructure/environment-verifier.service.js';
+import { startWorkerHealthServer, workerHealthPort } from './infrastructure/http-health.js';
 import { WorkerModule } from './worker.module.js';
 import { DocumentsRuntime } from './jobs/documents-runtime.js';
 import { LocalMessagingRuntime } from './jobs/messaging/local-runtime.js';
@@ -26,20 +27,31 @@ const waitForShutdown = (): Promise<void> =>
   });
 
 const bootstrap = async (): Promise<void> => {
+  const healthPort = workerHealthPort(process.env);
   const application = await NestFactory.createApplicationContext(WorkerModule);
+  let health: Awaited<ReturnType<typeof startWorkerHealthServer>> | undefined;
 
   try {
     const dependencies = await application.get(EnvironmentVerifier).verify();
     await application.get(DocumentsRuntime).start();
     await application.get(LocalMessagingRuntime).start();
     await application.get(ReportsRuntime).start();
+    if (healthPort !== null)
+      health = await startWorkerHealthServer({
+        port: healthPort,
+        verifyReady: () => application.get(EnvironmentVerifier).verify(),
+      });
     logger.log(
       `Dependencies ready (postgres=${dependencies.postgres}, redis=${dependencies.redis}, storage=${dependencies.storage})`,
     );
     logger.log('GestSchool worker is ready');
     await waitForShutdown();
   } finally {
-    await application.close();
+    try {
+      await health?.close();
+    } finally {
+      await application.close();
+    }
   }
 };
 

@@ -1,168 +1,132 @@
-# LOT14 — Rapport de préparation / certification
+# LOT14 — Supabase Storage et stratégie staging entièrement gratuite
 
-**Verdict actuel : NO-GO staging.** Ce rapport distingue preuves acquises, code préparé et opérations distantes non réalisées. Les noms de ressources sont approuvés dans `lot14-staging.md`, mais aucune URL staging n'est encore obtenue ; Vercel/Render sont encore signalés comme non installés dans cette tâche : leur installation et authentification doivent être terminées dans l’interface. `<EMAIL_TEST>` est un placeholder : **MANUAL ACTION REQUIRED et aucun email réel**. Aucun backup/restore distant, déploiement ou bascule V2 n'est revendiqué. Les résultats locaux détaillés sont consignés ci-dessous ; ils ne certifient aucun service distant.
+État de revue du 25 octobre 2026 (Europe/Paris) : **NO-GO**, préparation terminée et recertification locale complète réussie ; tests S3 distants encore à exécuter. Décision explicite du propriétaire : **zéro paiement, zéro carte avant validation client**. Cloudflare R2 est abandonné. Supabase Storage Free remplace le fournisseur de stockage encore indéterminé du checkpoint précédent. Le worker est désormais autorisé comme Web Service Render Free avec `/health` ; les anciennes exigences d'un Background Worker payant sont remplacées pour ce staging.
 
-## LOT13 : GO définitif, préalable satisfait
+## Ressources et stockage observés
 
-PR #61 MERGED le 24 octobre 2026. Merge/main certifié `9db48741b1559d6444e247432fa5336e0ad9adaa`. [CI main #25](https://github.com/BALLOPROTEL/GestSchool_V3/actions/runs/40125118997), ID `40125118997`, événement push, completed/success. Toutes les étapes listées du job quality sont en succès : installation frozen, Prisma, stockage privé, migrations, intégrité, messaging frais, dashboards/reports frais, formatage, sécurité, audit production, lint, typage, unités, build canari, IAM/métiers et frontend/E2E.
+Organisation Supabase `PROTEL's`, `oivgwikrcgdbpygwhujs`, plan `free` / `tier_free` vérifié via la connexion. Le projet `gestschool-v3-staging` existe déjà : `rwmuksaafbnphurxaofq`, état `ACTIVE_HEALTHY`, région réelle `eu-west-1` (Irlande). Il est réutilisé conformément à l'autorisation « créer/utiliser » ; aucune migration de région, aucun doublon et aucune modification de V2. Le projet V2 `gestschool_v2BD` reste exclu.
 
-`lot-13-go` annoté « LOT 13 certified GO », objet `d941b6c5b1ac0065a2c6f161329cc78c5231d700`, publié sur ce SHA exact. Main propre au checkpoint avant création de `feat/lot14-staging-certification`. `lot-12-go` inchangé : objet `cd4a0cc3fa810b06bfd6174fedcab6ecae9f51ff`, commit `5208841520f5e7e994a8a5f18c76573fbf4da9d8`.
+Le bucket `gestschool-v3-staging-private` est confirmé dans `storage.buckets`, `public=false`. `file_size_limit=null` hérite du plafond global de l'offre, au maximum 50 MB sur Free ; ce n'est pas une absence de plafond fournisseur. Les premières lectures étaient vides, puis la création manuelle du propriétaire a été confirmée par une nouvelle lecture. Aucune écriture SQL sur les métadonnées Storage n'a été faite : les opérations passent par l'API/S3.
 
-## Les 45 points demandés
-
-| Nº  | Point                | État / preuve / limite                                                                                                                                              |
-| --- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Merge LOT13          | PR #61 fusionnée avec commit de merge, sans force-push ni rebase main                                                                                               |
-| 2   | CI main LOT13        | Run #25 completed/success sur le vrai commit de merge, pas seulement sur la PR                                                                                      |
-| 3   | lot-13-go            | Annoté et publié sur le main certifié ; ancien tag LOT12 préservé                                                                                                   |
-| 4   | Architecture staging | Vercel web + API/worker persistants séparés + PG/Redis TLS + S3 privé + Brevo, audit dans lot14-staging.md                                                          |
-| 5   | URLs staging         | `gestschool-v3-staging.vercel.app` souhaité mais disponibilité non vérifiée ; aucune URL présentée comme déployée                                                   |
-| 6   | Providers utilisés   | Créations Vercel/Render autorisées et nommées ; aucun distant provisionné faute de connexion, S3 à choisir, Brevo GestSchool LOT11 à réutiliser                     |
-| 7   | Web                  | Garde-fou de build hébergé préparé ; build Vercel réel en attente                                                                                                   |
-| 8   | API                  | Bind configurable API_HOST et PORT préparé ; health distant non mesuré                                                                                              |
-| 9   | Worker               | Trois runtimes existants audités ; packaging/Chromium et déploiement séparé à valider                                                                               |
-| 10  | PostgreSQL           | Validation verify-full existante ; DB staging, rôles et migrations deploy distants non exécutés                                                                     |
-| 11  | Redis                | TLS/auth exigés ; instance dédiée requise, préfixe IAM insuffisant pour les queues                                                                                  |
-| 12  | Storage              | Adaptateur privé audité ; ACL/refus anonymes distants non testés                                                                                                    |
-| 13  | Brevo                | Compte GestSchool LOT11 à réutiliser ; `<EMAIL_TEST>` non remplacé, MANUAL ACTION REQUIRED, aucun envoi ; prérequis WhatsApp FR/EN/AR relevés                       |
-| 14  | TLS                  | Refus local HTTP maintenu ; certificats/CA des services réels non attestés                                                                                          |
-| 15  | Proxy                | direct conservé comme défaut sûr ; topologie fournisseur inconnue, pas de trust-all ajouté                                                                          |
-| 16  | CORS                 | Exact côté code ; test distant lecture seule préparé, pas exécuté                                                                                                   |
-| 17  | CSRF                 | Mécanisme conservé ; chaîne Vercel → API et mutations distantes à certifier                                                                                         |
-| 18  | Cookies              | Secure/HttpOnly/Strict conservés ; contrôle booléen sans valeur dans smoke, pas encore distant                                                                      |
-| 19  | CSP                  | Production sans unsafe-eval ; unsafe-inline reste le risque LOT13 documenté                                                                                         |
-| 20  | Secrets              | Variables/stores distincts documentés ; scan avant commit sans signature, aucun secret réel identifié dans les 26 fichiers                                          |
-| 21  | Tenant A/B           | Plan de bootstrap fictif ; aucune création distante, tests de fuite/agrégats non exécutés                                                                           |
-| 22  | Auth                 | Pas de bypass ajouté ; login/refresh/logout/session distants non attestés                                                                                           |
-| 23  | MFA                  | Obligatoire pour rôles privilégiés ; aucun secret/MFA fictif installé en distant                                                                                    |
-| 24  | RBAC                 | Contrats et scopes inchangés ; matrice distante sept rôles à exécuter                                                                                               |
-| 25  | Finance              | Couverture locale/CI LOT13 ; aucune preuve distante ni SLA inventé                                                                                                  |
-| 26  | Results              | P2 bulk grades certifié LOT13 ; aucun résultat staging réel revendiqué                                                                                              |
-| 27  | Documents            | PDF/QR/privacité locaux existants ; chaîne distante non exécutée                                                                                                    |
-| 28  | Reports              | CI sur base fraîche verte ; acteur/tenant/lease à recertifier en distant                                                                                            |
-| 29  | Exports              | CSV/XLSX/PDF à vérifier sur bucket privé distant, MIME/disposition/checksum/expiration                                                                              |
-| 30  | BullMQ               | Noms/DTO/retries/locks audités ; compatibilité Redis TLS et déploiement réellement séparé non mesurés                                                               |
-| 31  | Outbox               | PostgreSQL durable/reconciliation existants ; aucune preuve de zéro job perdu en distant                                                                            |
-| 32  | Backup               | Procédure fournisseur/chiffrement/rétention décrite ; activation non attestée                                                                                       |
-| 33  | Restore              | Procédure vers base isolée exclusivement ; aucun restore exécuté, jamais sur staging actif                                                                          |
-| 34  | Logs                 | Politique IDs/codes et canaris ; logs fournisseurs/proxy non accessibles, absence de fuite distante non attestée                                                    |
-| 35  | E2E staging          | Smoke public séparé préparé ; ne couvre pas encore les parcours authentifiés/tenant/worker distants                                                                 |
-| 36  | Responsive           | Sept viewports déclarés dans la suite distante ; exécution HTTPS réelle en attente                                                                                  |
-| 37  | i18n/RTL             | FR/EN/AR, deux thèmes et RTL prévus ; pas de résultat distant inventé                                                                                               |
-| 38  | Performance          | Smoke annote la durée observée de login ; aucune mesure distante disponible, aucun SLA annoncé                                                                      |
-| 39  | GitHub security      | Protection classique GET 403, ruleset effectif [], reporting privé désactivé observé, secret scanning non attesté ; actions propriétaire documentées                |
-| 40  | Cutover V2→V3        | Plan détaillé livré, arrêt avant remplacement ; V2 uniquement inspectée en lecture seule                                                                            |
-| 41  | Risques restants     | Accès, coûts/comptes, TLS/proxy, image worker, bootstrap staging, recipients/WhatsApp, sauvegarde/restore, tests distants                                           |
-| 42  | Actions manuelles    | Terminer installation/authentification Vercel/Render ; accès storage autorisé ; destinataire contrôlé dans la variable Brevo du provider, jamais dans Git/logs/chat |
-| 43  | Fichiers modifiés    | 26 fichiers sauvegardés dans le commit de préparation 050935d ; 2 documents modifiés ensuite pour revue, aucune migration historique modifiée                       |
-| 44  | Tests                | CI main LOT13 verte ; résultats locaux LOT14 détaillés ci-dessous, sans preuve distante                                                                             |
-| 45  | Verdict              | **NO-GO LOT14** tant que les preuves distantes et les prérequis ci-dessus manquent                                                                                  |
-
-## Tests de la branche LOT14
-
-| Commande / contrôle                                                                        | Résultat observé                                                                                                                                             |
-| ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `pnpm install --frozen-lockfile --store-dir /workspace/.gestschool-cloud/cache/pnpm-store` | PASS, lockfile inchangé                                                                                                                                      |
-| `pnpm security:test` final                                                                 | PASS, 179 tests : 66 config/messaging, 65 API/IAM/webhook, 34 infrastructure/provider, 1 worker, 5 web, 2 gardes de cibles staging, 3 refus runtime, 3 Redis |
-| `pnpm audit --prod`                                                                        | PASS, aucune vulnérabilité connue signalée                                                                                                                   |
-| `pnpm security:secrets --history`                                                          | PASS, zéro signature détectée dans l’arbre/historique local connu ; aucun secret affiché                                                                     |
-| `pnpm format:check`, `pnpm lint`, `pnpm typecheck`                                         | PASS, contrôles finaux réussis                                                                                                                               |
-| `pnpm test` final                                                                          | PASS, 499 tests (70 config, 6 UI, 107 web, 41 infrastructure, 1 database, 10 worker, 264 API)                                                                |
-| `pnpm build`, `pnpm security:bundle`                                                       | PASS, build canari frais final : 57 artifacts publics sans canari serveur ni source map                                                                      |
-| `pnpm iam:test`                                                                            | PASS, 358 tests / 9 suites                                                                                                                                   |
-| `pnpm reports:test`                                                                        | PASS, 13 tests                                                                                                                                               |
-| `pnpm messaging:test`                                                                      | PASS sur une DB locale fraîche dédiée `gestschool_lot11_lot14_*`, migrations deploy + seed TEST + 18 tests DB, Redis DB 15                                   |
-| `pnpm test:e2e`                                                                            | PASS, 203 cas : 114 réussis / 89 skips contractuels existants / 0 échec, sept viewports, 11,5 minutes à la reprise                                           |
-| `node --test scripts/staging-targets.test.mjs`                                             | PASS, refus avant requête de cibles manquantes/HTTP/local/V2 et découverte de 49 smoke tests                                                                 |
-| API compilée, bind/PORT/readiness/SIGTERM                                                  | PASS en TEST local : écoute 0.0.0.0:43113 par PORT, readiness postgres/redis/storage up, arrêt SIGTERM sans kill forcé ; pas une preuve TLS distante         |
-| `git diff --check`                                                                         | PASS, contrôle final réussi                                                                                                                                  |
-| Migrations historiques / tags                                                              | Aucune migration modifiée ; tags LOT12/LOT13 inchangés après leur checkpoint                                                                                 |
-
-Les compteurs de sécurité, unités et intégrations se recoupent : ne pas les additionner comme des scénarios tous distincts. Les 49 tests de smoke staging ont été **découverts seulement**, sur des origines HTTPS de fixture sans connexion réseau ; aucun n'a été exécuté sur un staging réel.
-
-Deux arrêts de préparation ont été résolus sans affaiblir les contrôles : pnpm refusait de reconstruire node_modules sans TTY à cause d'un store différent ; l'installation avec le store existant a réussi, sans toucher au lockfile. La première commande messaging, lancée sur la DB locale normale, a correctement refusé ce contexte. Une nouvelle DB vide a ensuite été créée, migrée et seedée en TEST, puis l'intégrité et messaging ont réussi avec Redis DB 15.
-
-Le scan de signatures avec `--history` a nécessité les permissions d’exécution de l’environnement après un premier refus sandbox `git EPERM` ; il a ensuite réussi avec zéro signature détectée, sans valeur affichée.
-
-Le verrou staging Brevo est testé avec fetch simulé : absence/placeholder/destinataire étranger ne produit aucun appel réseau, seul le destinataire contrôlé explicite peut être envoyé ; WhatsApp staging est interdit. Aucun véritable envoi Brevo n'a été fait. Les tests de refus de bodies excessifs, profondeur et propriétés prototype restent dans la suite HTTP de 42 tests.
-
-## Fichiers préparés et état Git
-
-Les 26 fichiers ci-dessous ont été sauvegardés dans le commit de préparation `050935d2882ad7a3a66b9a65a3ea016a42ed7c63` (`chore(staging): prepare LOT14 certification`), puis poussés avec suivi sur `origin/feat/lot14-staging-certification`. Scan de signatures sans détection, contrôle exact des chemins (aucun `.env` réel, `.local` ou credential provider), `git diff --cached --check` et contrôle du périmètre réussis avant commit. Arbre propre juste après push. Ce commit ne signifie pas GO LOT14. Aucun tag `lot-14-go`, aucune modification de V2, aucun LOT15.
+Les paramètres **non secrets** suivants ont été enregistrés sur le seul service API Render, en fusion avec ses variables existantes :
 
 ```text
-apps/api/src/main.ts
-apps/api/src/modules/iam/domain/security.test.ts
-apps/api/src/modules/iam/infrastructure/iam-config.ts
-apps/web/e2e-staging/smoke.spec.ts
-apps/web/next.config.ts
-apps/web/package.json
-apps/web/playwright.staging.config.ts
-apps/web/tsconfig.json
-docs/README.md
-docs/deployment/cutover-v2-v3.md
-docs/deployment/staging.md
-docs/lot14-certification.md
-docs/lot14-staging.md
-package.json
-packages/config/src/environment.test.ts
-packages/config/src/environment.ts
-packages/config/src/messaging.test.ts
-packages/config/src/messaging.ts
-packages/config/src/security.test.ts
-packages/config/src/security.ts
-packages/infrastructure/src/messaging/provider.test.ts
-packages/infrastructure/src/messaging/provider.ts
-scripts/security-test.mjs
-scripts/security-web.test.mjs
-scripts/staging-targets.test.mjs
-turbo.json
+S3_ENDPOINT=https://rwmuksaafbnphurxaofq.storage.supabase.co/storage/v1/s3
+S3_REGION=eu-west-1
+S3_BUCKET=gestschool-v3-staging-private
+S3_FORCE_PATH_STYLE=true
 ```
 
-## Conditions de reprise et de GO
+Le propriétaire confirme avoir enregistré `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` et l'URL TCP TLS Upstash `REDIS_URL` directement dans les secrets Render. Aucune valeur n'a été lue, copiée localement, écrite dans Git, dans un rapport, un log ou le chat. Une déclaration de configuration ne vaut pas un test de fonctionnement. La connexion Supabase actuelle ne gère ni création de bucket par API Storage ni génération de clés S3 ; ces étapes ont été effectuées dans l'interface par le propriétaire. Aucun achat, compte payant ou rechargement navigateur.
 
-Le propriétaire a confirmé les noms des projets/ressources, une région européenne commune et l'autorisation de création staging. Les connexions Vercel/Render proposées restent techniquement à activer pour identifier les espaces et plans réellement disponibles ; le stockage S3 et une vraie adresse Brevo contrôlée restent à préciser. Ne demander/afficher aucune clé en chat. Après accès : packaging reproductible, bootstrap fictif contrôlé, provisionnement distant et toutes les preuves du runbook. Seuls les résultats observés peuvent fermer les cases GO : web/API/worker sains, TLS/stockage privé, auth/RBAC/tenants, files et tests distants complets, aucune régression LOT0–13 ni vulnérabilité exploitable High/Critical.
+## Les 45 points de certification
 
-Le commit de préparation a été explicitement autorisé et publié ; les mises à jour documentaires postérieures restent non commitées pour la revue finale. Si un GO distant est obtenu après cette revue, proposer seulement `chore(staging): certify GestSchool V3 deployment`. Ne pas créer `lot-14-go`, modifier/remplacer V2, créer la production finale ou commencer LOT15 sans décision explicite.
+| Nº  | Point                  | État / preuve / limite                                                                                                                                                              |
+| --- | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | HEAD / branche         | `c61652023d03b8637a91f8a278aecf7e2629945f`, `feat/lot14-staging-certification` ; modifications non committées pour revue                                                            |
+| 2   | Vercel team / projet   | `PROTEL's projects`, `team_bDjUZ3B4w8Iih7vBbRayKIGI`, projet `prj_3UdsP3bidz7SrLfkogJC7VqPrxU8` / `gestschool-v3-staging`                                                           |
+| 3   | Web staging            | `https://gestschool-v3-staging.vercel.app`, domaine réservé/vérifié ; aucun déploiement healthy certifié                                                                            |
+| 4   | Render workspace       | `GESTSCHOOL-V3`, `tea-d50tlb24d50c73cbo9m0`, Francfort                                                                                                                              |
+| 5   | API staging            | `srv-dbei87lg1s2s73fmb7h0`, Free, `https://gestschool-v3-api-staging.onrender.com` ; dernier déploiement connu non healthy                                                          |
+| 6   | Worker service         | Cible `gestschool-v3-worker-staging`, **Web Service Free + /health désormais autorisé** ; code et image préparés, service non créé                                                  |
+| 7   | PostgreSQL             | `dpg-dbei7tqvcj2c73d1qukg-a`, PG 18 / Free, disponible selon Render ; expiration `2026-11-23T21:32:39Z`                                                                             |
+| 8   | Redis                  | Upstash Redis Free dédié ; URL TCP TLS signalée enregistrée dans Render par le propriétaire ; connexion/BullMQ non certifiés, aucune valeur lue                                     |
+| 9   | Storage                | Supabase Free `gestschool-v3-staging` / `rwmuksaafbnphurxaofq`, **eu-west-1** (projet existant réutilisé), bucket privé confirmé                                                    |
+| 10  | Brevo                  | Compte PROTEL connecté ; destinataire contrôlé absent, aucun vrai envoi ; credentials runtime à compléter                                                                           |
+| 11  | Migrations             | NOT RUN à distance ; deploy uniquement, aucun reset, aucune migration historique modifiée                                                                                           |
+| 12  | Seed Tenant A/B        | NOT RUN à distance ; protection DEV maintenue, bootstrap staging sécurisé encore requis                                                                                             |
+| 13  | Auth                   | SKIP distant bloqué ; aucun zéro bypass distant revendiqué                                                                                                                          |
+| 14  | MFA                    | SKIP distant bloqué ; exigence privilégiée conservée                                                                                                                                |
+| 15  | Sessions               | SKIP distant : refresh/replay/logout/révocation non exécutés                                                                                                                        |
+| 16  | RBAC                   | SKIP distant ; matrice des rôles non exécutée                                                                                                                                       |
+| 17  | Tenant isolation       | SKIP distant : A/B, IDOR et COUNT/SUM/AVG non exécutés                                                                                                                              |
+| 18  | People                 | SKIP distant : lectures/mutations non exécutées                                                                                                                                     |
+| 19  | Academic               | SKIP distant : lectures/mutations non exécutées                                                                                                                                     |
+| 20  | Enrollments            | SKIP distant : lectures/mutations non exécutées                                                                                                                                     |
+| 21  | Finance                | SKIP distant : lectures/mutations/agrégats non exécutés                                                                                                                             |
+| 22  | Results                | SKIP distant ; P2 local conservé, aucune assertion affaiblie                                                                                                                        |
+| 23  | Documents              | SKIP distant : génération PDF/QR non exécutée                                                                                                                                       |
+| 24  | Reports                | SKIP distant : génération non exécutée ; Chromium dans image worker à valider                                                                                                       |
+| 25  | Exports                | SKIP distant : CSV/XLSX/PDF non exécutés                                                                                                                                            |
+| 26  | Messaging              | SKIP distant ; aucun destinataire autorisé ni email réel                                                                                                                            |
+| 27  | Outbox / BullMQ        | Upstash TCP TLS prévu ; polling/quotas/reprise à vérifier, aucun job distant exécuté                                                                                                |
+| 28  | Worker                 | Port health activable uniquement staging en NODE_ENV production ; readiness après démarrage des trois workers, fermeture avant application.close ; pas encore déployé               |
+| 29  | Storage private checks | Bucket public=false observé ; HeadBucket/PutObject/GetObject/DeleteObject et refus anonymes **NOT RUN sur Supabase** avant publication du diagnostic                                |
+| 30  | TLS                    | S3 HTTPS configuré ; Redis rediss signalé, DB verify-full requis ; pas de contournement TLS                                                                                         |
+| 31  | Trust proxy            | API direct conservé ; topologie/XFF/XFP non certifiés                                                                                                                               |
+| 32  | CORS                   | Origine web exacte configurée Render ; tests HTTPS étrangers/null/suffix non exécutés                                                                                               |
+| 33  | CSRF                   | SKIP distant ; chaîne web/API et mutations non certifiées                                                                                                                           |
+| 34  | Cookies                | SKIP distant : Secure/HttpOnly/Strict/Path/expiration non observés                                                                                                                  |
+| 35  | CSP                    | Contrat LOT13 maintenu ; production sans unsafe-eval côté code, pas de preuve distante                                                                                              |
+| 36  | Headers                | Pas de certification HTTPS publique ; health worker no-store/nosniff testé localement                                                                                               |
+| 37  | Rate limiting          | SKIP distant ; aucun stress test                                                                                                                                                    |
+| 38  | Logs                   | Nouveau diagnostic n’émet que phases/statuts sûrs ; aucun secret lu ou affiché ; nouvelles lignes Render à inspecter après exécution                                                |
+| 39  | Backup / restore       | PLAN LIMITATION acceptée pour staging : pas de backup fournisseur PG Free ; aucun restore exécuté                                                                                   |
+| 40  | 49 smoke tests         | 0 exécuté à distance, 49 scénarios bloqués avant lancement ; aucun faux PASS                                                                                                        |
+| 41  | E2E local              | PASS de cette reprise : 114 réussis / 89 skips contractuels / 0 échec, 203 cas, 11 min 20 s                                                                                         |
+| 42  | Local certification    | PASS : 14 étapes code 0, sécurité 187, unités 502, IAM 358, Reports 13, Messaging frais et E2E ; image vérifiée                                                                     |
+| 43  | Residual risks         | Veille/quotas/expiration Free acceptés pour staging ; prérequis applicatifs, publication, tests distants et seed restent bloquants                                                  |
+| 44  | Manual actions         | Bucket privé et clés S3 / Redis signalés configurés dans Render ; partage sûr des mêmes secrets avec worker après création, autres secrets/migrations et liaison Vercel à compléter |
+| 45  | GO / NO-GO             | **NO-GO LOT14** : critères distants non exécutés ; les limites gratuites acceptées ne constituent plus à elles seules un motif de refus                                             |
 
-## Reprise — état après sauvegarde du travail
+## Diagnostic S3 réel, sans changer l'adaptateur
 
-Commit de préparation : `050935d2882ad7a3a66b9a65a3ea016a42ed7c63`, 26 fichiers, 740 insertions et 7 suppressions. La branche distante suit ce commit. Main et les tags LOT12/LOT13 ne sont pas modifiés.
+L'adaptateur `packages/infrastructure/src/storage/s3-storage-adapter.ts` est **inchangé**. Aucune incompatibilité n'est démontrée. Supabase documente le support de HeadBucket, PutObject, GetObject et DeleteObject ainsi que forcePathStyle ; les opérations réelles restent à exécuter.
 
-La vérification d'accès de cette reprise retourne Vercel et Render disponibles mais **non installés**. Aucun outil fournisseur authentifié n'est disponible ; le profil navigateur disponible ne déclare aucune connexion enregistrée à ces services. L'autorisation de création staging reste acquise. L'installation et l'authentification dans l'interface sont l'action technique requise, sans transmettre de clé dans le chat. Aucun projet n'a été créé et aucune disponibilité de domaine n'est inventée.
+`scripts/staging-storage-probe.mjs` utilise l'adaptateur existant et refuse toute cible autre que le projet/bucket staging exacts, tout mode non staging/production, toute absence de clés, toute région différente ou path-style désactivé. Il crée uniquement une petite probe PDF à tenant/document UUID aléatoires, contrôle le checksum/MIME, exige 401/403 pour GET/LIST/PUT S3 anonymes sur objet existant, refuse les redirects et les 404 comme preuve d'auth S3, vérifie que le PUT anonyme n'a pas changé les octets, contrôle aussi la route publique Supabase, supprime sa seule probe et confirme sa disparition par GET signé 404. Nettoyage de la probe en cas d'échec ; aucune suppression de contenu utilisateur.
 
-| Point de reprise demandé                          | Résultat réel                                                                                                                                                                                                    |
-| ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| URL Vercel staging                                | Non obtenue ; projet `gestschool-v3-staging` non créé, accès indisponible                                                                                                                                        |
-| URL API Render                                    | Non obtenue ; service `gestschool-v3-api-staging` non créé                                                                                                                                                       |
-| Worker                                            | `gestschool-v3-worker-staging` non créé, aucun worker distant certifié                                                                                                                                           |
-| PostgreSQL / Redis                                | Ressources staging non créées ; aucune migration distante exécutée ; TLS/plan non vérifiés                                                                                                                       |
-| Storage                                           | **MANUAL ACTION REQUIRED — staging object storage** ; aucun provider autorisé et accessible identifié, aucune dépendance improvisée                                                                              |
-| Brevo                                             | **MANUAL ACTION REQUIRED — Brevo test recipient** ; variable provider avec adresse contrôlée non configurée, aucun email réel ; placeholder inutilisable par le code                                             |
-| 49 smoke tests                                    | Découverte locale seulement ; pas d'exécution ni de résultat distant revendiqué                                                                                                                                  |
-| Tenant A/B / auth / MFA / RBAC / sessions         | Pas de seed staging exécuté, aucune preuve distante                                                                                                                                                              |
-| TLS / CORS / CSRF / cookies / CSP                 | Contrats fail-closed conservés dans le code sauvegardé ; pas de certification d'infrastructure réelle                                                                                                            |
-| Outbox / BullMQ / documents / reports / messaging | Preuves locales antérieures conservées ; aucune chaîne distante exécutée                                                                                                                                         |
-| Backup / restore                                  | Capacités/plan Render impossibles à vérifier sans accès ; aucun backup ou restore testé, aucune restauration sur DB active                                                                                       |
-| Sécurité                                          | Aucun secret réel identifié avant commit ; `.env` et `.local` exclus ; aucun affaiblissement des assertions                                                                                                      |
-| Re-certification locale                           | PASS : installation frozen, 179 sécurité, audit sans alerte, format/lint/typecheck, 499 unités, builds/canari, 358 IAM/métier, 13 reports, messaging base fraîche, E2E 114 PASS / 89 skips / 0 FAIL, diff propre |
-| Fichiers modifiés après le premier commit         | `docs/lot14-certification.md`, `docs/deployment/cutover-v2-v3.md` uniquement                                                                                                                                     |
-| Verdict                                           | **NO-GO LOT14** : accès Vercel/Render, stockage indispensable et preuves distantes manquants                                                                                                                     |
+Pour garder les clés exclusivement dans Render, `LOT14_STORAGE_PROBE=true` active temporairement ce diagnostic au build de l'API après compilation. La commande build existante reste utilisable. La valeur est transmise par Turbo et change son cache. Désactivé par défaut ; activé sur production/V2/configuration incomplète, le diagnostic refuse le build. Sorties uniquement `LOT14_STORAGE_PROBE`, phase et PASS/FAIL, éventuellement statut HTTP : aucun credential, URL secrète ou stack. Désactiver le flag après collecte des preuves.
 
-V2 demeure inchangée. Aucun merge sur main, aucun tag LOT14, aucune production finale, aucun LOT15. Les risques restants sont ceux de l'audit et du runbook ; aucune mesure distante, identité de compte ou limite de plan n'est supposée.
+**Publication requise** : le hook et les fichiers ne sont pas encore dans la branche distante. L'instruction antérieure de laisser les modifications non committées pour revue reste applicable. Aucun nouveau commit/push n'est réalisé sans décision explicite ; aucun résultat Supabase n'est revendiqué sur la base des cinq tests simulés locaux.
 
-### Résultats de la re-certification après publication du commit de préparation
+## Worker Web Service Free
 
-Les 14 étapes de la reprise ont terminé avec le code 0 : `pnpm install --frozen-lockfile` (store existant fourni par configuration d'environnement), `pnpm security:test`, `pnpm audit --prod`, `pnpm format:check`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`, build canari supplémentaire, `pnpm iam:test`, `pnpm reports:test`, `pnpm messaging:test` sur nouvelle base locale isolée + Redis DB 15, `pnpm test:e2e` et `git diff --check`. Les tâches Turbo réutilisent leurs caches valides lorsque le code est identique. E2E : 203 cas, 114 réussis, 89 skips contractuels et aucun échec, environ 11 min 32 s. Aucun test ou contrôle n'a été assoupli.
+`WORKER_HTTP_HEALTH_ENABLED=true`, `APP_ENV=staging`, `NODE_ENV=production` et le `PORT` Render activent l'écoute `0.0.0.0:$PORT`. Hors de ce mode le serveur est désactivé ou refuse la configuration. Le démarrage des trois workers et la vérification initiale des dépendances précèdent l'ouverture du port. `/health` et `/health/ready` renvoient 200 ou 503 avec état générique, vérification des dépendances mise en cache 5 s et mutualisée ; `/health/live` expose seulement la vie du processus. GET/HEAD uniquement ; autres méthodes 405 et routes 404. Aucun job, donnée métier, secret ou version via HTTP. Fermeture de la sonde avant arrêt Nest/queues lors du SIGTERM.
 
-La nouvelle base locale vide a reçu les migrations deploy, le seed TEST et les 18 tests d'intégrité avant messaging ; replay concurrent, retry et capture locale ont réussi. Il ne s'agit ni d'une migration staging ni d'un email réel. Les scans avant commit et pendant la re-certification n'identifient aucun secret réel. Les totaux de suites restent partiellement communs et ne doivent pas être additionnés.
+Image préparée `docker/worker/Dockerfile`, contexte racine, Node 24.20.0, pnpm 10.24.0 frozen, Chromium Playwright du lockfile et dépendances système. UID runtime non root, CMD exec, `.dockerignore` excluant secrets locaux et artifacts. CA de proxy de l'environnement de validation montée uniquement comme secret BuildKit ; TLS jamais désactivé, aucune CA de session copiée dans l'image. Validation locale réussie : PDF FR/AR hors ligne, utilisateur non root, limite mémoire 512 Mo / CPU 0,5 ; marqueur `WORKER_NONROOT_512MB_CHROMIUM_PDF_PASS`. Le premier essai a détecté des permissions de fichiers ; la copie en propriété node et les droits de lecture des navigateurs ont été corrigés, puis l'essai a réussi.
 
-État Git de revue : commit local et upstream identiques à `050935d2882ad7a3a66b9a65a3ea016a42ed7c63`, index vide, seules les deux mises à jour documentaires post-commit ci-dessous restent non commitées.
+## Limites Free acceptées, exclusivement pour staging
 
-```text
-## feat/lot14-staging-certification...origin/feat/lot14-staging-certification
- M docs/deployment/cutover-v2-v3.md
- M docs/lot14-certification.md
-```
+- Supabase Free : 1 GB de stockage, plafond fichier 50 MB, pause possible après inactivité, aucune garantie production/HA. Les clés S3 serveur contournent les RLS et donnent accès aux buckets du projet : projet dédié obligatoire, aucun partage avec V2.
+- Render API et worker Web Free : veille après 15 minutes sans trafic entrant, délai de réveil, redémarrages, filesystem éphémère, quota partagé de 750 heures/mois. L'arrivée d'un job Redis ne réveille pas à elle seule un Web Service endormi : réveiller manuellement le worker via HTTPS avant les tests et vérifier readiness. Aucun ping artificiel permanent ou service payant ajouté.
+- PostgreSQL Render Free : 1 GB, expiration 30 jours après création, pas de backup fournisseur, pas de HA ; base actuelle expirant le 23 novembre 2026. Aucune donnée réelle.
+- Upstash Free : TCP TLS, commandes BullMQ à valider, quotas à surveiller ; le polling consomme des commandes même sans job. Ne pas activer pay-as-you-go, upgrade ou carte pour contourner une limite. Aucun SLA, zéro perte ou disponibilité permanente n'est revendiqué.
 
-Le fetch du checkout était initialement limité à main ; le suivi distant de la seule branche LOT14 a été ajouté et vérifié sans modifier main. Vérification distante : main reste `9db48741b1559d6444e247432fa5336e0ad9adaa`, tags LOT12/LOT13 inchangés, aucun `lot-14-go`. La vérification finale d'accès retourne toujours Vercel/Render non installés. L'installation et l'authentification sont donc requises pour poursuivre les créations déjà autorisées ; aucune nouvelle autorisation de création n'est demandée ici.
+Ces limites sont explicitement acceptées par le propriétaire pour LOT14 staging. Elles restent documentées comme risques ; elles n'autorisent pas un GO sans tests distants des fonctionnalités/sécurités indispensables.
+
+## Validation locale et historique
+
+Checkpoint précédent avant ce changement : 14 étapes code 0, sécurité 179, unités 499, IAM/métier 358, Reports 13, Messaging sur DB locale neuve (18 contrôles d'intégrité), E2E 114 PASS / 89 skips contractuels / 0 FAIL, audit sans alerte, bundle canari 57 artifacts sans source map navigateur, scan de signatures zéro détection. Ces résultats ne certifient ni le nouveau code ni Supabase/Upstash distants.
+
+Validation ciblée actuelle : sonde 5 tests PASS ; worker 13 tests PASS dont activation strictement staging, 200/503, pas de fuite, méthode/route refusées et fermeture ; build worker PASS. Recertification complète et image à consigner après leur fin. Aucune assertion historique réduite.
+
+## Git et interdictions préservées
+
+HEAD et upstream de départ `c61652023d03b8637a91f8a278aecf7e2629945f`. Main certifié LOT13 `9db48741b1559d6444e247432fa5336e0ad9adaa`, tags LOT12/LOT13 préservés. Aucun `lot-14-go`, merge, production finale ou LOT15. V2 `gestschool.vercel.app`, projet `prj_lxb4cdk2pzSBK7jhGn6kaPzLhjtY` et Supabase `gestschool_v2BD` intacts.
+
+Le rejet automatique antérieur de la règle d'ignorance de build Vercel est conservé au checkpoint historique ; cette règle reste non appliquée et aucun contournement n'est utilisé. Le projet Vercel reste à lier/configurer manuellement pour la seule Preview LOT14. Les profils Render/Vercel ont été enregistrés, l'automatisation navigateur payante reste exclue.
+
+Sources : [S3 Supabase](https://supabase.com/docs/guides/storage/s3/authentication), [compatibilité](https://supabase.com/docs/guides/storage/s3/compatibility), [métadonnées Storage en lecture seule](https://supabase.com/docs/guides/storage/schema/design), [plafond fichiers](https://supabase.com/docs/guides/storage/uploads/file-limits), [Render Free](https://render.com/docs/free), [Upstash BullMQ](https://upstash.com/docs/redis/integrations/bullmq). Le changement Supabase retirant des suites TLS 1.2 CBC à partir du 10 novembre 2026 a été lu ; aucune désactivation TLS ni adaptation de l'adaptateur Node 24 n'est nécessaire sur cette seule annonce.
+
+## Commandes exécutées dans cette reprise
+
+| Commande                                                                                 | Résultat     |
+| ---------------------------------------------------------------------------------------- | ------------ |
+| `pnpm install --frozen-lockfile`                                                         | PASS, code 0 |
+| `pnpm security:test`                                                                     | PASS, code 0 |
+| `pnpm audit --prod`                                                                      | PASS, code 0 |
+| `pnpm format:check`                                                                      | PASS, code 0 |
+| `pnpm lint`                                                                              | PASS, code 0 |
+| `pnpm typecheck`                                                                         | PASS, code 0 |
+| `pnpm test`                                                                              | PASS, code 0 |
+| `pnpm build`                                                                             | PASS, code 0 |
+| `pnpm security:bundle`                                                                   | PASS, code 0 |
+| `pnpm iam:test`                                                                          | PASS, code 0 |
+| `pnpm reports:test`                                                                      | PASS, code 0 |
+| `pnpm messaging:test sur DB locale neuve, après migrations deploy / seed TEST / db:test` | PASS, code 0 |
+| `pnpm test:e2e`                                                                          | PASS, code 0 |
+| `git diff --check`                                                                       | PASS, code 0 |
+
+Image locale `gestschool-lot14-worker:local`, identifiant `sha256:7d0f49001f32524a338abb837f9de5e68adc874e55db8aa3c0c5135655f22cf5` : PDF FR/AR hors ligne, UID non root, 512 Mo / CPU 0,5 PASS ; configuration incomplète refusée PASS. Il ne s'agit pas d'un worker Render healthy. Scan arbre/historique : zéro signature de secret. Aucun changement de l'adaptateur S3 et aucune migration historique modifiée.
+
+Quinze fichiers de cette préparation restent non committés pour revue : scripts de sonde/hook/tests, build API, health worker/tests/main, image/Dockerignore, transmission Turbo, suite sécurité et quatre documents. Leur publication sur la seule branche LOT14 est nécessaire pour que Render exécute le code avec ses secrets. Aucun commit/push n'est effectué avant autorisation explicite levant la consigne antérieure « laisse les modifications non commitées pour revue finale ». Aucun merge ou tag GO n'est envisagé.

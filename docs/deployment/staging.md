@@ -1,31 +1,40 @@
-# Runbook de staging GestSchool V3
+# Runbook LOT14 — staging strictement gratuit
 
-Statut : procédure préparée, non exécutée sur un fournisseur. Ne pas appliquer aux projets V2 ou production. Utiliser une URL staging distincte, des ressources dédiées et les stores de secrets des fournisseurs. Ne pas utiliser `.env.example`, `iam:dev` ou le seed DEV sur staging.
+Décision du 25 octobre 2026 : zéro paiement, zéro carte, aucun R2. Supabase Storage Free, Upstash Redis Free, API et worker Render Web Free, PostgreSQL Render Free existant, Vercel Hobby. Les limites Free sont acceptées pour staging ; elles ne dispensent pas des preuves de sécurité/fonctionnement. V2 exclue, aucun merge, tag LOT14 ou LOT15.
 
-## Inventaire à compléter avant provisionnement
+## Stockage réel et secrets
 
-| Élément                                                                | État                                                                                                                                         |
-| ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| Équipe et nouveau projet Vercel staging, domaine stable distinct de V2 | Compte/team GestSchool existant ; `gestschool-v3-staging`, domaine souhaité `gestschool-v3-staging.vercel.app`, disponibilité non vérifiée   |
-| Workspace Render, région, service API et background worker             | Compte GestSchool connecté ou personnel ; région EU commune ; `gestschool-v3-api-staging` et `gestschool-v3-worker-staging`                  |
-| Fournisseur/plan PostgreSQL, DB dédiée et rôles                        | Render `gestschool-v3-postgres-staging` ; plan/rôles à confirmer                                                                             |
-| Fournisseur/plan Redis TCP/TLS compatible BullMQ                       | Render `gestschool-v3-redis-staging` ; plan/compatibilité à confirmer                                                                        |
-| Fournisseur S3/R2, bucket privé, clés dédiées et rétention             | Non choisis                                                                                                                                  |
-| Compte Brevo, sender, templates approuvés, destinataires de test       | Compte GestSchool LOT11 existant ; sender/templates non accessibles ; `<EMAIL_TEST>` non remplacé : aucun envoi réel, MANUAL ACTION REQUIRED |
-| Coûts, sauvegardes, localisation et accès opérateurs                   | À revoir avec le propriétaire                                                                                                                |
+Projet Supabase existant `gestschool-v3-staging` / `rwmuksaafbnphurxaofq`, organisation PROTEL's vérifiée Free, région réelle `eu-west-1`. Le projet est réutilisé ; ne pas réutiliser `gestschool_v2BD`. Bucket `gestschool-v3-staging-private`, public=false confirmé. API Render cible `srv-dbei87lg1s2s73fmb7h0` dans workspace `tea-d50tlb24d50c73cbo9m0`.
 
-## Ordre d'exécution après revue
+```text
+S3_ENDPOINT=https://rwmuksaafbnphurxaofq.storage.supabase.co/storage/v1/s3
+S3_REGION=eu-west-1
+S3_BUCKET=gestschool-v3-staging-private
+S3_FORCE_PATH_STYLE=true
+```
 
-1. Accéder aux comptes autorisés ci-dessus et valider les plans/coûts ; enregistrer les IDs non secrets. Activer les connexions Vercel/Render proposées. Ne pas réutiliser le projet qui porte `gestschool.vercel.app`.
-2. Créer DB, Redis et bucket dédiés ; activer TLS/auth/chiffrement/backups. Vérifier la CA, les commandes Redis utilisées par BullMQ et la politique noeviction. Garder les accès réseau au minimum nécessaire.
-3. Créer les rôles migration/runtime si le provider le permet. Interdire DDL et accès aux tables de migrations au runtime ; vérifier les opérations métier et triggers avec ce rôle. Documenter tout partage de rôle comme risque à accepter, sans prétendre à une séparation réalisée.
-4. Générer les clés Ed25519, MFA/CSRF/messaging indépendantes dans un contexte opérateur sûr ; les injecter uniquement dans les secret stores. Aucune clé dans Git, logs, chat, arguments de commande, rapport ou bundle. Enregistrer les références de versions de secrets, jamais les valeurs.
-5. Déployer les migrations existantes avec le rôle migration via `pnpm db:migrate:deploy`, depuis la racine du monorepo. Injecter `DATABASE_URL` de migration pour cette commande uniquement. Pas de `migrate dev`, reset, nouvelle migration historique ou restauration sur DB active.
-6. Préparer un bootstrap staging spécifique, revu et testé sur base jetable, avant de créer les comptes contrôlés. Le seed actuel crée une école locale et refuse `NODE_ENV=production` : ne pas contourner ce refus en mettant staging en DEV. Le bootstrap doit créer uniquement des tenants A/B fictifs, référentiels, permissions/rôles et comptes contrôlés ; l'activation/MFA passe par les vrais parcours IAM. Aucun mot de passe par défaut, bypass MFA ou token réutilisable. Cet outil n'est pas encore livré dans la préparation actuelle, faute d'identités autorisées et de cible DB.
-7. Déployer API et worker séparés, sur le même SHA revu. Vérifier readiness avant de rendre le web accessible. Aucun service public worker. Conserver les queues et leases pendant redéploiement ; tester SIGTERM, reprise et absence de doublons/pertes.
-8. Créer le projet web staging avec root `apps/web`, Next.js, Node 24.x compatible avec `engines`, pnpm 10.24.0 et accès aux packages hors root. Depuis cette root : install `cd ../.. && pnpm install --frozen-lockfile --prod=false` ; build `cd ../.. && pnpm --filter @gestschool/web... build`. Les dépendances de développement sont nécessaires à la compilation, même si le runtime utilise `NODE_ENV=production`. Conserver output Next par défaut ; pas de static export. Utiliser Preview ou un environnement personnalisé staging, sans déploiement Production ni promotion vers le projet V2.
-9. Configurer un domaine staging stable dans `APP_PUBLIC_ORIGIN`, la même origine dans `IAM_ALLOWED_ORIGINS`, et `API_INTERNAL_URL` avec l'origine API HTTPS. Toute modification de cette dernière impose un nouveau build Vercel. Ne pas ouvrir CORS à tous les sous-domaines Preview.
-10. Exécuter les tests distants et collecter des preuves sans secrets. GO uniquement après fermeture de chaque blocage du rapport. Ne pas taguer LOT14 avant revue du propriétaire.
+Ces quatre paramètres non secrets sont enregistrés dans Render. S3_ACCESS_KEY_ID / S3_SECRET_ACCESS_KEY et REDIS_URL TCP rediss sont signalés enregistrés par le propriétaire dans les secrets API Render. Ne jamais les lire pour les mettre dans un outil local, les sortir dans des logs, `.env`, Git ou le chat. Copier/partager uniquement dans les mécanismes Render avec le futur worker. Aucun secret via Docker ARG ou image.
+
+## Exécution du diagnostic S3 dans Render
+
+1. Publier uniquement la branche LOT14 après revue explicite des fichiers, en conservant l'interdiction de merge/tag. Le hook API est dans `scripts/staging-storage-build-probe.mjs` et la sonde dans `scripts/staging-storage-probe.mjs`. Avant publication, ne pas prétendre qu'ils sont disponibles au provider.
+2. Définir temporairement `LOT14_STORAGE_PROBE=true` sur l'API staging via fusion de variables. Le build existant `pnpm install --frozen-lockfile --prod=false && pnpm --filter @gestschool/api... build` compile puis exécute le hook avec les clés **uniquement dans Render**. La sonde n'a pas besoin de DB, Redis, clés IAM ou envoi Brevo. Une cible autre que le projet exact ou APP_ENV différent de staging est refusée avant toute écriture.
+3. Suivre le deploy ID et lire uniquement les événements sûrs `LOT14_STORAGE_PROBE`. Exiger PASS pour HeadBucket, PutObject, GetObject/checksum/MIME, GET/LIST/PUT S3 anonymes refusés, absence de modification, route publique refusée et DeleteObject vérifié. Objet PDF jetable à UUID aléatoires ; aucune suppression d'objet utilisateur. Un statut 404 ou redirect ne prouve pas le refus S3 anonyme.
+4. En cas d'échec, garder FAIL, nettoyer seulement la probe et investiguer sans afficher le secret. Ne modifier l'adaptateur qu'après incompatibilité démontrée. Désactiver ensuite le flag par `LOT14_STORAGE_PROBE=false` pour les builds habituels. Le démarrage de l'API peut rester bloqué par d'autres dépendances : un diagnostic S3 PASS ne signifie pas API healthy.
+
+## Worker Render Web Service Free
+
+Après publication de la branche, créer `gestschool-v3-worker-staging`, runtime Docker, plan **free**, région `frankfurt`, branche `feat/lot14-staging-certification`, contexte racine, Dockerfile `docker/worker/Dockerfile`, auto-deploy désactivé pour la certification. Le CMD démarre le worker réel, pas un serveur health isolé. Définir APP_ENV staging, NODE_ENV production, IAM_ENV staging, WORKER_HTTP_HEALTH_ENABLED true ; Render fournit PORT. Sonde `/health/ready`, écoute 0.0.0.0 après démarrage des trois runtimes, réponses génériques 200/503, GET/HEAD, no-store. `/health` équivaut readiness, `/health/live` vérifie seulement le processus. Aucun endpoint métier.
+
+Installer dans les stores Render les mêmes connexions DB/Redis/S3 et configurations Brevo nécessaires ; ne pas extraire les clés via le chat. Vérifier migrations avant workers. Garder le refus de config prod, pas de mode DEV/local ou seed DEV forcé. Le worker Free peut dormir : le réveiller manuellement via HTTPS avant tests, vérifier readiness, tester ensuite reprises/leases/outbox. Ne pas promettre que Redis le réveillera, ne pas ajouter de keepalive permanent ou option payante.
+
+Image : Node 24.20.0, pnpm 10.24.0 frozen, Chromium Playwright et bibliothèques installés, runtime non root, SIGTERM reçu directement. `.dockerignore` exclut secrets/artefacts. Validation locale avec CA de proxy en secret BuildKit facultatif, jamais incorporée dans les couches. Aucun secret applicatif au build Docker.
+
+## Limites et prérequis restants
+
+Supabase Free : 1 GB, plafond fichier 50 MB, pause possible après inactivité, sans production/HA. Render Web Free : sommeil, redémarrages, stockage local éphémère, quota partagé 750 heures/mois. PostgreSQL Free existant : 1 GB, temporaire, expiration 23 novembre 2026, sans backup fournisseur. Upstash Free : quotas/polling, TCP TLS requis, pas d'URL REST, pas d'upgrade. Vérifier l'éviction désactivée et le comportement au plafond dans la console ; aucune configuration provider n'est attestée par la seule déclaration de l'URL. Limites acceptées pour ce staging uniquement.
+
+Préparer encore les clés IAM/crypto dans les stores, les credentials/templates Brevo (aucun email sans recipient autorisé), les migrations deploy et un bootstrap fictif A/B sécurisé sans seed DEV. Lier le projet Vercel staging et configurer seulement la Preview LOT14. La commande d'ignorance de build précédemment rejetée n'est pas appliquée. Auth/MFA/RBAC/tenant/worker complet et 49 smoke distants restent à exécuter. Voir les 45 points dans `../lot14-certification.md`.
 
 ## Variables : séparation web / API / worker
 
@@ -86,3 +95,5 @@ Avant restore : comparer les IDs des bases, rôle, hôte, cible isolée et absen
 Conserver IDs de requête, codes sûrs, état de dépendances, profondeur/âge des files et échecs de jobs. Masquer Authorization, Cookie/Set-Cookie, mots de passe, TOTP, bearer QR/reset, clés et URLs DB dans les logs du proxy/fournisseur, pas seulement dans l'application. Tester avec des canaris, jamais afficher un vrai secret pour le chercher. Mettre des alertes sur health, backlog/leases, erreurs auth/provider et échec de backup.
 
 Le propriétaire doit vérifier protections main (review/CI requise, force-push et suppression interdits), scans et reporting privé. L'API de protection classique retourne 403 à l'intégration ; ne pas déduire de ce refus que le dépôt est non protégé. Ne pas activer de règles qui bloqueraient le propriétaire sans examiner leurs bypass et droits.
+
+Recertification locale de cette préparation terminée : 14 étapes PASS, 187 sécurité, 502 unités, 358 IAM/métier, 13 Reports, Messaging frais, 114 E2E PASS / 89 skips contractuels / 0 FAIL. Image validée non root/512 Mo/PDF et démarrage incomplet refusé. Les tests S3 Supabase restent NOT RUN avant publication de la branche ; les clés restent dans Render.
