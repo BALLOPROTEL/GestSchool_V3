@@ -29,6 +29,7 @@ export interface MessagingConfig {
 
 export function loadMessagingConfig(environment: NodeJS.ProcessEnv = process.env): MessagingConfig {
   validateDeploymentEnvironment(environment);
+  const staging = environment['APP_ENV'] === 'staging';
   const nodeEnvironment = z
     .enum(['development', 'test', 'production'])
     .parse(environment['NODE_ENV'] ?? 'development');
@@ -50,8 +51,9 @@ export function loadMessagingConfig(environment: NodeJS.ProcessEnv = process.env
   if (nodeEnvironment === 'production')
     requirePublicHttps(appPublicOrigin, 'APP_PUBLIC_ORIGIN', true);
 
+  const templateIdsJson = environment['BREVO_WHATSAPP_TEMPLATE_IDS_JSON'];
   const templateIdsInput: unknown = JSON.parse(
-    environment['BREVO_WHATSAPP_TEMPLATE_IDS_JSON'] ?? '{}',
+    staging && !templateIdsJson?.trim() ? '{}' : (templateIdsJson ?? '{}'),
   );
   const whatsAppTemplateIds = z
     .partialRecord(locale, z.number().int().positive())
@@ -74,14 +76,23 @@ export function loadMessagingConfig(environment: NodeJS.ProcessEnv = process.env
   const emailSender = environment['BREVO_EMAIL_SENDER'] ?? null;
   const whatsAppSender = environment['BREVO_WHATSAPP_SENDER'] ?? null;
   if (mode === 'brevo') {
-    z.string().min(20).parse(apiKey);
-    z.string().min(32).parse(webhookSecret);
-    email.parse(emailSender);
-    z.string()
-      .regex(/^[1-9]\d{7,14}$/)
-      .parse(whatsAppSender);
-    if (!whatsAppTemplateIds.fr || !whatsAppTemplateIds.en || !whatsAppTemplateIds.ar)
-      throw new Error('Brevo requires approved FR/EN/AR WhatsApp template IDs');
+    z.object({
+      BREVO_API_KEY: z.string().min(20),
+      BREVO_WEBHOOK_SECRET: z.string().min(32),
+      BREVO_EMAIL_SENDER: email,
+    }).parse({
+      BREVO_API_KEY: apiKey,
+      BREVO_WEBHOOK_SECRET: webhookSecret,
+      BREVO_EMAIL_SENDER: emailSender,
+    });
+    // Staging rejects WhatsApp before any provider call, even with an authorized inbox.
+    if (!staging) {
+      z.string()
+        .regex(/^[1-9]\d{7,14}$/)
+        .parse(whatsAppSender);
+      if (!whatsAppTemplateIds.fr || !whatsAppTemplateIds.en || !whatsAppTemplateIds.ar)
+        throw new Error('Brevo requires approved FR/EN/AR WhatsApp template IDs');
+    }
   }
   if (nodeEnvironment === 'production') {
     requireEncryptionKey(tokenKey, 'MESSAGING_TOKEN_KEY');
@@ -111,7 +122,7 @@ export function loadMessagingConfig(environment: NodeJS.ProcessEnv = process.env
     apiKey,
     webhookSecret,
     tokenKey,
-    ...(environment['APP_ENV'] === 'staging'
+    ...(staging
       ? {
           stagingEmailRecipient: (() => {
             const result = email.safeParse(

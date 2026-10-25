@@ -66,7 +66,12 @@ export class MessagingProviderError extends Error {
 export class BrevoMessagingProvider implements MessagingProvider {
   readonly name = 'BREVO' as const;
   constructor(private readonly config: MessagingConfig) {
-    if (config.mode !== 'brevo' || !config.apiKey || !config.emailSender || !config.whatsAppSender)
+    if (
+      config.mode !== 'brevo' ||
+      !config.apiKey ||
+      !config.emailSender ||
+      (config.stagingEmailRecipient === undefined && !config.whatsAppSender)
+    )
       throw new Error('Brevo provider configuration is incomplete');
   }
   private async send(path: string, payload: unknown): Promise<ProviderReceipt> {
