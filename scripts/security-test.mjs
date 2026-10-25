@@ -63,6 +63,7 @@ const steps = [
   ['node', ['--test', 'scripts/security-web.test.mjs']],
   ['node', ['--test', 'scripts/staging-targets.test.mjs']],
   ['node', ['--test', 'scripts/staging-storage-probe.test.mjs']],
+  ['node', ['--test', 'scripts/staging-redis-probe.test.mjs']],
   ['node', ['--test', 'scripts/security-runtime.test.mjs']],
   ['pnpm', ['--filter', '@gestschool/api', 'test:iam', 'tests/security.test.ts']],
 ];
