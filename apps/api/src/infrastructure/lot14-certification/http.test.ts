@@ -1,4 +1,5 @@
 import { createServer, type Server, type RequestListener } from 'node:http';
+import { randomUUID } from 'node:crypto';
 import type { AddressInfo } from 'node:net';
 import { afterEach, describe, expect, it } from 'vitest';
 import { CertificationHttp } from './http.js';
@@ -71,7 +72,7 @@ describe('private loopback HTTP transport', () => {
       res.setHeader('Set-Cookie', 'unsafe=private-canary; Path=/; Secure');
       res.end('private-driver-canary');
     });
-    await expect(client.send('auth/me')).rejects.toThrow('LOT14_CERTIFICATION_FAILED');
+    await expect(client.send('auth/me')).rejects.toThrow('LOT14_HTTP_FAILED');
   });
   it('aborts open HTTP requests and closes their sockets', async () => {
     const client = await listen(() => {});
@@ -80,9 +81,25 @@ describe('private loopback HTTP transport', () => {
       (server!.address() as AddressInfo).port,
       controller.signal,
     );
-    const run = expect(bounded.send('auth/me')).rejects.toThrow('LOT14_CERTIFICATION_FAILED');
+    const run = expect(bounded.send('auth/me')).rejects.toThrow('LOT14_HTTP_FAILED');
     controller.abort();
     await run;
+    client.clear();
+  });
+  it('captures AUTH_UNAVAILABLE from a business API request with a safe correlation, without exposing its response', async () => {
+    const requestId = randomUUID();
+    const client = await listen((_req, res) => {
+      res.writeHead(500, { 'Content-Type': 'application/json', 'X-Request-ID': requestId });
+      res.end(JSON.stringify({ code: 'AUTH_UNAVAILABLE', private: 'PRIVATE_RESPONSE_CANARY' }));
+    });
+    await expect(client.send('students')).rejects.toMatchObject({
+      details: {
+        code: 'AUTH_API_UNAVAILABLE',
+        operation: 'API_REQUEST',
+        httpStatus: 500,
+        requestId,
+      },
+    });
     client.clear();
   });
 });

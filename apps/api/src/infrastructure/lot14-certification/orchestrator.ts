@@ -1,4 +1,5 @@
 import { failure, runBudgetMs, scenarios } from './config.js';
+import { CertificationAuthFailure, rootFailure, type AuthFailureDetails } from './diagnostics.js';
 
 export type Verdict = 'PASS' | 'FAIL' | 'SKIP';
 export interface CertificationTasks {
@@ -7,8 +8,13 @@ export interface CertificationTasks {
   worker(signal: AbortSignal): Promise<void>;
   close(): Promise<void>;
 }
-export interface SafeRecord {
-  check: 'LOT14_TENANT_AB_CASE' | 'LOT14_TENANT_AB' | 'LOT14_WORKER_E2E' | 'LOT14_CERTIFICATION';
+export interface SafeRecord extends Partial<Omit<AuthFailureDetails, 'code'>> {
+  check:
+    | 'LOT14_TENANT_AB_CASE'
+    | 'LOT14_TENANT_AB'
+    | 'LOT14_WORKER_E2E'
+    | 'LOT14_CERTIFICATION'
+    | 'LOT14_AUTH_STATE';
   status: Verdict;
   case?: (typeof scenarios)[number];
   pass?: number;
@@ -19,7 +25,17 @@ export interface SafeRecord {
     | 'PREPARATION_FAILED'
     | 'TENANT_AB_FAILED'
     | 'CLEANUP_FAILED'
-    | 'RUN_FAILED';
+    | 'RUN_FAILED'
+    | AuthFailureDetails['code'];
+  tenants?: number;
+  users?: number;
+  memberships?: number;
+  adminMfaEnrolled?: number;
+  activeSessions?: number;
+  expiredSessions?: number;
+  unusedMfaChallenges?: number;
+  usedMfaChallenges?: number;
+  expiredMfaChallenges?: number;
   workflow?: 'report';
   terminal?: 'completed';
 }
@@ -38,12 +54,16 @@ export async function certify(
   let passed = 0;
   let failed = 0;
   let ok = false;
+  let preparationFailure: AuthFailureDetails | undefined;
   try {
     try {
       await tasks.prepare(abort.signal);
       abort.signal.throwIfAborted();
       prepared = true;
-    } catch {
+    } catch (error) {
+      preparationFailure = rootFailure(error);
+      if (preparationFailure)
+        emit({ check: 'LOT14_CERTIFICATION', status: 'FAIL', ...preparationFailure });
       /* Every blocked case is FAIL, never silently skipped. */
     }
     for (const [index, name] of scenarios.entries()) {
@@ -54,7 +74,9 @@ export async function certify(
           await tasks.scenario(index, abort.signal);
           abort.signal.throwIfAborted();
           status = 'PASS';
-        } catch {
+        } catch (error) {
+          const root = rootFailure(error);
+          if (root) emit({ check: 'LOT14_CERTIFICATION', status: 'FAIL', ...root });
           /* Sanitized below. */
         }
       }
@@ -90,7 +112,9 @@ export async function certify(
           terminal: 'completed',
         });
         ok = true;
-      } catch {
+      } catch (error) {
+        const root = rootFailure(error);
+        if (root) emit({ check: 'LOT14_CERTIFICATION', status: 'FAIL', ...root });
         emit({ check: 'LOT14_WORKER_E2E', status: 'FAIL', code: 'ASSERTION_FAILED' });
       }
     }
@@ -105,6 +129,6 @@ export async function certify(
       emit({ check: 'LOT14_CERTIFICATION', status: 'FAIL', code: 'CLEANUP_FAILED' });
     }
   }
-  if (!ok) throw failure();
+  if (!ok) throw preparationFailure ? new CertificationAuthFailure(preparationFailure) : failure();
   emit({ check: 'LOT14_CERTIFICATION', status: 'PASS' });
 }

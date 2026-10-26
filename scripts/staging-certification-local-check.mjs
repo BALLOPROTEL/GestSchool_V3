@@ -86,6 +86,8 @@ try {
     await import('../apps/api/dist/modules/iam/presentation/http/security.js');
   const { authenticate } =
     await import('../apps/api/dist/infrastructure/lot14-certification/authentication.js');
+  const { readAuthState } =
+    await import('../apps/api/dist/infrastructure/lot14-certification/auth-state.js');
   const { fixtures, scenario } =
     await import('../apps/api/dist/infrastructure/lot14-certification/fixtures.js');
   stage = 'local-nest';
@@ -113,6 +115,13 @@ try {
     },
   };
   const tenants = (await client.query('SELECT id,slug FROM tenants')).rows;
+  const initialState = await readAuthState(
+    client,
+    tenants.map((row) => row.id),
+  );
+  assert.equal(initialState.adminMfaEnrolled, 0);
+  assert.equal(initialState.activeSessions, 0);
+  assert.equal(initialState.unusedMfaChallenges, 0);
   const groups = [];
   stage = 'real-http-login-enroll-refresh';
   for (const label of ['A', 'B']) {
@@ -137,6 +146,14 @@ try {
   await fixtures('B', groups[1]);
   stage = 'http-mfa-rerun-normal-replay-protection';
   await authenticate('A', 'SCHOOL_ADMIN', groups[0].SCHOOL_ADMIN.tenantId, signal, dependencies);
+  const enrolledState = await readAuthState(
+    client,
+    tenants.map((row) => row.id),
+  );
+  assert.equal(enrolledState.adminMfaEnrolled, 2);
+  assert.equal(enrolledState.activeSessions, 9);
+  assert.equal(enrolledState.unusedMfaChallenges, 0);
+  assert.equal(enrolledState.usedMfaChallenges, 5);
   stage = 'http-session-cleanup';
   for (const account of accounts) {
     assert.equal((await account.http.send('auth/logout', 'POST', {})).status, 201);

@@ -2,6 +2,7 @@ import { execFile } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { certificationEnabled, childBudgetMs, failure, scenarios } from './config.js';
 import type { SafeRecord } from './orchestrator.js';
+import { authFailureSchema, authStateSchema } from './diagnostics.js';
 
 function safeOutput(stdout: string): SafeRecord[] {
   const records: SafeRecord[] = [];
@@ -10,8 +11,17 @@ function safeOutput(stdout: string): SafeRecord[] {
     if (!data || typeof data !== 'object') throw failure();
     const row = data as SafeRecord;
     if (!['PASS', 'FAIL', 'SKIP'].includes(row.status)) throw failure();
-    if (row.check === 'LOT14_TENANT_AB_CASE' && scenarios.includes(row.case!)) {
-      records.push({ check: row.check, status: row.status, case: row.case! });
+    if (row.check === 'LOT14_AUTH_STATE') {
+      records.push(authStateSchema.parse(data));
+    } else if (row.check === 'LOT14_TENANT_AB_CASE' && scenarios.includes(row.case!)) {
+      records.push({
+        check: row.check,
+        status: row.status,
+        case: row.case!,
+        ...(row.code === 'ASSERTION_FAILED' || row.code === 'PREPARATION_FAILED'
+          ? { code: row.code }
+          : {}),
+      });
     } else if (
       row.check === 'LOT14_TENANT_AB' &&
       [row.pass, row.fail, row.skip].every(
@@ -32,13 +42,23 @@ function safeOutput(stdout: string): SafeRecord[] {
       records.push({
         check: row.check,
         status: row.status,
+        ...(row.code === 'TENANT_AB_FAILED' ? { code: row.code } : {}),
         ...(row.status === 'PASS'
           ? { workflow: 'report' as const, terminal: 'completed' as const }
           : {}),
       });
-    } else if (row.check === 'LOT14_CERTIFICATION')
-      records.push({ check: row.check, status: row.status });
-    else throw failure();
+    } else if (row.check === 'LOT14_CERTIFICATION') {
+      const details = row.status === 'FAIL' ? authFailureSchema.safeParse(data) : undefined;
+      records.push({
+        check: row.check,
+        status: row.status,
+        ...(details?.success
+          ? details.data
+          : ['RUN_FAILED', 'CLEANUP_FAILED'].includes(row.code ?? '')
+            ? { code: row.code as 'RUN_FAILED' | 'CLEANUP_FAILED' }
+            : {}),
+      });
+    } else throw failure();
   }
   return records;
 }
@@ -111,21 +131,22 @@ export async function runStagingCertification(
   } catch {
     throw failure();
   }
-  const cases = records.filter((row) => row.check === 'LOT14_TENANT_AB_CASE');
+  const core = records.filter((row) => row.check !== 'LOT14_AUTH_STATE');
+  const cases = core.filter((row) => row.check === 'LOT14_TENANT_AB_CASE');
   const invalid =
     !outcome.ok ||
-    records.length !== 17 ||
+    core.length !== 17 ||
     cases.length !== 14 ||
     cases.some((row, index) => row.case !== scenarios[index] || row.status !== 'PASS') ||
-    records[14]?.check !== 'LOT14_TENANT_AB' ||
-    records[14].status !== 'PASS' ||
-    records[14].pass !== 14 ||
-    records[14].fail !== 0 ||
-    records[14].skip !== 0 ||
-    records[15]?.check !== 'LOT14_WORKER_E2E' ||
-    records[15].status !== 'PASS' ||
-    records[16]?.check !== 'LOT14_CERTIFICATION' ||
-    records[16].status !== 'PASS';
+    core[14]?.check !== 'LOT14_TENANT_AB' ||
+    core[14].status !== 'PASS' ||
+    core[14].pass !== 14 ||
+    core[14].fail !== 0 ||
+    core[14].skip !== 0 ||
+    core[15]?.check !== 'LOT14_WORKER_E2E' ||
+    core[15].status !== 'PASS' ||
+    core[16]?.check !== 'LOT14_CERTIFICATION' ||
+    core[16].status !== 'PASS';
   if (outcome.ok && invalid) throw failure();
   // Child exit zero alone is insufficient; require the complete exact matrix and terminal result.
   for (const row of records) {

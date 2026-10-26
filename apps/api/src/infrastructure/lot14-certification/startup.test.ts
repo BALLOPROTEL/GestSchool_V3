@@ -150,6 +150,87 @@ describe('bounded certification startup process', () => {
     complete(new Error('interrupted'), '');
     await run;
   });
+  it('forwards the whitelisted root code and correlation ID on nonzero exit, without extra child fields', async () => {
+    const emit = vi.fn();
+    const requestId = randomUUID();
+    const run = expect(runStagingCertification(3001, env(), emit)).rejects.toThrow(
+      'LOT14_CERTIFICATION_FAILED',
+    );
+    complete(
+      new Error('private-driver-canary'),
+      JSON.stringify({
+        check: 'LOT14_CERTIFICATION',
+        status: 'FAIL',
+        code: 'AUTH_LOGIN_UNAVAILABLE',
+        operation: 'LOGIN',
+        httpStatus: 503,
+        requestId,
+        responseCode: 'AUTH_UNAVAILABLE',
+        extra: 'private-stdout-canary',
+      }),
+    );
+    await run;
+    expect(JSON.parse(emit.mock.calls[0]![0])).toEqual({
+      check: 'LOT14_CERTIFICATION',
+      status: 'FAIL',
+      code: 'AUTH_LOGIN_UNAVAILABLE',
+      operation: 'LOGIN',
+      httpStatus: 503,
+      requestId,
+      responseCode: 'AUTH_UNAVAILABLE',
+    });
+    expect(JSON.stringify(emit.mock.calls)).not.toContain('private-');
+  });
+  it('allows only the bounded safe state counters before an otherwise complete PASS', async () => {
+    const emit = vi.fn();
+    const run = runStagingCertification(3001, env(), emit);
+    complete(
+      null,
+      JSON.stringify({
+        check: 'LOT14_AUTH_STATE',
+        status: 'PASS',
+        tenants: 2,
+        users: 8,
+        memberships: 8,
+        adminMfaEnrolled: 2,
+        activeSessions: 1,
+        expiredSessions: 0,
+        unusedMfaChallenges: 0,
+        usedMfaChallenges: 4,
+        expiredMfaChallenges: 0,
+        extra: 'private-stdout-canary',
+      }) +
+        '\n' +
+        report(),
+    );
+    await run;
+    expect(emit).toHaveBeenCalledTimes(18);
+    expect(JSON.stringify(emit.mock.calls)).not.toContain('private-');
+  });
+  it('preserves PREPARATION_FAILED and the reason for the conditional worker SKIP', async () => {
+    const emit = vi.fn(),
+      run = expect(runStagingCertification(3001, env(), emit)).rejects.toThrow(
+        'LOT14_CERTIFICATION_FAILED',
+      );
+    const rows = report()
+      .split('\n')
+      .map((line) => JSON.parse(line));
+    for (let index = 0; index < 14; index++)
+      rows[index] = { ...rows[index], status: 'FAIL', code: 'PREPARATION_FAILED' };
+    rows[14] = { check: 'LOT14_TENANT_AB', status: 'FAIL', pass: 0, fail: 14, skip: 0 };
+    rows[15] = { check: 'LOT14_WORKER_E2E', status: 'SKIP', code: 'TENANT_AB_FAILED' };
+    rows[16] = { check: 'LOT14_CERTIFICATION', status: 'FAIL', code: 'RUN_FAILED' };
+    complete(new Error('failed'), rows.map((row) => JSON.stringify(row)).join('\n'));
+    await run;
+    expect(JSON.parse(emit.mock.calls[0]![0])).toMatchObject({
+      status: 'FAIL',
+      code: 'PREPARATION_FAILED',
+    });
+    expect(JSON.parse(emit.mock.calls[15]![0])).toMatchObject({
+      status: 'SKIP',
+      code: 'TENANT_AB_FAILED',
+    });
+  });
   it('refuses malformed flags and nonstaging without spawning', async () => {
     await expect(
       runStagingCertification(3001, { ...env(), APP_ENV: 'production' }),

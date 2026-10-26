@@ -1,3 +1,4 @@
+import { readAuthState } from './auth-state.js';
 import { authenticate } from './authentication.js';
 import { createHash, randomUUID } from 'node:crypto';
 import { createRequire } from 'node:module';
@@ -11,7 +12,8 @@ import { loadIamConfig } from '../../modules/iam/infrastructure/iam-config.js';
 import { certificationEnabled, failure, roles, type Role } from './config.js';
 import { CertificationHttp, items, object, requireStatus, text } from './http.js';
 import { fixtures, scenario, type Account, type Graph } from './fixtures.js';
-import type { CertificationTasks } from './orchestrator.js';
+import type { CertificationTasks, SafeRecord } from './orchestrator.js';
+import { authRequest, CertificationAuthFailure, preparationStep } from './diagnostics.js';
 
 interface Sql {
   query(sql: string, values?: unknown[]): Promise<{ rows: Record<string, unknown>[] }>;
@@ -30,7 +32,11 @@ interface BootstrapModule {
   ): Promise<unknown>;
 }
 
-export function productionTasks(port: number, environment: NodeJS.ProcessEnv): CertificationTasks {
+export function productionTasks(
+  port: number,
+  environment: NodeJS.ProcessEnv,
+  emit: (record: SafeRecord) => void = () => {},
+): CertificationTasks {
   if (!certificationEnabled(environment)) throw failure();
   const infrastructure = loadInfrastructureConfig(environment);
   if (
@@ -64,8 +70,7 @@ export function productionTasks(port: number, environment: NodeJS.ProcessEnv): C
   async function healthy(signal: AbortSignal) {
     const http = new CertificationHttp(port, signal);
     try {
-      const api = await http.send('health/ready');
-      requireStatus(api, 200);
+      const api = await authRequest(http, 'READINESS', 'health/ready', 200);
       const dependencies = object(api.body.dependencies);
       if (
         api.body.status !== 'ok' ||
@@ -238,24 +243,61 @@ export function productionTasks(port: number, environment: NodeJS.ProcessEnv): C
 
   return {
     async prepare(signal) {
-      await healthy(signal);
-      await sql.connect();
-      const target = await sql.query(
-        'SELECT current_database() AS name, pg_try_advisory_lock(hashtext($1)) AS locked',
-        ['lot14-certification-v1'],
+      await preparationStep('PREREQUISITE_HEALTH', 'AUTH_PREREQUISITE_UNHEALTHY', () =>
+        healthy(signal),
+      );
+      await preparationStep('BOOTSTRAP_DB_CONNECT', 'AUTH_BOOTSTRAP_DB_UNAVAILABLE', () =>
+        sql.connect(),
+      );
+      const target = await preparationStep(
+        'BOOTSTRAP_TARGET',
+        'AUTH_BOOTSTRAP_DB_UNAVAILABLE',
+        () =>
+          sql.query(
+            'SELECT current_database() AS name, pg_try_advisory_lock(hashtext($1)) AS locked',
+            ['lot14-certification-v1'],
+          ),
       );
       locked = target.rows[0]?.locked === true;
-      if (!locked || target.rows[0]?.name !== 'gestschool_v3_postgres_staging') throw failure();
-      const moduleUrl = new URL('../../../../../scripts/staging-bootstrap.mjs', import.meta.url);
-      const bootstrap = (await import(moduleUrl.href)) as BootstrapModule;
-      await bootstrap.inspectBootstrap(sql, {
-        grants: roleGrants,
-        verifyIdentity: (user, hash) =>
-          passwords.verify(hash, environment[user.passwordVariable] ?? ''),
+      if (!locked || target.rows[0]?.name !== 'gestschool_v3_postgres_staging')
+        throw new CertificationAuthFailure({
+          code: 'AUTH_FIXTURE_MISMATCH',
+          operation: 'BOOTSTRAP_TARGET',
+        });
+      await preparationStep('BOOTSTRAP_INSPECT', 'AUTH_BOOTSTRAP_INSPECTION_FAILED', async () => {
+        const moduleUrl = new URL('../../../../../scripts/staging-bootstrap.mjs', import.meta.url);
+        const bootstrap = (await import(moduleUrl.href)) as BootstrapModule;
+        try {
+          await bootstrap.inspectBootstrap(sql, {
+            grants: roleGrants,
+            verifyIdentity: (user, hash) =>
+              passwords.verify(hash, environment[user.passwordVariable] ?? ''),
+          });
+        } catch (error) {
+          if (error instanceof Error && error.message === 'BOOTSTRAP_COLLISION')
+            throw new CertificationAuthFailure({
+              code: 'AUTH_FIXTURE_MISMATCH',
+              operation: 'BOOTSTRAP_INSPECT',
+            });
+          throw error;
+        }
       });
-      const tenants = await sql.query(
-        "SELECT id,slug FROM tenants WHERE slug IN ('lot14-certification-a','lot14-certification-b')",
+      const tenants = await preparationStep(
+        'BOOTSTRAP_TENANTS',
+        'AUTH_BOOTSTRAP_DB_UNAVAILABLE',
+        () =>
+          sql.query(
+            "SELECT id,slug FROM tenants WHERE slug IN ('lot14-certification-a','lot14-certification-b')",
+          ),
       );
+      await preparationStep('BOOTSTRAP_STATE', 'AUTH_BOOTSTRAP_DB_UNAVAILABLE', async () => {
+        emit(
+          await readAuthState(
+            sql,
+            tenants.rows.map((row) => text(row.id)),
+          ),
+        );
+      });
       const groups: Record<Role, Account>[] = [];
       for (const label of ['A', 'B'] as const) {
         const tenantId = text(
@@ -266,10 +308,14 @@ export function productionTasks(port: number, environment: NodeJS.ProcessEnv): C
           group[role] = await authenticate(label, role, tenantId, signal, authentication);
         groups.push(group);
       }
-      a = await fixtures('A', groups[0]!);
-      await bindings(a);
-      b = await fixtures('B', groups[1]!);
-      await bindings(b);
+      a = await preparationStep('FIXTURES_A', 'AUTH_FIXTURE_MISMATCH', () =>
+        fixtures('A', groups[0]!),
+      );
+      await preparationStep('FIXTURES_A', 'AUTH_FIXTURE_MISMATCH', () => bindings(a));
+      b = await preparationStep('FIXTURES_B', 'AUTH_FIXTURE_MISMATCH', () =>
+        fixtures('B', groups[1]!),
+      );
+      await preparationStep('FIXTURES_B', 'AUTH_FIXTURE_MISMATCH', () => bindings(b));
     },
     async scenario(index) {
       await scenario(index, a, b);

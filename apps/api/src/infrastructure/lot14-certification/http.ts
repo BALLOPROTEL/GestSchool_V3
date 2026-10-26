@@ -1,5 +1,11 @@
 import { request } from 'node:http';
+import { performance } from 'node:perf_hooks';
 import { failure, stagingOrigin } from './config.js';
+import {
+  CertificationAuthFailure,
+  CertificationHttpFailure,
+  unavailableReply,
+} from './diagnostics.js';
 
 export interface Reply {
   status: number;
@@ -37,6 +43,7 @@ export class CertificationHttp {
   ): Promise<Reply> {
     if (!/^[a-z0-9][a-z0-9/?=&_.%-]*$/i.test(path) || path.includes('..')) throw failure();
     const pathname = path === 'health/ready' ? '/health/ready' : `/api/v1/${path}`;
+    const started = performance.now();
     const payload = body === undefined ? undefined : JSON.stringify(body);
     const headers: Record<string, string> = {
       Origin: stagingOrigin,
@@ -50,6 +57,11 @@ export class CertificationHttp {
       headers.Cookie = cookies.map(([key, item]) => `${key}=${item.value}`).join('; ');
     if (payload) headers['Content-Length'] = String(Buffer.byteLength(payload));
     return new Promise((resolve, reject) => {
+      let timedOut = false;
+      const transportFailure = () =>
+        new CertificationHttpFailure(
+          timedOut ? 'TIMEOUT' : this.signal.aborted ? 'ABORTED' : 'TRANSPORT_ERROR',
+        );
       const req = request(
         {
           hostname: '127.0.0.1',
@@ -68,7 +80,10 @@ export class CertificationHttp {
             if (size > 2_097_152) req.destroy(failure());
             else chunks.push(chunk);
           });
-          res.on('error', () => reject(failure()));
+          res.on('error', () => {
+            clearTimeout(deadline);
+            reject(transportFailure());
+          });
           res.on('end', () => {
             clearTimeout(deadline);
             try {
@@ -99,23 +114,37 @@ export class CertificationHttp {
               const result = (Array.isArray(parsed) ? {} : parsed) as Record<string, unknown>;
               if (path === 'auth/csrf' && typeof result.csrfToken === 'string')
                 this.csrf = result.csrfToken;
-              resolve({
+              const reply: Reply = {
                 status: res.statusCode ?? 0,
                 body: result,
                 data: parsed,
                 bytes,
                 headers: res.headers,
-              });
-            } catch {
-              reject(failure());
+              };
+              const unavailable = unavailableReply(
+                path,
+                reply,
+                Math.round(performance.now() - started),
+              );
+              if (unavailable) reject(unavailable);
+              else resolve(reply);
+            } catch (error) {
+              reject(
+                error instanceof CertificationAuthFailure
+                  ? error
+                  : new CertificationHttpFailure('RESPONSE_INVALID'),
+              );
             }
           });
         },
       );
-      const deadline = setTimeout(() => req.destroy(failure()), 10_000);
+      const deadline = setTimeout(() => {
+        timedOut = true;
+        req.destroy(failure());
+      }, 10_000);
       req.once('error', () => {
         clearTimeout(deadline);
-        reject(failure());
+        reject(transportFailure());
       });
       req.end(payload);
     });

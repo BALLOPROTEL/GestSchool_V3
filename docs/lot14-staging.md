@@ -1,6 +1,6 @@
 # LOT14 — Architecture de staging entièrement gratuite
 
-Checkpoint runner Tenant A/B + worker préparé depuis `315211e` : voir le [runbook de certification](deployment/staging-certification-runner.md). Bootstrap staging **PASS confirmé par l'opérateur** (`created=true`), deux tenants / huit comptes, flag bootstrap restauré à `false`. `LOT14_CERTIFICATION_RUN` reste OFF ; aucune certification distante Tenant A/B ou worker E2E exécutée par ce checkpoint. Stabilité worker PASS : 21/21 HTTP 200, zéro `POSTGRES_HEALTH_*` observé ; retry existant mais non exercé, aucune récupération revendiquée. **NO-GO LOT14 maintenu** jusqu'aux preuves applicatives distantes.
+Premier run Render du runner `8c2d09e` : **0 PASS / 14 FAIL / 0 SKIP**, worker E2E **SKIP**. La ligne `AUTH_UNAVAILABLE` du 26 octobre 2026 à 22:43:27 Europe/Paris reste sans route/statut attribuable ; ces compteurs ne prouvent pas 14 défauts RBAC indépendants. Voir le [diagnostic sûr et ses limites](lot14-auth-unavailable-diagnostic.md). `LOT14_CERTIFICATION_RUN=false` restauré par l'opérateur et non réactivé ici. Bootstrap A/B PASS et stabilité worker PASS restent acquis ; retry PostgreSQL existant mais non exercé sur la fenêtre stable, sans récupération revendiquée. **NO-GO LOT14 maintenu.**
 
 ## Historique des checkpoints antérieurs
 

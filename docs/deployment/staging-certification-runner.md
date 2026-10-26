@@ -1,5 +1,7 @@
 # LOT14 — runner ponctuel Tenant A/B et worker
 
+État après le premier run Render : 0 PASS / 14 FAIL / 0 SKIP, worker SKIP, `AUTH_UNAVAILABLE` non attribuable à une route avec les logs disponibles. Le flag est restauré à `false`. Le [checkpoint de diagnostic](../lot14-auth-unavailable-diagnostic.md) décrit la nouvelle corrélation sûre. Les mesures locales en fin de ce document restent celles du checkpoint initial `8c2d09e`.
+
 Checkpoint préparé depuis `315211e00e36f65f2ec1837e13f01eed9fed8f15`, sur
 `feat/lot14-staging-certification`. Aucune activation Render ni certification distante
 n'est effectuée par ce checkpoint. Le NO-GO LOT14 reste en vigueur.
