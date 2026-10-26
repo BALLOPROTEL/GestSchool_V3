@@ -58,6 +58,7 @@ const steps = [
       'run',
       'src/jobs/reports/security.test.ts',
       'src/infrastructure/http-health.test.ts',
+      'src/infrastructure/environment-verifier.service.test.ts',
     ],
   ],
   ['node', ['--test', 'scripts/security-web.test.mjs']],
