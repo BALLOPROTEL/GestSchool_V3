@@ -1,0 +1,389 @@
+{
+  "source_head": "eb0d3654551f39ba3b6d7a01b71bd003c693e7a9",
+  "deployed_sha_source": "Owner-confirmed deployment; public endpoint does not expose SHA",
+  "interval_seconds": 30,
+  "planned_checks": 21,
+  "checks": 21,
+  "first_probe_utc": "2026-10-26T19:35:57.407814+00:00",
+  "last_probe_utc": "2026-10-26T19:45:57.405771+00:00",
+  "duration_seconds": 600.76,
+  "http_200": 21,
+  "http_503": 0,
+  "other_or_transport_failures": 0,
+  "all_valid_ready": true,
+  "latency_ms": {
+    "min": 237.521,
+    "median": 473.608,
+    "max": 1257.186
+  },
+  "worker_logs": {
+    "access": "Render correlation confirmed by owner in follow-up request; no direct log API in this session",
+    "source": "owner_report",
+    "complete_window": true,
+    "postgres_health_events": 0,
+    "connect_timeouts": 0,
+    "postgres_down": 0,
+    "redis_down": 0,
+    "storage_down": 0,
+    "retry_recoveries": 0
+  },
+  "observations": [
+    {
+      "kind": "worker",
+      "index": 1,
+      "utc": "2026-10-26T19:35:57.407814+00:00",
+      "paris": "2026-10-26T20:35:57.407814+01:00",
+      "offset_seconds": 0.407,
+      "curl_exit": 0,
+      "http_code": 200,
+      "latency_ms": 391.587,
+      "tls_verify_result": "0",
+      "body": {
+        "status": "ok"
+      }
+    },
+    {
+      "kind": "api",
+      "index": 1,
+      "utc": "2026-10-26T19:35:57.408532+00:00",
+      "paris": "2026-10-26T20:35:57.408532+01:00",
+      "offset_seconds": 3.866,
+      "curl_exit": 0,
+      "http_code": 200,
+      "latency_ms": 3849.866,
+      "tls_verify_result": "0",
+      "body": {
+        "status": "ok",
+        "dependencies": {
+          "postgres": "up",
+          "redis": "up",
+          "storage": "up"
+        }
+      }
+    },
+    {
+      "kind": "worker",
+      "index": 2,
+      "utc": "2026-10-26T19:36:27.408005+00:00",
+      "paris": "2026-10-26T20:36:27.408005+01:00",
+      "offset_seconds": 30.491,
+      "curl_exit": 0,
+      "http_code": 200,
+      "latency_ms": 473.608,
+      "tls_verify_result": "0",
+      "body": {
+        "status": "ok"
+      }
+    },
+    {
+      "kind": "worker",
+      "index": 3,
+      "utc": "2026-10-26T19:36:57.406070+00:00",
+      "paris": "2026-10-26T20:36:57.406070+01:00",
+      "offset_seconds": 60.594,
+      "curl_exit": 0,
+      "http_code": 200,
+      "latency_ms": 582.148,
+      "tls_verify_result": "0",
+      "body": {
+        "status": "ok"
+      }
+    },
+    {
+      "kind": "worker",
+      "index": 4,
+      "utc": "2026-10-26T19:37:27.405860+00:00",
+      "paris": "2026-10-26T20:37:27.405860+01:00",
+      "offset_seconds": 90.59,
+      "curl_exit": 0,
+      "http_code": 200,
+      "latency_ms": 574.738,
+      "tls_verify_result": "0",
+      "body": {
+        "status": "ok"
+      }
+    },
+    {
+      "kind": "worker",
+      "index": 5,
+      "utc": "2026-10-26T19:37:57.406391+00:00",
+      "paris": "2026-10-26T20:37:57.406391+01:00",
+      "offset_seconds": 121.08,
+      "curl_exit": 0,
+      "http_code": 200,
+      "latency_ms": 1064.62,
+      "tls_verify_result": "0",
+      "body": {
+        "status": "ok"
+      }
+    },
+    {
+      "kind": "worker",
+      "index": 6,
+      "utc": "2026-10-26T19:38:27.405784+00:00",
+      "paris": "2026-10-26T20:38:27.405784+01:00",
+      "offset_seconds": 150.591,
+      "curl_exit": 0,
+      "http_code": 200,
+      "latency_ms": 579.841,
+      "tls_verify_result": "0",
+      "body": {
+        "status": "ok"
+      }
+    },
+    {
+      "kind": "worker",
+      "index": 7,
+      "utc": "2026-10-26T19:38:57.405765+00:00",
+      "paris": "2026-10-26T20:38:57.405765+01:00",
+      "offset_seconds": 180.341,
+      "curl_exit": 0,
+      "http_code": 200,
+      "latency_ms": 329.69,
+      "tls_verify_result": "0",
+      "body": {
+        "status": "ok"
+      }
+    },
+    {
+      "kind": "worker",
+      "index": 8,
+      "utc": "2026-10-26T19:39:27.405879+00:00",
+      "paris": "2026-10-26T20:39:27.405879+01:00",
+      "offset_seconds": 210.259,
+      "curl_exit": 0,
+      "http_code": 200,
+      "latency_ms": 237.521,
+      "tls_verify_result": "0",
+      "body": {
+        "status": "ok"
+      }
+    },
+    {
+      "kind": "worker",
+      "index": 9,
+      "utc": "2026-10-26T19:39:57.405867+00:00",
+      "paris": "2026-10-26T20:39:57.405867+01:00",
+      "offset_seconds": 240.404,
+      "curl_exit": 0,
+      "http_code": 200,
+      "latency_ms": 393.725,
+      "tls_verify_result": "0",
+      "body": {
+        "status": "ok"
+      }
+    },
+    {
+      "kind": "worker",
+      "index": 10,
+      "utc": "2026-10-26T19:40:27.405757+00:00",
+      "paris": "2026-10-26T20:40:27.405757+01:00",
+      "offset_seconds": 270.399,
+      "curl_exit": 0,
+      "http_code": 200,
+      "latency_ms": 385.901,
+      "tls_verify_result": "0",
+      "body": {
+        "status": "ok"
+      }
+    },
+    {
+      "kind": "worker",
+      "index": 11,
+      "utc": "2026-10-26T19:40:57.405784+00:00",
+      "paris": "2026-10-26T20:40:57.405784+01:00",
+      "offset_seconds": 300.335,
+      "curl_exit": 0,
+      "http_code": 200,
+      "latency_ms": 322.952,
+      "tls_verify_result": "0",
+      "body": {
+        "status": "ok"
+      }
+    },
+    {
+      "kind": "api",
+      "index": 11,
+      "utc": "2026-10-26T19:40:57.406093+00:00",
+      "paris": "2026-10-26T20:40:57.406093+01:00",
+      "offset_seconds": 301.005,
+      "curl_exit": 0,
+      "http_code": 200,
+      "latency_ms": 993.858,
+      "tls_verify_result": "0",
+      "body": {
+        "status": "ok",
+        "dependencies": {
+          "postgres": "up",
+          "redis": "up",
+          "storage": "up"
+        }
+      }
+    },
+    {
+      "kind": "worker",
+      "index": 12,
+      "utc": "2026-10-26T19:41:27.405731+00:00",
+      "paris": "2026-10-26T20:41:27.405731+01:00",
+      "offset_seconds": 331.163,
+      "curl_exit": 0,
+      "http_code": 200,
+      "latency_ms": 1150.076,
+      "tls_verify_result": "0",
+      "body": {
+        "status": "ok"
+      }
+    },
+    {
+      "kind": "worker",
+      "index": 13,
+      "utc": "2026-10-26T19:41:57.405762+00:00",
+      "paris": "2026-10-26T20:41:57.405762+01:00",
+      "offset_seconds": 361.269,
+      "curl_exit": 0,
+      "http_code": 200,
+      "latency_ms": 1257.186,
+      "tls_verify_result": "0",
+      "body": {
+        "status": "ok"
+      }
+    },
+    {
+      "kind": "worker",
+      "index": 14,
+      "utc": "2026-10-26T19:42:27.405890+00:00",
+      "paris": "2026-10-26T20:42:27.405890+01:00",
+      "offset_seconds": 390.255,
+      "curl_exit": 0,
+      "http_code": 200,
+      "latency_ms": 242.921,
+      "tls_verify_result": "0",
+      "body": {
+        "status": "ok"
+      }
+    },
+    {
+      "kind": "worker",
+      "index": 15,
+      "utc": "2026-10-26T19:42:57.405860+00:00",
+      "paris": "2026-10-26T20:42:57.405860+01:00",
+      "offset_seconds": 420.445,
+      "curl_exit": 0,
+      "http_code": 200,
+      "latency_ms": 433.729,
+      "tls_verify_result": "0",
+      "body": {
+        "status": "ok"
+      }
+    },
+    {
+      "kind": "worker",
+      "index": 16,
+      "utc": "2026-10-26T19:43:27.405811+00:00",
+      "paris": "2026-10-26T20:43:27.405811+01:00",
+      "offset_seconds": 450.279,
+      "curl_exit": 0,
+      "http_code": 200,
+      "latency_ms": 265.161,
+      "tls_verify_result": "0",
+      "body": {
+        "status": "ok"
+      }
+    },
+    {
+      "kind": "worker",
+      "index": 17,
+      "utc": "2026-10-26T19:43:57.405728+00:00",
+      "paris": "2026-10-26T20:43:57.405728+01:00",
+      "offset_seconds": 480.359,
+      "curl_exit": 0,
+      "http_code": 200,
+      "latency_ms": 346.252,
+      "tls_verify_result": "0",
+      "body": {
+        "status": "ok"
+      }
+    },
+    {
+      "kind": "worker",
+      "index": 18,
+      "utc": "2026-10-26T19:44:27.405777+00:00",
+      "paris": "2026-10-26T20:44:27.405777+01:00",
+      "offset_seconds": 511.17,
+      "curl_exit": 0,
+      "http_code": 200,
+      "latency_ms": 1159.881,
+      "tls_verify_result": "0",
+      "body": {
+        "status": "ok"
+      }
+    },
+    {
+      "kind": "worker",
+      "index": 19,
+      "utc": "2026-10-26T19:44:57.405750+00:00",
+      "paris": "2026-10-26T20:44:57.405750+01:00",
+      "offset_seconds": 541.065,
+      "curl_exit": 0,
+      "http_code": 200,
+      "latency_ms": 1050.487,
+      "tls_verify_result": "0",
+      "body": {
+        "status": "ok"
+      }
+    },
+    {
+      "kind": "worker",
+      "index": 20,
+      "utc": "2026-10-26T19:45:27.405825+00:00",
+      "paris": "2026-10-26T20:45:27.405825+01:00",
+      "offset_seconds": 570.566,
+      "curl_exit": 0,
+      "http_code": 200,
+      "latency_ms": 555.089,
+      "tls_verify_result": "0",
+      "body": {
+        "status": "ok"
+      }
+    },
+    {
+      "kind": "worker",
+      "index": 21,
+      "utc": "2026-10-26T19:45:57.405771+00:00",
+      "paris": "2026-10-26T20:45:57.405771+01:00",
+      "offset_seconds": 600.528,
+      "curl_exit": 0,
+      "http_code": 200,
+      "latency_ms": 516.472,
+      "tls_verify_result": "0",
+      "body": {
+        "status": "ok"
+      }
+    },
+    {
+      "kind": "api",
+      "index": 21,
+      "utc": "2026-10-26T19:45:57.406132+00:00",
+      "paris": "2026-10-26T20:45:57.406132+01:00",
+      "offset_seconds": 600.759,
+      "curl_exit": 0,
+      "http_code": 200,
+      "latency_ms": 746.791,
+      "tls_verify_result": "0",
+      "body": {
+        "status": "ok",
+        "dependencies": {
+          "postgres": "up",
+          "redis": "up",
+          "storage": "up"
+        }
+      }
+    }
+  ],
+  "certification": "PASS",
+  "retry_policy": {
+    "present": true,
+    "exercised_during_window": false,
+    "actual_recovery_observed": false
+  }
+}

@@ -1,5 +1,9 @@
 # LOT14 — Architecture de staging entièrement gratuite
 
+Certification worker PASS après `eb0d365` : 21/21 HTTP 200, 0 HTTP 503 sur dix minutes le 26 octobre 2026 (20:35:57–20:45:58 Europe/Paris). Corrélation Render confirmée par le propriétaire : aucun `POSTGRES_HEALTH_*` ni état down observé. Le retry existe mais n’a pas été exercé. Bootstrap A/B audité, idempotent, huit comptes, non appliqué en staging. Voir le [checkpoint d’audit et les résultats distants](lot14-bootstrap-audit.md) et les [mesures](lot14-worker-stability-eb0d365.md). NO-GO global maintenu pour les certifications applicatives restantes.
+
+## Historique des checkpoints antérieurs
+
 **Reprise PostgreSQL : corrélation opérateur confirmée postgres down / Redis et Storage up. Classification sûre ajoutée ; timeouts et tentative unique conservés faute de preuve de timeout. Déploiement et fenêtre de stabilité bloqués par l'absence d'accès Render. Voir le [diagnostic et la suite conditionnelle](lot14-postgres-readiness.md). NO-GO maintenu.**
 
 **Nouvelle exécution distante, 26 octobre 2026 à 18:58 CET : 49 PASS / 0 FAIL / 0 SKIP. NO-GO maintenu : deux readiness worker HTTP 503 reproduites. Tenant A/B et worker E2E non lancés ; aucun bootstrap disponible, confirmé par le propriétaire. Voir les [preuves et le diagnostic distinct PostgreSQL](lot14-remote-certification-2026-10-26.md). Les checkpoints ci-dessous sont historiques.**
