@@ -1,5 +1,9 @@
 # LOT14 — checkpoint stabilité et audit bootstrap
 
+Verdict courant : **GO STAGING FONCTIONNEL**, en attente de merge final. Le second run Render sur `39f5cc2` a confirmé 14/14 Tenant A/B, report worker completed et certification PASS ; les flags sont revenus OFF. Voir [la certification finale](lot14-certification.md). Le contenu ci-dessous décrit le checkpoint historique de ce document ; les anciens NO-GO/SKIP/NOT RUN ne sont pas le verdict courant.
+
+## Historique du checkpoint
+
 Base du checkpoint : `eb0d3654551f39ba3b6d7a01b71bd003c693e7a9`, branche `feat/lot14-staging-certification`.
 
 Dernier état déclaré par l'opérateur après le hook `315211e` : bootstrap staging **PASS réel / created=true**, deux tenants et huit comptes ; `LOT14_BOOTSTRAP_APPLY=false` restauré. Le bloc d'exécution ci-dessous conserve la situation de ce checkpoint d'audit historique. Le nouveau [runner de certification](deployment/staging-certification-runner.md) est préparé, flag OFF, sans exécution distante dans ce travail.

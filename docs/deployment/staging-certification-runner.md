@@ -1,5 +1,9 @@
 # LOT14 — runner ponctuel Tenant A/B et worker
 
+État final : bootstrap **PASS réel**, deux tenants / huit comptes ; certification Tenant A/B **14 PASS / 0 FAIL / 0 SKIP**, worker report completed et verdict runner PASS confirmés par l'opérateur sur `39f5cc2`. `LOT14_BOOTSTRAP_APPLY=false` et `LOT14_CERTIFICATION_RUN=false` restent l'état normal. Aucun rejeu demandé. Voir [le rapport final](../lot14-certification.md).
+
+## Contrats et historique de préparation
+
 État après le premier run Render : 0 PASS / 14 FAIL / 0 SKIP, worker SKIP, `AUTH_UNAVAILABLE` non attribuable à une route avec les logs disponibles. Le flag est restauré à `false`. Le [checkpoint de diagnostic](../lot14-auth-unavailable-diagnostic.md) décrit la nouvelle corrélation sûre. Les mesures locales en fin de ce document restent celles du checkpoint initial `8c2d09e`.
 
 Checkpoint préparé depuis `315211e00e36f65f2ec1837e13f01eed9fed8f15`, sur

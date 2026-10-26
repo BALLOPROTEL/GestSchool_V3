@@ -1,5 +1,9 @@
 # LOT14 — diagnostic PostgreSQL readiness
 
+Verdict courant : **GO STAGING FONCTIONNEL**, en attente de merge final. Le second run Render sur `39f5cc2` a confirmé 14/14 Tenant A/B, report worker completed et certification PASS ; les flags sont revenus OFF. Voir [la certification finale](lot14-certification.md). Le contenu ci-dessous décrit le checkpoint historique de ce document ; les anciens NO-GO/SKIP/NOT RUN ne sont pas le verdict courant.
+
+## Historique du checkpoint
+
 ## État et décision
 
 Reprise sur `feat/lot14-staging-certification`, base `2c82cc1461212a20b8b96c44d6ca835e6ce0d612`. Les **49 smoke distants PASS / 0 FAIL / 0 SKIP** restent acquis. **NO-GO LOT14** : aucune stabilité worker après ce nouveau code n'est encore certifiée.

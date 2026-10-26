@@ -1,4 +1,8 @@
-# LOT14 — bootstrap staging A/B préparé, non appliqué
+# LOT14 — bootstrap staging A/B appliqué et certifié
+
+État final : bootstrap **PASS réel**, deux tenants / huit comptes ; certification Tenant A/B **14 PASS / 0 FAIL / 0 SKIP**, worker report completed et verdict runner PASS confirmés par l'opérateur sur `39f5cc2`. `LOT14_BOOTSTRAP_APPLY=false` et `LOT14_CERTIFICATION_RUN=false` restent l'état normal. Aucun rejeu demandé. Voir [le rapport final](../lot14-certification.md).
+
+## Contrats et historique de préparation
 
 Prérequis HTTP mesuré : [21/21 readiness worker 200 sur dix minutes](../lot14-worker-stability-eb0d365.md), aucun 503 ou échec de transport. La corrélation Render est confirmée par le propriétaire : zéro timeout ou dépendance down observé, retry présent mais non exercé. **Aucune donnée staging n'a été créée par cette préparation.**
 

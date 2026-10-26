@@ -1,6 +1,9 @@
-# Préparation sécurité LOT14/15 — aucune opération de déploiement effectuée
+# Prérequis d'exploitation — backlog LOT15 non commencé
 
-Cette checklist est un travail opérateur futur. Une case ci-dessous ne signifie pas qu'une infrastructure a été configurée ou certifiée par le LOT13.
+Le [GO LOT14](lot14-certification.md) certifie le MVP staging seulement. Les cases
+ci-dessous restent des contrôles d'exploitation futurs, sans HA, restauration,
+charge ou mise en service réelle certifiées. Cette consolidation documentaire ne
+commence pas LOT15 et ne coche pas ces prérequis.
 
 - [ ] Vérifier domaine et DNS détenus, certificats TLS/renouvellement et redirection HTTPS. Activer HSTS seulement sur le périmètre maîtrisé, sans preload/subdomains implicites.
 - [ ] Examiner séparément Vercel et Render, réseau interne, origins explicites, secrets serveur exclusivement. Fournir la même origine API HTTPS au build et au démarrage Next ; vérifier le routes-manifest compilé. Ne jamais recopier `.env.example` en production ; aucun NEXT_PUBLIC pour credential.

@@ -1,5 +1,9 @@
 # LOT14 — fenêtre distante après retry PostgreSQL
 
+Verdict courant : **GO STAGING FONCTIONNEL**, en attente de merge final. Le second run Render sur `39f5cc2` a confirmé 14/14 Tenant A/B, report worker completed et certification PASS ; les flags sont revenus OFF. Voir [la certification finale](lot14-certification.md). Le contenu ci-dessous décrit le checkpoint historique de ce document ; les anciens NO-GO/SKIP/NOT RUN ne sont pas le verdict courant.
+
+## Historique du checkpoint
+
 **Stabilité distante worker : PASS sur la fenêtre mesurée, corrélation Render confirmée par le propriétaire. Verdict global LOT14 : NO-GO tant que les parcours applicatifs restent incomplets.**
 
 Branche vérifiée : `feat/lot14-staging-certification`, HEAD `eb0d3654551f39ba3b6d7a01b71bd003c693e7a9`, arbre initialement propre. Le déploiement worker de ce SHA est confirmé par le propriétaire ; le endpoint public ne révèle pas le SHA. Aucun timeout, retry, cache ou health applicatif modifié pendant cette tâche.

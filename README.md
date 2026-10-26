@@ -10,8 +10,10 @@ factures, paiements, reçus métier et sessions de caisse. Le LOT 9 ajoute les �
 notes, moyennes, rangs et bulletins historiques. Le LOT 10 ajoute les documents PDF privés et QR,
 le LOT 11 la messagerie/notifications et l'outbox, et le LOT 12 les dashboards, rapports et exports
 CSV/XLSX/PDF. Le LOT 13 durcit la configuration, HTTP/IAM, les workers, le stockage et la supply chain ;
-sa validation est détaillée dans les documents sécurité. Les LOT14 staging et LOT15 production ne
-sont ni déployés ni certifiés par ce travail.
+sa validation est détaillée dans les documents sécurité. Le [LOT14](docs/lot14-certification.md)
+est **GO STAGING FONCTIONNEL**, en attente de merge final, avec 49 smoke, 14/14 Tenant A/B
+et worker report E2E réels. LOT15 reste Backlog / Not started ; aucun établissement réel
+ne doit être onboardé dans cet état et V2 reste intacte.
 
 ## Prérequis
 

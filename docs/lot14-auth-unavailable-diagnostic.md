@@ -1,5 +1,9 @@
 # LOT14 — diagnostic du premier échec du runner Render
 
+Verdict courant : **GO STAGING FONCTIONNEL**, en attente de merge final. Le second run Render sur `39f5cc2` a confirmé 14/14 Tenant A/B, report worker completed et certification PASS ; les flags sont revenus OFF. Voir [la certification finale](lot14-certification.md). Le contenu ci-dessous décrit le checkpoint historique de ce document ; les anciens NO-GO/SKIP/NOT RUN ne sont pas le verdict courant.
+
+## Historique du checkpoint
+
 Base : `8c2d09edd7f93fd3b56c6251978f3245d8f002db`, branche
 `feat/lot14-staging-certification`. **NO-GO maintenu.** Le flag
 `LOT14_CERTIFICATION_RUN` a été remis à `false` par l'opérateur et n'est pas

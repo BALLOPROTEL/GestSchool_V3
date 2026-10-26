@@ -1,5 +1,9 @@
 # LOT14 — hook API ponctuel, OFF par défaut
 
+État final : bootstrap **PASS réel**, deux tenants / huit comptes ; certification Tenant A/B **14 PASS / 0 FAIL / 0 SKIP**, worker report completed et verdict runner PASS confirmés par l'opérateur sur `39f5cc2`. `LOT14_BOOTSTRAP_APPLY=false` et `LOT14_CERTIFICATION_RUN=false` restent l'état normal. Aucun rejeu demandé. Voir [le rapport final](../lot14-certification.md).
+
+## Contrats et historique de préparation
+
 Le bootstrap A/B existant est réutilisé sans duplication de SQL. La commande Render API reste `node apps/api/dist/main.js` et la commande de build reste `pnpm install --frozen-lockfile --prod=false && pnpm --filter @gestschool/api... build`. Aucun changement de configuration Render ni déploiement n'est réalisé pour préparer ce hook.
 
 ## Activation explicite

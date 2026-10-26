@@ -1,5 +1,9 @@
 # LOT14 — exécution distante du 26 octobre 2026
 
+Verdict courant : **GO STAGING FONCTIONNEL**, en attente de merge final. Le second run Render sur `39f5cc2` a confirmé 14/14 Tenant A/B, report worker completed et certification PASS ; les flags sont revenus OFF. Voir [la certification finale](lot14-certification.md). Le contenu ci-dessous décrit le checkpoint historique de ce document ; les anciens NO-GO/SKIP/NOT RUN ne sont pas le verdict courant.
+
+## Historique du checkpoint
+
 **49 PASS / 0 FAIL / 0 SKIP**, mais **NO-GO LOT14** : readiness worker intermittente. Heures ci-dessous en Europe/Paris (CET, UTC+1).
 
 ## Reprise Git
