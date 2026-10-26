@@ -42,6 +42,7 @@ const steps = [
       'vitest',
       'run',
       'src/queue-security.test.ts',
+      'src/database/postgres-health.test.ts',
       'src/storage/storage-security.test.ts',
       'src/documents/renderer.test.ts',
       'src/reports/serializers.test.ts',

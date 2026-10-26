@@ -1,5 +1,9 @@
 # LOT14 — Architecture de staging entièrement gratuite
 
+**Reprise PostgreSQL : corrélation opérateur confirmée postgres down / Redis et Storage up. Classification sûre ajoutée ; timeouts et tentative unique conservés faute de preuve de timeout. Déploiement et fenêtre de stabilité bloqués par l'absence d'accès Render. Voir le [diagnostic et la suite conditionnelle](lot14-postgres-readiness.md). NO-GO maintenu.**
+
+**Nouvelle exécution distante, 26 octobre 2026 à 18:58 CET : 49 PASS / 0 FAIL / 0 SKIP. NO-GO maintenu : deux readiness worker HTTP 503 reproduites. Tenant A/B et worker E2E non lancés ; aucun bootstrap disponible, confirmé par le propriétaire. Voir les [preuves et le diagnostic distinct PostgreSQL](lot14-remote-certification-2026-10-26.md). Les checkpoints ci-dessous sont historiques.**
+
 Point de reprise du **26 octobre 2026, Europe/Paris** : **14 migrations appliquées et checksums vérifiés**, API readiness trois dépendances up, commandes normales restaurées, API live sur `b5a791f`, worker live sur `818ad43`. Worker : les trois runtimes et readiness ont réussi après migration, un réveil a échoué avec ConnectionTimeoutError Redis ; le nouveau déploiement a une readiness PASS après un échec PostgreSQL ponctuel, stabilité non certifiée. **Vercel staging READY**, pages FR/EN/AR accessibles ; 49 smoke en attente de l'accès réseau de l'environnement de test. **NO-GO LOT14**, quatre documents non committés.
 
 Décision du 25 octobre 2026 : **zéro paiement et zéro carte avant validation client**. Cloudflare R2 est abandonné ; Supabase Storage Free est choisi. Les limites gratuites ci-dessous sont acceptées pour staging uniquement. Verdict actuel **NO-GO**, car les parcours applicatifs distants restent à certifier ; le stockage S3 est PASS réel.

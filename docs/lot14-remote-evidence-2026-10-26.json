@@ -1,0 +1,289 @@
+{
+  "sourceHead": "2c82cc1461212a20b8b96c44d6ca835e6ce0d612",
+  "branch": "feat/lot14-staging-certification",
+  "playwright": {
+    "startTime": "2026-10-26T17:56:44.989Z",
+    "duration": 63886.74,
+    "expected": 49,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "readinessSamples": [
+    {
+      "utc": "2026-10-26T17:53:25Z",
+      "url": "https://gestschool-v3-api-staging.onrender.com/health/ready",
+      "exit": 0,
+      "response": "{\"dependencies\":{\"postgres\":\"up\",\"redis\":\"up\",\"storage\":\"up\"},\"status\":\"ok\"}\n200 0.792124",
+      "error": ""
+    },
+    {
+      "utc": "2026-10-26T17:53:25Z",
+      "url": "https://gestschool-v3-worker-staging.onrender.com/health/live",
+      "exit": 0,
+      "response": "{\"status\":\"ok\"}\n200 0.216381",
+      "error": ""
+    },
+    {
+      "utc": "2026-10-26T17:53:26Z",
+      "url": "https://gestschool-v3-worker-staging.onrender.com/health/ready",
+      "exit": 0,
+      "response": "{\"status\":\"ok\"}\n200 1.460342",
+      "error": ""
+    },
+    {
+      "utc": "2026-10-26T17:53:43Z",
+      "url": "https://gestschool-v3-api-staging.onrender.com/health/ready",
+      "exit": 0,
+      "response": "{\"dependencies\":{\"postgres\":\"up\",\"redis\":\"up\",\"storage\":\"up\"},\"status\":\"ok\"}\n200 1.738631",
+      "error": ""
+    },
+    {
+      "utc": "2026-10-26T17:53:42Z",
+      "url": "https://gestschool-v3-worker-staging.onrender.com/health/live",
+      "exit": 0,
+      "response": "{\"status\":\"ok\"}\n200 0.571566",
+      "error": ""
+    },
+    {
+      "utc": "2026-10-26T17:53:42Z",
+      "url": "https://gestschool-v3-worker-staging.onrender.com/health/ready",
+      "exit": 0,
+      "response": "{\"status\":\"ok\"}\n200 1.020205",
+      "error": ""
+    },
+    {
+      "utc": "2026-10-26T17:53:59Z",
+      "url": "https://gestschool-v3-api-staging.onrender.com/health/ready",
+      "exit": 0,
+      "response": "{\"dependencies\":{\"postgres\":\"up\",\"redis\":\"up\",\"storage\":\"up\"},\"status\":\"ok\"}\n200 1.210888",
+      "error": ""
+    },
+    {
+      "utc": "2026-10-26T17:53:58Z",
+      "url": "https://gestschool-v3-worker-staging.onrender.com/health/live",
+      "exit": 0,
+      "response": "{\"status\":\"ok\"}\n200 0.217411",
+      "error": ""
+    },
+    {
+      "utc": "2026-10-26T17:53:58Z",
+      "url": "https://gestschool-v3-worker-staging.onrender.com/health/ready",
+      "exit": 0,
+      "response": "{\"status\":\"ok\"}\n200 0.386058",
+      "error": ""
+    },
+    {
+      "utc": "2026-10-26T17:54:15Z",
+      "url": "https://gestschool-v3-api-staging.onrender.com/health/ready",
+      "exit": 0,
+      "response": "{\"dependencies\":{\"postgres\":\"up\",\"redis\":\"up\",\"storage\":\"up\"},\"status\":\"ok\"}\n200 0.543935",
+      "error": ""
+    },
+    {
+      "utc": "2026-10-26T17:54:14Z",
+      "url": "https://gestschool-v3-worker-staging.onrender.com/health/live",
+      "exit": 0,
+      "response": "{\"status\":\"ok\"}\n200 0.348378",
+      "error": ""
+    },
+    {
+      "utc": "2026-10-26T17:54:15Z",
+      "url": "https://gestschool-v3-worker-staging.onrender.com/health/ready",
+      "exit": 0,
+      "response": "{\"status\":\"ok\"}\n200 0.571653",
+      "error": ""
+    },
+    {
+      "utc": "2026-10-26T17:54:31Z",
+      "url": "https://gestschool-v3-api-staging.onrender.com/health/ready",
+      "exit": 0,
+      "response": "{\"dependencies\":{\"postgres\":\"up\",\"redis\":\"up\",\"storage\":\"up\"},\"status\":\"ok\"}\n200 1.471653",
+      "error": ""
+    },
+    {
+      "utc": "2026-10-26T17:54:30Z",
+      "url": "https://gestschool-v3-worker-staging.onrender.com/health/live",
+      "exit": 0,
+      "response": "{\"status\":\"ok\"}\n200 0.272419",
+      "error": ""
+    },
+    {
+      "utc": "2026-10-26T17:54:30Z",
+      "url": "https://gestschool-v3-worker-staging.onrender.com/health/ready",
+      "exit": 0,
+      "response": "{\"status\":\"ok\"}\n200 0.215386",
+      "error": ""
+    },
+    {
+      "utc": "2026-10-26T17:54:47Z",
+      "url": "https://gestschool-v3-api-staging.onrender.com/health/ready",
+      "exit": 0,
+      "response": "{\"dependencies\":{\"postgres\":\"up\",\"redis\":\"up\",\"storage\":\"up\"},\"status\":\"ok\"}\n200 0.778389",
+      "error": ""
+    },
+    {
+      "utc": "2026-10-26T17:54:46Z",
+      "url": "https://gestschool-v3-worker-staging.onrender.com/health/live",
+      "exit": 0,
+      "response": "{\"status\":\"ok\"}\n200 0.321541",
+      "error": ""
+    },
+    {
+      "utc": "2026-10-26T17:54:47Z",
+      "url": "https://gestschool-v3-worker-staging.onrender.com/health/ready",
+      "exit": 0,
+      "response": "{\"status\":\"ok\"}\n200 0.868574",
+      "error": ""
+    },
+    {
+      "utc": "2026-10-26T17:55:03Z",
+      "url": "https://gestschool-v3-api-staging.onrender.com/health/ready",
+      "exit": 0,
+      "response": "{\"dependencies\":{\"postgres\":\"up\",\"redis\":\"up\",\"storage\":\"up\"},\"status\":\"ok\"}\n200 1.387765",
+      "error": ""
+    },
+    {
+      "utc": "2026-10-26T17:55:02Z",
+      "url": "https://gestschool-v3-worker-staging.onrender.com/health/live",
+      "exit": 0,
+      "response": "{\"status\":\"ok\"}\n200 0.469543",
+      "error": ""
+    },
+    {
+      "utc": "2026-10-26T17:55:03Z",
+      "url": "https://gestschool-v3-worker-staging.onrender.com/health/ready",
+      "exit": 0,
+      "response": "{\"status\":\"ok\"}\n200 1.394343",
+      "error": ""
+    },
+    {
+      "utc": "2026-10-26T17:55:19Z",
+      "url": "https://gestschool-v3-api-staging.onrender.com/health/ready",
+      "exit": 0,
+      "response": "{\"dependencies\":{\"postgres\":\"up\",\"redis\":\"up\",\"storage\":\"up\"},\"status\":\"ok\"}\n200 0.606636",
+      "error": ""
+    },
+    {
+      "utc": "2026-10-26T17:55:19Z",
+      "url": "https://gestschool-v3-worker-staging.onrender.com/health/live",
+      "exit": 0,
+      "response": "{\"status\":\"ok\"}\n200 0.375409",
+      "error": ""
+    },
+    {
+      "utc": "2026-10-26T17:55:19Z",
+      "url": "https://gestschool-v3-worker-staging.onrender.com/health/ready",
+      "exit": 0,
+      "response": "{\"status\":\"ok\"}\n200 1.085835",
+      "error": ""
+    },
+    {
+      "utc": "2026-10-26T17:57:11Z",
+      "url": "https://gestschool-v3-api-staging.onrender.com/health/ready",
+      "exit": 0,
+      "response": "{\"dependencies\":{\"postgres\":\"up\",\"redis\":\"up\",\"storage\":\"up\"},\"status\":\"ok\"}\n200 0.740760",
+      "error": ""
+    },
+    {
+      "utc": "2026-10-26T17:57:10Z",
+      "url": "https://gestschool-v3-worker-staging.onrender.com/health/ready",
+      "exit": 0,
+      "response": "{\"status\":\"unavailable\"}\n503 0.304669",
+      "error": ""
+    },
+    {
+      "utc": "2026-10-26T17:57:22Z",
+      "url": "https://gestschool-v3-api-staging.onrender.com/health/ready",
+      "exit": 0,
+      "response": "{\"dependencies\":{\"postgres\":\"up\",\"redis\":\"up\",\"storage\":\"up\"},\"status\":\"ok\"}\n200 0.674356",
+      "error": ""
+    },
+    {
+      "utc": "2026-10-26T17:57:21Z",
+      "url": "https://gestschool-v3-worker-staging.onrender.com/health/ready",
+      "exit": 0,
+      "response": "{\"status\":\"ok\"}\n200 0.264062",
+      "error": ""
+    },
+    {
+      "utc": "2026-10-26T17:57:32Z",
+      "url": "https://gestschool-v3-api-staging.onrender.com/health/ready",
+      "exit": 0,
+      "response": "{\"dependencies\":{\"postgres\":\"up\",\"redis\":\"up\",\"storage\":\"up\"},\"status\":\"ok\"}\n200 0.686400",
+      "error": ""
+    },
+    {
+      "utc": "2026-10-26T17:57:32Z",
+      "url": "https://gestschool-v3-worker-staging.onrender.com/health/ready",
+      "exit": 0,
+      "response": "{\"status\":\"ok\"}\n200 0.204600",
+      "error": ""
+    },
+    {
+      "utc": "2026-10-26T17:57:44Z",
+      "url": "https://gestschool-v3-api-staging.onrender.com/health/ready",
+      "exit": 0,
+      "response": "{\"dependencies\":{\"postgres\":\"up\",\"redis\":\"up\",\"storage\":\"up\"},\"status\":\"ok\"}\n200 1.414843",
+      "error": ""
+    },
+    {
+      "utc": "2026-10-26T17:57:43Z",
+      "url": "https://gestschool-v3-worker-staging.onrender.com/health/ready",
+      "exit": 0,
+      "response": "{\"status\":\"ok\"}\n200 0.240345",
+      "error": ""
+    },
+    {
+      "utc": "2026-10-26T17:57:54Z",
+      "url": "https://gestschool-v3-api-staging.onrender.com/health/ready",
+      "exit": 0,
+      "response": "{\"dependencies\":{\"postgres\":\"up\",\"redis\":\"up\",\"storage\":\"up\"},\"status\":\"ok\"}\n200 0.539069",
+      "error": ""
+    },
+    {
+      "utc": "2026-10-26T17:57:56Z",
+      "url": "https://gestschool-v3-worker-staging.onrender.com/health/ready",
+      "exit": 0,
+      "response": "{\"status\":\"unavailable\"}\n503 2.615287",
+      "error": ""
+    },
+    {
+      "utc": "2026-10-26T17:58:07Z",
+      "url": "https://gestschool-v3-api-staging.onrender.com/health/ready",
+      "exit": 0,
+      "response": "{\"dependencies\":{\"postgres\":\"up\",\"redis\":\"up\",\"storage\":\"up\"},\"status\":\"ok\"}\n200 0.716958",
+      "error": ""
+    },
+    {
+      "utc": "2026-10-26T17:58:07Z",
+      "url": "https://gestschool-v3-worker-staging.onrender.com/health/ready",
+      "exit": 0,
+      "response": "{\"status\":\"ok\"}\n200 0.360731",
+      "error": ""
+    }
+  ],
+  "rawPlaywrightReportSha256": "f2ced63918762ea6063e40c72c659be3a4a0cc2e56cf875cf6c66bd5676050a8",
+  "operatorCorrelations": {
+    "source": "Logs Render fournis par le propriétaire dans la demande suivante ; aucune lecture Render directe par cet agent",
+    "incidents": [
+      {
+        "utc": "2026-10-26T17:57:10Z",
+        "dependencies": {
+          "postgres": "down",
+          "redis": "up",
+          "storage": "up"
+        }
+      },
+      {
+        "utc": "2026-10-26T17:57:56Z",
+        "dependencies": {
+          "postgres": "down",
+          "redis": "up",
+          "storage": "up"
+        }
+      }
+    ],
+    "errorSubtype": "unknown"
+  }
+}
