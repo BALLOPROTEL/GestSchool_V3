@@ -4,7 +4,7 @@ Prérequis HTTP mesuré : [21/21 readiness worker 200 sur dix minutes](../lot14-
 
 ## Contenu exact
 
-`scripts/staging-bootstrap.mjs` est un outil opérateur séparé, sans route HTTP ni hook de démarrage. Par défaut et avec `--plan`, il fonctionne hors ligne et ne lit pas les credentials :
+`scripts/staging-bootstrap.mjs` est un outil opérateur séparé, sans route HTTP. Un [hook API explicite et désactivé par défaut](staging-bootstrap-api-hook.md) permet sa future exécution dans Render sans changer la commande de démarrage. Par défaut et avec `--plan`, l'outil fonctionne hors ligne et ne lit pas les credentials :
 
 ```sh
 node scripts/staging-bootstrap.mjs --plan
@@ -34,7 +34,7 @@ Le bootstrap active les identités avec leur hash mais **n'écrit aucun secret o
 
 ## Garde-fous et exécution ultérieure
 
-Le candidat est revu, testé localement et destiné au checkpoint demandé. Il doit être disponible dans un runtime opérateur V3 staging avec secrets injectés avant l’application. Le push du checkpoint ne signifie pas que le bootstrap a été appliqué. Utiliser les commandes normales de build du dépôt pour disposer des contrats et du crypto IAM compilés. Ne pas remplacer durablement la commande de démarrage API/worker ou rendre le bootstrap automatique.
+Le candidat est revu, testé localement et destiné au checkpoint demandé. Il doit être disponible dans un runtime opérateur V3 staging avec secrets injectés avant l’application. Le push du checkpoint ne signifie pas que le bootstrap a été appliqué. Utiliser les commandes normales de build du dépôt pour disposer des contrats et du crypto IAM compilés. Ne pas remplacer la commande de démarrage API/worker ; aucune exécution implicite n'est ajoutée. Le hook API n'exécute l'outil que si LOT14_BOOTSTRAP_APPLY vaut exactement true dans l'environnement staging validé.
 
 La commande d'application ultérieure est explicite, sans secret dans ses arguments :
 

@@ -28,6 +28,7 @@ const steps = [
       'vitest',
       'run',
       'src/security-hardening.test.ts',
+      'src/infrastructure/staging-bootstrap-startup.test.ts',
       'src/modules/iam/domain/security.test.ts',
       'src/modules/messaging/domain/webhook-auth.test.ts',
       'src/modules/messaging/application/webhook.service.test.ts',

@@ -5,6 +5,7 @@ import { NestFactory } from '@nestjs/core';
 
 import { AppModule } from './app.module.js';
 import { configureIamHttp } from './modules/iam/presentation/http/security.js';
+import { runStagingBootstrapStartup } from './infrastructure/staging-bootstrap-startup.js';
 import {
   INFRASTRUCTURE_CONFIGURATION,
   type InfrastructureConfiguration,
@@ -26,5 +27,14 @@ const bootstrap = async (): Promise<void> => {
 
   await application.listen(configuration.apiPort, configuration.apiHost);
 };
+
+try {
+  await runStagingBootstrapStartup();
+} catch {
+  process.stderr.write(
+    '{"check":"LOT14_BOOTSTRAP_STARTUP","status":"FAIL","code":"LOT14_BOOTSTRAP_STARTUP_FAILED"}\n',
+  );
+  process.exit(1);
+}
 
 await bootstrap();
