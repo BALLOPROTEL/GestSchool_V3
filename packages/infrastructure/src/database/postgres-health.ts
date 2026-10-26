@@ -66,6 +66,44 @@ function classify(error: unknown, phase: Phase): Failure {
   return phase === 'connect' ? 'POSTGRES_HEALTH_CONNECTION_ERROR' : 'POSTGRES_HEALTH_QUERY_ERROR';
 }
 
+const retryBackoffMilliseconds = 200;
+const cleanupTimeoutMilliseconds = 250;
+
+async function within<T>(
+  operation: () => Promise<T>,
+  milliseconds: number,
+  timeoutMessage: string,
+): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const deadline = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(timeoutMessage)), milliseconds);
+  });
+  try {
+    return await Promise.race([Promise.resolve().then(operation), deadline]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function close(client: Client): Promise<void> {
+  try {
+    await within(
+      () => client.end(),
+      cleanupTimeoutMilliseconds,
+      'POSTGRES_HEALTH_CONNECTION_ERROR',
+    );
+  } catch {
+    // Cleanup failures must not leak raw driver errors or extend the readiness budget.
+  } finally {
+    // end() can wait for a socket indefinitely. Force disposal after the bounded grace period.
+    try {
+      client.connection.stream.destroy();
+    } catch {
+      // Never serialize socket errors.
+    }
+  }
+}
+
 export class PostgresHealth implements DependencyHealthCheck {
   readonly name = 'postgres';
 
@@ -75,6 +113,18 @@ export class PostgresHealth implements DependencyHealthCheck {
   ) {}
 
   async check(): Promise<void> {
+    let failure = await this.attempt();
+    if (failure === 'POSTGRES_HEALTH_CONNECT_TIMEOUT') {
+      await new Promise<void>((resolve) => setTimeout(resolve, retryBackoffMilliseconds));
+      failure = await this.attempt();
+    }
+    // At most two attempts, with a fresh, closed client each time. Only SELECT success is up.
+    // Default worst-case budget: 2s connect + 250ms cleanup + 200ms backoff +
+    // 2s connect + 2s query + 250ms cleanup = 6.7s (two connect timeouts: 4.7s).
+    if (failure) throw new Error(failure);
+  }
+
+  private async attempt(): Promise<Failure | undefined> {
     const started = performance.now();
     let phase: Phase = 'connect';
     let client: Client | undefined;
@@ -89,9 +139,10 @@ export class PostgresHealth implements DependencyHealthCheck {
       client.on('error', (error: Error) => {
         connectionFailure = error;
       });
-      await client.connect();
+      await within(() => client!.connect(), this.timeoutMilliseconds, 'timeout expired');
       phase = 'query';
-      await client.query('SELECT 1');
+      await within(() => client!.query('SELECT 1'), this.timeoutMilliseconds, 'Query read timeout');
+      return undefined;
     } catch (error) {
       const event = classify(connectionFailure ?? error, phase);
       const durationMs = Math.max(0, Math.round(performance.now() - started));
@@ -100,15 +151,9 @@ export class PostgresHealth implements DependencyHealthCheck {
       } catch {
         // A logging failure must not replace the safe classification or skip cleanup.
       }
-      // Keep readiness down and prevent upstream logging of the original sensitive error.
-      // oxlint-disable-next-line preserve-caught-error -- Raw driver causes may contain credentials.
-      throw new Error(event);
+      return event;
     } finally {
-      try {
-        await client?.end();
-      } catch {
-        // Cleanup must not leak raw errors or replace the diagnostic failure.
-      }
+      if (client) await close(client);
     }
   }
 }

@@ -1,7 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+type TestClient = import('node:events').EventEmitter & {
+  end: () => unknown;
+  connection: { stream: { destroy: () => unknown } };
+};
+
 const driver = vi.hoisted(() => ({
-  instance: undefined as import('node:events').EventEmitter | undefined,
+  instance: undefined as TestClient | undefined,
+  instances: [] as TestClient[],
   construct: vi.fn(),
   connect: vi.fn(),
   query: vi.fn(),
@@ -15,10 +21,12 @@ vi.mock('pg', async () => {
         super();
         driver.construct(options);
         driver.instance = this;
+        driver.instances.push(this);
       }
-      connect = driver.connect;
-      query = driver.query;
-      end = driver.end;
+      connect = vi.fn(() => driver.connect());
+      query = vi.fn((sql: string) => driver.query(sql));
+      end = vi.fn(() => driver.end());
+      connection = { stream: { destroy: vi.fn() } };
     },
   };
 });
@@ -43,6 +51,7 @@ describe('PostgresHealth safe failure diagnostics', () => {
   beforeEach(() => {
     vi.resetAllMocks();
     driver.instance = undefined;
+    driver.instances = [];
     driver.connect.mockResolvedValue(undefined);
     driver.query.mockResolvedValue({ rows: [{ '?column?': 1 }] });
     driver.end.mockResolvedValue(undefined);
@@ -88,17 +97,23 @@ describe('PostgresHealth safe failure diagnostics', () => {
     async (phase, error, classification) => {
       const operation = phase === 'connect' ? driver.connect : driver.query;
       operation.mockRejectedValue(error);
-      const result = await states();
+      const pending = states();
+      const attempts = classification === 'CONNECT_TIMEOUT' ? 2 : 1;
+      if (attempts === 2) await vi.advanceTimersByTimeAsync(200);
+      const result = await pending;
       expect(result).toEqual({ postgres: 'down', redis: 'up', storage: 'up' });
       expect(isInfrastructureReady(result)).toBe(false);
-      expect(driver.connect).toHaveBeenCalledTimes(1);
+      expect(driver.connect).toHaveBeenCalledTimes(attempts);
       expect(driver.query).toHaveBeenCalledTimes(phase === 'connect' ? 0 : 1);
-      expect(driver.end).toHaveBeenCalledTimes(1);
-      expect(process.stderr.write).toHaveBeenCalledExactlyOnceWith(
-        line({
-          event: `POSTGRES_HEALTH_${classification}`,
-          durationMs: 0,
-        }),
+      expect(driver.end).toHaveBeenCalledTimes(attempts);
+      for (const client of driver.instances) {
+        expect(client.end).toHaveBeenCalledTimes(1);
+        expect(client.connection.stream.destroy).toHaveBeenCalledTimes(1);
+      }
+      expect(vi.mocked(process.stderr.write).mock.calls).toEqual(
+        Array.from({ length: attempts }, () => [
+          line({ event: `POSTGRES_HEALTH_${classification}`, durationMs: 0 }),
+        ]),
       );
       expect(JSON.stringify(vi.mocked(process.stderr.write).mock.calls)).not.toMatch(
         /health-user|health-password|private-db|secret-db|certificate|SQL-data-canary/,
@@ -118,19 +133,41 @@ describe('PostgresHealth safe failure diagnostics', () => {
     expect(driver.end).toHaveBeenCalledTimes(1);
   });
 
-  it('does not latch down after a timeout: a later check requires a new successful SELECT', async () => {
+  it('recovers from a connect timeout only after a closed first client, bounded backoff and successful SELECT', async () => {
     driver.connect.mockRejectedValueOnce(new Error('timeout expired'));
-    const postgres = health();
-    expect((await states(postgres)).postgres).toBe('down');
-    expect((await states(postgres)).postgres).toBe('up');
+    let completed = false;
+    const pending = states().then((result) => {
+      completed = true;
+      return result;
+    });
+    await vi.advanceTimersByTimeAsync(199);
+    expect(completed).toBe(false);
+    expect(driver.construct).toHaveBeenCalledTimes(1);
+    expect(driver.connect).toHaveBeenCalledTimes(1);
+    expect(driver.query).not.toHaveBeenCalled();
+    expect(driver.instances[0]!.end).toHaveBeenCalledTimes(1);
+    expect(driver.instances[0]!.connection.stream.destroy).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(isInfrastructureReady(await pending)).toBe(true);
     expect(driver.construct).toHaveBeenCalledTimes(2);
     expect(driver.connect).toHaveBeenCalledTimes(2);
-    expect(driver.query).toHaveBeenCalledTimes(1);
+    expect(driver.query).toHaveBeenCalledExactlyOnceWith('SELECT 1');
     expect(driver.end).toHaveBeenCalledTimes(2);
+    expect(driver.instances[1]).not.toBe(driver.instances[0]);
+    expect(driver.instances[1]!.end).toHaveBeenCalledTimes(1);
+    expect(driver.instances[1]!.connection.stream.destroy).toHaveBeenCalledTimes(1);
+    expect(performance.now()).toBe(200);
+    expect(vi.getTimerCount()).toBe(0);
+    expect(process.stderr.write).toHaveBeenCalledExactlyOnceWith(
+      line({ event: 'POSTGRES_HEALTH_CONNECT_TIMEOUT', durationMs: 0 }),
+    );
+    expect(JSON.stringify(vi.mocked(process.stderr.write).mock.calls)).not.toMatch(
+      /health-user|health-password|private-db|secret-db|certificate|SQL-data-canary/,
+    );
   });
 
   it.each(['timeout', 'tls', 'auth', 'query'] as const)(
-    'keeps two consecutive %s checks down without retrying or stale success',
+    'keeps consecutive %s checks down with only the permitted bounded retries',
     async (kind) => {
       if (kind === 'query') driver.query.mockRejectedValue(raw('42601'));
       else
@@ -140,10 +177,16 @@ describe('PostgresHealth safe failure diagnostics', () => {
             : raw(kind === 'tls' ? 'ERR_TLS_CERT_ALTNAME_INVALID' : '28P01'),
         );
       const postgres = health();
-      expect((await states(postgres)).postgres).toBe('down');
-      expect((await states(postgres)).postgres).toBe('down');
-      expect(driver.connect).toHaveBeenCalledTimes(2);
-      expect(driver.end).toHaveBeenCalledTimes(2);
+      for (let check = 0; check < 2; check++) {
+        const pending = states(postgres);
+        if (kind === 'timeout') await vi.advanceTimersByTimeAsync(200);
+        expect((await pending).postgres).toBe('down');
+      }
+      const attempts = kind === 'timeout' ? 4 : 2;
+      expect(driver.connect).toHaveBeenCalledTimes(attempts);
+      expect(driver.end).toHaveBeenCalledTimes(attempts);
+      for (const client of driver.instances) expect(client.end).toHaveBeenCalledTimes(1);
+      expect(vi.getTimerCount()).toBe(0);
     },
   );
 
@@ -207,6 +250,115 @@ describe('PostgresHealth safe failure diagnostics', () => {
       );
     },
   );
+
+  it('bounds two hung connections to 4.2s, closes both and never tries a third time', async () => {
+    driver.connect.mockImplementation(() => new Promise(() => undefined));
+    let completed = false;
+    const pending = states().then((result) => {
+      completed = true;
+      return result;
+    });
+    await vi.advanceTimersByTimeAsync(4_199);
+    expect(completed).toBe(false);
+    await vi.advanceTimersByTimeAsync(1);
+    expect((await pending).postgres).toBe('down');
+    expect(performance.now()).toBe(4_200);
+    expect(driver.construct).toHaveBeenCalledTimes(2);
+    expect(driver.query).not.toHaveBeenCalled();
+    expect(driver.end).toHaveBeenCalledTimes(2);
+    for (const client of driver.instances) {
+      expect(client.end).toHaveBeenCalledTimes(1);
+      expect(client.connection.stream.destroy).toHaveBeenCalledTimes(1);
+    }
+    expect(vi.mocked(process.stderr.write).mock.calls).toEqual(
+      Array.from({ length: 2 }, () => [
+        line({ event: 'POSTGRES_HEALTH_CONNECT_TIMEOUT', durationMs: 2_000 }),
+      ]),
+    );
+    await vi.advanceTimersByTimeAsync(30_000);
+    expect(driver.construct).toHaveBeenCalledTimes(2);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('also bounds hung cleanup: two connect timeouts and disposal finish within 4.7s', async () => {
+    driver.connect.mockImplementation(() => new Promise(() => undefined));
+    driver.end.mockImplementation(() => new Promise(() => undefined));
+    let completed = false;
+    const pending = states().then((result) => {
+      completed = true;
+      return result;
+    });
+    await vi.advanceTimersByTimeAsync(4_699);
+    expect(completed).toBe(false);
+    await vi.advanceTimersByTimeAsync(1);
+    expect((await pending).postgres).toBe('down');
+    expect(performance.now()).toBe(4_700);
+    expect(driver.end).toHaveBeenCalledTimes(2);
+    for (const client of driver.instances) {
+      expect(client.end).toHaveBeenCalledTimes(1);
+      expect(client.connection.stream.destroy).toHaveBeenCalledTimes(1);
+    }
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('bounds the longest retry path, including second-query timeout and cleanup, below 6.7s', async () => {
+    driver.connect.mockImplementationOnce(() => new Promise(() => undefined));
+    driver.connect.mockImplementationOnce(
+      () => new Promise((resolve) => setTimeout(resolve, 1_999)),
+    );
+    driver.query.mockImplementation(() => new Promise(() => undefined));
+    driver.end.mockImplementation(() => new Promise(() => undefined));
+    const pending = states();
+    await vi.advanceTimersByTimeAsync(6_699);
+    expect((await pending).postgres).toBe('down');
+    expect(driver.connect).toHaveBeenCalledTimes(2);
+    expect(driver.query).toHaveBeenCalledExactlyOnceWith('SELECT 1');
+    expect(driver.end).toHaveBeenCalledTimes(2);
+    expect(performance.now()).toBe(6_699);
+    expect(vi.getTimerCount()).toBe(0);
+    expect(vi.mocked(process.stderr.write).mock.calls).toEqual([
+      [line({ event: 'POSTGRES_HEALTH_CONNECT_TIMEOUT', durationMs: 2_000 })],
+      [line({ event: 'POSTGRES_HEALTH_QUERY_TIMEOUT', durationMs: 3_999 })],
+    ]);
+  });
+
+  it.each([
+    ['connect', raw('28P01'), 'CONNECTION_ERROR'],
+    ['connect', raw('ERR_TLS_CERT_ALTNAME_INVALID'), 'TLS_ERROR'],
+    ['query', new Error('Query read timeout'), 'QUERY_TIMEOUT'],
+    ['query', raw('42601'), 'QUERY_ERROR'],
+  ] as const)(
+    'never retries the second-attempt %s failure (%s)',
+    async (phase, error, classification) => {
+      driver.connect.mockRejectedValueOnce(new Error('timeout expired'));
+      if (phase === 'connect') driver.connect.mockRejectedValueOnce(error);
+      else driver.query.mockRejectedValueOnce(error);
+      const pending = states();
+      await vi.advanceTimersByTimeAsync(200);
+      expect((await pending).postgres).toBe('down');
+      expect(driver.connect).toHaveBeenCalledTimes(2);
+      expect(driver.end).toHaveBeenCalledTimes(2);
+      expect(driver.query).toHaveBeenCalledTimes(phase === 'query' ? 1 : 0);
+      expect(process.stderr.write).toHaveBeenLastCalledWith(
+        line({ event: `POSTGRES_HEALTH_${classification}`, durationMs: 0 }),
+      );
+      expect(vi.getTimerCount()).toBe(0);
+    },
+  );
+
+  it('requires a new successful SELECT on a later check after both timeouts', async () => {
+    driver.connect
+      .mockRejectedValueOnce(new Error('timeout expired'))
+      .mockRejectedValueOnce(new Error('timeout expired'));
+    const postgres = health();
+    const pending = states(postgres);
+    await vi.advanceTimersByTimeAsync(200);
+    expect((await pending).postgres).toBe('down');
+    expect((await states(postgres)).postgres).toBe('up');
+    expect(driver.connect).toHaveBeenCalledTimes(3);
+    expect(driver.query).toHaveBeenCalledExactlyOnceWith('SELECT 1');
+    expect(driver.end).toHaveBeenCalledTimes(3);
+  });
 
   it('sanitizes constructor failures without pretending a client was created', async () => {
     driver.construct.mockImplementation(() => {
