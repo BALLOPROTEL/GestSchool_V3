@@ -38,6 +38,24 @@ export class PeopleDatabase implements OnModuleDestroy {
 @Module({ providers: [PeopleDatabase], exports: [PeopleDatabase] })
 export class PeopleDatabaseModule {}
 
+// Called inside the existing serialized tenant creation transaction. No reassignment
+// endpoint: an existing profile's IAM identity remains immutable through People HTTP.
+export async function linkedUser(
+  db: Prisma.TransactionClient,
+  tenantId: string,
+  userId: string | undefined,
+): Promise<{ userId?: string }> {
+  if (userId === undefined) return {};
+  const rows = await db.$queryRaw<{ id: string }[]>`
+    SELECT m.user_id AS id FROM memberships m JOIN users u ON u.id=m.user_id
+    JOIN tenants t ON t.id=m.tenant_id
+    WHERE m.tenant_id=${tenantId}::uuid AND m.user_id=${userId}::uuid
+    AND m.status='ACTIVE' AND u.disabled_at IS NULL AND t.status='ACTIVE'
+    FOR SHARE OF m,u`;
+  if (rows.length !== 1 || rows[0]?.id !== userId) throw new IamError('PERSON_NOT_FOUND', 404);
+  return { userId };
+}
+
 export async function audit(
   db: Prisma.TransactionClient,
   context: RequestContext,

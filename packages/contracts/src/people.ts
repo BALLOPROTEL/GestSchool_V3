@@ -13,6 +13,7 @@ const birthDate = z.iso
   .date()
   .refine((value) => value >= '1900-01-01' && value <= new Date().toISOString().slice(0, 10));
 const common = {
+  userId: personId.optional(),
   firstName: name,
   lastName: name,
   status: z.enum(['ACTIVE', 'INACTIVE']).optional(),
@@ -38,9 +39,9 @@ export const guardianCreate = z.strictObject({
 });
 export const teacherCreate = z.strictObject({ ...common, employeeNumber: reference.optional() });
 const notEmpty = (value: object) => Object.keys(value).length > 0;
-export const studentUpdate = studentCreate.partial().refine(notEmpty);
-export const guardianUpdate = guardianCreate.partial().refine(notEmpty);
-export const teacherUpdate = teacherCreate.partial().refine(notEmpty);
+export const studentUpdate = studentCreate.omit({ userId: true }).partial().refine(notEmpty);
+export const guardianUpdate = guardianCreate.omit({ userId: true }).partial().refine(notEmpty);
+export const teacherUpdate = teacherCreate.omit({ userId: true }).partial().refine(notEmpty);
 const integer = (maximum: number) =>
   z
     .string()

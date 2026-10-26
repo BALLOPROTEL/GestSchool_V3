@@ -29,6 +29,7 @@ const steps = [
       'run',
       'src/security-hardening.test.ts',
       'src/infrastructure/staging-bootstrap-startup.test.ts',
+      'src/infrastructure/lot14-certification',
       'src/modules/iam/domain/security.test.ts',
       'src/modules/messaging/domain/webhook-auth.test.ts',
       'src/modules/messaging/application/webhook.service.test.ts',
@@ -70,7 +71,10 @@ const steps = [
   ['node', ['--test', 'scripts/staging-migrate.test.mjs']],
   ['node', ['--test', 'scripts/staging-bootstrap.test.mjs']],
   ['node', ['--test', 'scripts/security-runtime.test.mjs']],
-  ['pnpm', ['--filter', '@gestschool/api', 'test:iam', 'tests/security.test.ts']],
+  [
+    'pnpm',
+    ['--filter', '@gestschool/api', 'test:iam', 'tests/security.test.ts', 'tests/people.test.ts'],
+  ],
 ];
 for (const [command, args] of steps) {
   const result = spawnSync(command, args, { stdio: 'inherit', env: process.env });

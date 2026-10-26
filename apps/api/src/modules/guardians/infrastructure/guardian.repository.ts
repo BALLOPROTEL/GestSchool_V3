@@ -6,6 +6,7 @@ import type { RequestContext } from '../../iam/domain/context.js';
 import { hasScope, tenantPermission } from '../../people/domain/policy.js';
 import {
   PeopleDatabase,
+  linkedUser,
   audit,
   editable,
   found,
@@ -79,6 +80,7 @@ export class PrismaGuardianRepository extends GuardianRepository {
       const row = await db.guardian.create({
         data: {
           tenantId: context.tenantId,
+          ...(await linkedUser(db, context.tenantId, input.userId)),
           firstName: input.firstName,
           lastName: input.lastName,
           guardianReference:

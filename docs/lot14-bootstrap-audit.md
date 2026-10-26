@@ -2,6 +2,8 @@
 
 Base du checkpoint : `eb0d3654551f39ba3b6d7a01b71bd003c693e7a9`, branche `feat/lot14-staging-certification`.
 
+Dernier état déclaré par l'opérateur après le hook `315211e` : bootstrap staging **PASS réel / created=true**, deux tenants et huit comptes ; `LOT14_BOOTSTRAP_APPLY=false` restauré. Le bloc d'exécution ci-dessous conserve la situation de ce checkpoint d'audit historique. Le nouveau [runner de certification](deployment/staging-certification-runner.md) est préparé, flag OFF, sans exécution distante dans ce travail.
+
 ## Preuve worker finalisée : PASS
 
 26 octobre 2026, 20:35:57–20:45:58 Europe/Paris : **21 checks, 21 HTTP 200, 0 HTTP 503, 0 erreur transport**, latences min/médiane/max **238/474/1 257 ms**. Le propriétaire confirme la corrélation Render : zéro `POSTGRES_HEALTH_*`, zéro `Worker dependencies unavailable (...)`, donc aucun état postgres/redis/storage down observé sur la fenêtre. La source de cette corrélation est explicitement opérateur ; la collecte HTTP est celle de cette session.

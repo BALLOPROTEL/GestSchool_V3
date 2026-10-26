@@ -1,6 +1,6 @@
 # LOT14 — Supabase Storage et stratégie staging entièrement gratuite
 
-Certification worker PASS après `eb0d365` : 21/21 HTTP 200, 0 HTTP 503 sur dix minutes le 26 octobre 2026 (20:35:57–20:45:58 Europe/Paris). Corrélation Render confirmée par le propriétaire : aucun `POSTGRES_HEALTH_*` ni état down observé. Le retry existe mais n’a pas été exercé. Bootstrap A/B audité, idempotent, huit comptes, non appliqué en staging. Voir le [checkpoint d’audit et les résultats distants](lot14-bootstrap-audit.md) et les [mesures](lot14-worker-stability-eb0d365.md). NO-GO global maintenu pour les certifications applicatives restantes.
+Checkpoint runner Tenant A/B + worker préparé depuis `315211e` : voir le [runbook de certification](deployment/staging-certification-runner.md). Bootstrap staging **PASS confirmé par l'opérateur** (`created=true`), deux tenants / huit comptes, flag bootstrap restauré à `false`. `LOT14_CERTIFICATION_RUN` reste OFF ; aucune certification distante Tenant A/B ou worker E2E exécutée par ce checkpoint. Stabilité worker PASS : 21/21 HTTP 200, zéro `POSTGRES_HEALTH_*` observé ; retry existant mais non exercé, aucune récupération revendiquée. **NO-GO LOT14 maintenu** jusqu'aux preuves applicatives distantes.
 
 ## Historique des checkpoints antérieurs
 
