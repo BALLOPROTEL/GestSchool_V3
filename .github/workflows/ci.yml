@@ -62,6 +62,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: LOT15 format diagnostic
+        run: |
+          pnpm exec prettier packages/database/scripts/backup-restore-check.mjs
+          exit 1
+
       - name: Generate Prisma client
         run: pnpm db:generate
 
