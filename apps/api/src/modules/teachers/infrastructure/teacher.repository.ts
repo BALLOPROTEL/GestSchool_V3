@@ -6,6 +6,7 @@ import type { RequestContext } from '../../iam/domain/context.js';
 import { hasScope, tenantPermission } from '../../people/domain/policy.js';
 import {
   PeopleDatabase,
+  linkedUser,
   audit,
   editable,
   found,
@@ -77,6 +78,7 @@ export class PrismaTeacherRepository extends TeacherRepository {
       const row = await db.teacher.create({
         data: {
           tenantId: context.tenantId,
+          ...(await linkedUser(db, context.tenantId, input.userId)),
           firstName: input.firstName,
           lastName: input.lastName,
           employeeNumber:

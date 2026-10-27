@@ -3,7 +3,7 @@ import createNextIntlPlugin from 'next-intl/plugin';
 import { securityHeaders, validateBuildApiOrigin } from './security-headers.mjs';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { requirePublicHttps } from '@gestschool/config/security';
+import { requirePublicHttps, validateDeploymentEnvironment } from '@gestschool/config/security';
 
 const nextConfig: NextConfig = {
   agentRules: false,
@@ -29,6 +29,17 @@ const nextConfig: NextConfig = {
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
 export default function configuration(phase: string) {
+  validateDeploymentEnvironment(process.env);
+  const hostedBuild =
+    phase === 'phase-production-build' &&
+    (process.env['VERCEL'] === '1' ||
+      ['staging', 'production'].includes(process.env['APP_ENV'] ?? ''));
+  if (hostedBuild) {
+    if (!['staging', 'production'].includes(process.env['APP_ENV'] ?? ''))
+      throw new Error('Hosted web builds require explicit APP_ENV=staging or production');
+    requirePublicHttps(process.env['APP_PUBLIC_ORIGIN'], 'APP_PUBLIC_ORIGIN', true);
+    requirePublicHttps(process.env['API_INTERNAL_URL'], 'API_INTERNAL_URL', true);
+  }
   // Building is not a deployed runtime. Local production-build E2E explicitly uses NODE_ENV=test.
   if (phase === 'phase-production-server' && process.env.NODE_ENV === 'production') {
     requirePublicHttps(process.env['APP_PUBLIC_ORIGIN'], 'APP_PUBLIC_ORIGIN', true);

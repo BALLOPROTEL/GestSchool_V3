@@ -71,6 +71,44 @@ const manifest = (destination) => ({
     fallback: [],
   },
 });
+test('Vercel builds require explicit remote mode and HTTPS origins before producing a bundle', () => {
+  for (const changes of [
+    { APP_ENV: undefined },
+    { IAM_ENV: 'local' },
+    { APP_PUBLIC_ORIGIN: undefined },
+    { API_INTERNAL_URL: undefined },
+    { API_INTERNAL_URL: 'http://127.0.0.1:3100' },
+    { API_INTERNAL_URL: 'http://api.example.com' },
+    { API_INTERNAL_URL: 'https://user:password@api.example.com' },
+    {},
+  ]) {
+    const result = spawnSync(
+      process.execPath,
+      [
+        '--import',
+        'tsx',
+        '--input-type=module',
+        '-e',
+        "import config from './next.config.ts'; config('phase-production-build');",
+      ],
+      {
+        cwd: 'apps/web',
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          NODE_ENV: 'production',
+          VERCEL: '1',
+          APP_ENV: 'staging',
+          IAM_ENV: 'staging',
+          APP_PUBLIC_ORIGIN: 'https://web-staging.example.com',
+          API_INTERNAL_URL: 'https://api-staging.example.com',
+          ...changes,
+        },
+      },
+    );
+    assert.equal(result.status, Object.keys(changes).length ? 1 : 0);
+  }
+});
 test('production refuses a hidden local or mismatched build-time API rewrite', () => {
   for (const destination of [
     'http://127.0.0.1:3100/api/v1/:path*',

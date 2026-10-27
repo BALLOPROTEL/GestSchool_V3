@@ -4,6 +4,7 @@ import {
   parseSecretJson,
   requireEncryptionKey,
   requirePublicHttps,
+  validateDeploymentEnvironment,
 } from '@gestschool/config/security';
 import { fileURLToPath } from 'node:url';
 import { z } from 'zod';
@@ -28,6 +29,7 @@ export interface IamConfig {
   local: boolean;
 }
 export function loadIamConfig(environment: NodeJS.ProcessEnv = process.env): IamConfig {
+  validateDeploymentEnvironment(environment);
   const mode = z.enum(['local', 'staging', 'production']).parse(environment['IAM_ENV'] ?? 'local');
   if (environment['NODE_ENV'] === 'production' && mode === 'local')
     throw new Error('IAM_ENV must be staging or production with NODE_ENV=production');

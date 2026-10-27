@@ -151,17 +151,27 @@ beforeAll(async () => {
   teacher = await account(tenantA, 'TEACHER');
   denied = await account(tenantA, null);
   academic = await account(tenantA, 'ACADEMIC_STAFF');
-  child = (await admin.browser.send('students', { firstName: 'Scope', lastName: 'Child' }, 'POST'))
-    .body;
+  child = (
+    await admin.browser.send(
+      'students',
+      { firstName: 'Scope', lastName: 'Child', userId: student.userId },
+      'POST',
+    )
+  ).body;
   guardian = (
-    await admin.browser.send('guardians', { firstName: 'Scope', lastName: 'Parent' }, 'POST')
+    await admin.browser.send(
+      'guardians',
+      { firstName: 'Scope', lastName: 'Parent', userId: parent.userId },
+      'POST',
+    )
   ).body;
   teacherProfile = (
-    await admin.browser.send('teachers', { firstName: 'Scope', lastName: 'Teacher' }, 'POST')
+    await admin.browser.send(
+      'teachers',
+      { firstName: 'Scope', lastName: 'Teacher', userId: teacher.userId },
+      'POST',
+    )
   ).body;
-  await db.student.update({ where: { id: child.id }, data: { userId: student.userId } });
-  await db.guardian.update({ where: { id: guardian.id }, data: { userId: parent.userId } });
-  await db.teacher.update({ where: { id: teacherProfile.id }, data: { userId: teacher.userId } });
   expect(
     (
       await admin.browser.send(
@@ -207,6 +217,21 @@ describe.each([
       { user_id: string | null }[]
     >`SELECT user_id FROM students WHERE id = ${reply.body.id}::uuid UNION ALL SELECT user_id FROM guardians WHERE id = ${reply.body.id}::uuid UNION ALL SELECT user_id FROM teachers WHERE id = ${reply.body.id}::uuid`;
     expect(row[0]?.user_id).toBeNull();
+  });
+  it('refuses foreign or missing users without creating a profile, and refuses identity reassignment', async () => {
+    for (const userId of [other.userId, randomUUID()]) {
+      const reply = await admin.browser.send<{ code: string }>(
+        kind,
+        { firstName: 'Linked', lastName: 'Denied', userId },
+        'POST',
+      );
+      expect(reply.status).toBe(404);
+      expect(reply.body.code).toBe('PERSON_NOT_FOUND');
+    }
+    expect(
+      (await admin.browser.send(`${kind}/${record(kind).id}`, { userId: admin.userId }, 'PATCH'))
+        .status,
+    ).toBe(400);
   });
   it('rejects duplicate references within a tenant and permits them in another tenant', async () => {
     const input = {
@@ -549,7 +574,7 @@ describe('relationships, validation and scopes', () => {
   });
   it.each([
     { tenantId: randomUUID() },
-    { userId: randomUUID() },
+    { userId: 'invalid-uuid' },
     { firstName: '' },
     { firstName: 'a'.repeat(101) },
     { birthDate: '2026-02-30' },
@@ -624,3 +649,31 @@ describe('relationships, validation and scopes', () => {
     expect(errors).toEqual([]);
   });
 });
+
+describe.each(['students', 'guardians', 'teachers'] as const)(
+  '%s IAM identity creation',
+  (kind) => {
+    it('links once, rejects a duplicate, and refuses suspended memberships or disabled users', async () => {
+      const user = await db.user.create({
+        data: { email: `${randomUUID()}@example.invalid`, displayName: 'People linking fixture' },
+      });
+      const membership = await db.membership.create({
+        data: { tenantId: tenantA, userId: user.id },
+      });
+      const input = { firstName: 'IAM', lastName: 'Linked', userId: user.id };
+      const created = await admin.browser.send(kind, input, 'POST');
+      expect(created.status).toBe(201);
+      expect(created.body).not.toHaveProperty('userId');
+      expect((await admin.browser.send(kind, input, 'POST')).status).toBe(409);
+      await db.membership.update({ where: { id: membership.id }, data: { status: 'SUSPENDED' } });
+      const suspended = await admin.browser.send<{ code: string }>(kind, input, 'POST');
+      expect(suspended.status).toBe(404);
+      expect(suspended.body.code).toBe('PERSON_NOT_FOUND');
+      await db.membership.update({ where: { id: membership.id }, data: { status: 'ACTIVE' } });
+      await db.user.update({ where: { id: user.id }, data: { disabledAt: new Date() } });
+      const disabled = await admin.browser.send<{ code: string }>(kind, input, 'POST');
+      expect(disabled.status).toBe(404);
+      expect(disabled.body.code).toBe('PERSON_NOT_FOUND');
+    });
+  },
+);

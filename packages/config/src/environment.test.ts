@@ -18,6 +18,7 @@ const validEnvironment = {
 describe('loadInfrastructureConfig', () => {
   it('normalizes a complete local environment', () => {
     expect(loadInfrastructureConfig(validEnvironment)).toEqual({
+      apiHost: '127.0.0.1',
       apiPort: 3100,
       databaseUrl: validEnvironment.DATABASE_URL,
       nodeEnvironment: 'development',
@@ -31,6 +32,20 @@ describe('loadInfrastructureConfig', () => {
         secretAccessKey: 'local-secret',
       },
     });
+  });
+
+  it('binds explicitly to a managed host and its PORT without changing local defaults', () => {
+    const { API_PORT: _port, ...environment } = validEnvironment;
+    const config = loadInfrastructureConfig({ ...environment, API_HOST: '0.0.0.0', PORT: '10000' });
+    expect(config.apiHost).toBe('0.0.0.0');
+    expect(config.apiPort).toBe(10000);
+    expect(
+      loadInfrastructureConfig({ ...environment, API_PORT: '3200', PORT: '10000' }).apiPort,
+    ).toBe(3200);
+    expect(() => loadInfrastructureConfig({ ...environment, PORT: 'invalid' })).toThrow();
+    expect(() =>
+      loadInfrastructureConfig({ ...environment, API_HOST: 'attacker.example.com' }),
+    ).toThrow();
   });
 
   it('reports every missing mandatory dependency setting clearly', () => {

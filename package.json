@@ -20,6 +20,7 @@
     "typecheck": "turbo run typecheck",
     "test": "turbo run test --concurrency=2",
     "test:e2e": "turbo run test:e2e",
+    "staging:test:e2e": "pnpm --filter @gestschool/web test:e2e:staging",
     "infra:up": "docker compose -f docker/compose.yml up -d --wait postgres redis minio && docker compose -f docker/compose.yml run --rm minio-init",
     "infra:down": "docker compose -f docker/compose.yml down --remove-orphans",
     "infra:logs": "docker compose -f docker/compose.yml logs -f postgres redis minio",

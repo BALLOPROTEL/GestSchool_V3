@@ -1,0 +1,220 @@
+{
+  "verdict": "GO STAGING FONCTIONNEL",
+  "review_status": "EN ATTENTE DE MERGE FINAL",
+  "certified_application_sha": "39f5cc20aa1c429210a6ab18597e218a1b693e88",
+  "branch": "feat/lot14-staging-certification",
+  "remote_run": {
+    "source": "owner_confirmation_in_chat",
+    "reported_run_date": "2026-10-26",
+    "timezone": "Europe/Paris",
+    "exact_start_and_end_not_provided": true,
+    "auth_state": {
+      "status": "PASS",
+      "tenants": 2,
+      "users": 8,
+      "memberships": 8,
+      "initial_active_sessions": 0
+    },
+    "tenant_ab": {
+      "status": "PASS",
+      "pass": 14,
+      "fail": 0,
+      "skip": 0,
+      "cases": [
+        {
+          "case": "A_CANNOT_READ_B",
+          "status": "PASS"
+        },
+        {
+          "case": "B_CANNOT_READ_A",
+          "status": "PASS"
+        },
+        {
+          "case": "UUID_IDOR",
+          "status": "PASS"
+        },
+        {
+          "case": "ADMIN_TENANT_SCOPE",
+          "status": "PASS"
+        },
+        {
+          "case": "TEACHER_ASSIGNMENTS",
+          "status": "PASS"
+        },
+        {
+          "case": "PARENT_CHILDREN",
+          "status": "PASS"
+        },
+        {
+          "case": "STUDENT_OWN",
+          "status": "PASS"
+        },
+        {
+          "case": "PEOPLE",
+          "status": "PASS"
+        },
+        {
+          "case": "ACADEMIC",
+          "status": "PASS"
+        },
+        {
+          "case": "ENROLLMENTS",
+          "status": "PASS"
+        },
+        {
+          "case": "FINANCE",
+          "status": "PASS"
+        },
+        {
+          "case": "RESULTS",
+          "status": "PASS"
+        },
+        {
+          "case": "DOCUMENTS",
+          "status": "PASS"
+        },
+        {
+          "case": "REPORTS",
+          "status": "PASS"
+        }
+      ]
+    },
+    "worker_e2e": {
+      "status": "PASS",
+      "workflow": "report",
+      "terminal": "completed"
+    },
+    "certification": {
+      "status": "PASS"
+    },
+    "final_health": {
+      "api": {
+        "status": "ok",
+        "postgres": "up",
+        "redis": "up",
+        "storage": "up"
+      },
+      "worker": {
+        "status": "ok"
+      }
+    },
+    "operator_flags": {
+      "LOT14_BOOTSTRAP_APPLY": false,
+      "LOT14_CERTIFICATION_RUN": false
+    },
+    "flags_source": "operator_confirmations; no Render variable-store access in this workspace",
+    "no_runner_replay_after_off": true
+  },
+  "prior_evidence": {
+    "smoke_file": "lot14-remote-evidence-2026-10-26.json",
+    "smoke_pass": 49,
+    "smoke_fail": 0,
+    "smoke_skip": 0,
+    "smoke_runner_source_sha": "2c82cc1461212a20b8b96c44d6ca835e6ce0d612",
+    "stability_file": "lot14-worker-stability-eb0d365.json",
+    "worker_stability_deployed_sha": "eb0d3654551f39ba3b6d7a01b71bd003c693e7a9",
+    "stability_checks": 21,
+    "stability_http_200": 21,
+    "stability_http_503": 0,
+    "stability_transport_failures": 0,
+    "stability_latency_ms": {
+      "min": 238,
+      "median": 474,
+      "max": 1257
+    },
+    "postgres_retry_exercised_in_stability_window": false,
+    "migrations_applied": 14,
+    "migration_checksums_verified": true,
+    "bootstrap_status": "PASS",
+    "bootstrap_created": true
+  },
+  "historical_auth_incident": {
+    "source": "owner_confirmation_in_chat",
+    "application_sha": "8c2d09edd7f93fd3b56c6251978f3245d8f002db",
+    "code": "AUTH_UNAVAILABLE",
+    "utc": "2026-10-26T21:43:27.515889714Z",
+    "request_id": "309358a7-3873-4171-84cf-cdbc3a5245de",
+    "tenant_ab": {
+      "pass": 0,
+      "fail": 14,
+      "skip": 0
+    },
+    "worker_e2e": "SKIP",
+    "exact_cause_demonstrated": false
+  },
+  "residual_debts": {
+    "students_report_student_id_ignored": true,
+    "runner_positive_filter": "classId",
+    "production_operations_certified": false,
+    "real_institutions_onboarding_authorized": false,
+    "lot15_status": "Backlog / Not started"
+  },
+  "github_tracking": {
+    "lot14_issue": 65,
+    "lot15_backlog_issue": 66,
+    "projects_access": "integration_forbidden; board columns not verified"
+  },
+  "restrictions": {
+    "merge_performed": false,
+    "lot_14_go_tag_created": false,
+    "v2_modified": false,
+    "lot15_started": false,
+    "paid_resource_created": false
+  },
+  "local_recertification": {
+    "source": "executed_in_workspace",
+    "application_code_unchanged": true,
+    "certification_hooks_iam_diagnostics": {
+      "pass": 144,
+      "fail": 0,
+      "skip": 0
+    },
+    "bootstrap": {
+      "pass": 10,
+      "fail": 0,
+      "skip": 0
+    },
+    "iam_all": {
+      "pass": 369,
+      "fail": 0,
+      "skip": 0
+    },
+    "local_http_ab": {
+      "pass": 14,
+      "fail": 0,
+      "skip": 0
+    },
+    "security": {
+      "pass": 496,
+      "fail": 0,
+      "skip": 0
+    },
+    "infrastructure": {
+      "pass": 84,
+      "fail": 0,
+      "skip": 0
+    },
+    "worker": {
+      "pass": 17,
+      "fail": 0,
+      "skip": 0
+    },
+    "unit": {
+      "pass": 716,
+      "fail": 0,
+      "skip": 0,
+      "force": true,
+      "cached_tasks": 0
+    },
+    "typecheck": "PASS",
+    "lint": "PASS",
+    "format": "PASS",
+    "render_exact_build": "PASS",
+    "global_build": "PASS",
+    "secrets_scan_findings": 0,
+    "git_diff_check": "PASS",
+    "counts_overlap": true,
+    "remote_runner_replayed": false,
+    "report": "lot14-final-local-validation.md"
+  }
+}

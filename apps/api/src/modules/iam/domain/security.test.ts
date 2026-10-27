@@ -108,6 +108,7 @@ describe('token and MFA cryptography', () => {
       loadIamConfig({
         ...production,
         IAM_ENV: 'staging',
+        APP_ENV: 'staging',
         IAM_ALLOWED_ORIGINS: 'http://insecure.invalid',
       }),
     ).toThrow();

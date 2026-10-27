@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { performance } from 'node:perf_hooks';
 import {
   Catch,
   HttpException,
@@ -26,8 +27,14 @@ import {
 } from '../../domain/context.js';
 import { safeEqual, tokenHash } from '../../infrastructure/crypto.js';
 import { IamRuntime } from '../../infrastructure/iam-runtime.js';
+import {
+  elapsed,
+  iamDiagnostic,
+  iamHttpOperation,
+} from '../../infrastructure/operational-diagnostics.js';
 
 export interface IamRequest extends Request {
+  iamStartedAt?: number;
   metadata: RequestMetadata;
   claims?: AccessClaims;
   context?: RequestContext;
@@ -79,6 +86,7 @@ export function configureIamHttp(app: INestApplication): void {
   server.disable('x-powered-by');
   server.set('trust proxy', process.env['TRUST_PROXY'] === 'loopback' ? 'loopback' : false);
   app.use((request: IamRequest, response: Response, next: () => void) => {
+    request.iamStartedAt = performance.now();
     request.metadata = {
       requestId: randomUUID(),
       ipAddress: request.ip ?? request.socket.remoteAddress ?? 'unknown',
@@ -307,7 +315,38 @@ export class IamExceptionFilter implements ExceptionFilter {
                 ? 'UNSUPPORTED_MEDIA_TYPE'
                 : 'AUTH_UNAVAILABLE';
     const requestId = request.metadata?.requestId ?? randomUUID();
-    if (status >= 500) this.logger.error(JSON.stringify({ code, requestId }));
+    if (status >= 500) {
+      let diagnostics: ReturnType<typeof iamDiagnostic> = {
+        diagnostic: 'LOT14_AUTH_INTERNAL_ERROR',
+        reason: 'UNKNOWN',
+      };
+      try {
+        diagnostics = iamDiagnostic(exception);
+      } catch {
+        /* Diagnostics never replace the original response. */
+      }
+      this.logger.error(
+        JSON.stringify({
+          code,
+          status,
+          requestId,
+          operation: iamHttpOperation(request.path),
+          durationMs: request.iamStartedAt === undefined ? 0 : elapsed(request.iamStartedAt),
+          ...diagnostics,
+          // Only the static Express/Nest template, never originalUrl, params or headers.
+          ...(typeof request.route?.path === 'string' &&
+          request.route.path.length <= 160 &&
+          /^\/(?:api\/v1|health)\/(?:[a-z-]+|:[a-zA-Z]+)(?:\/(?:[a-z-]+|:[a-zA-Z]+))*$/.test(
+            request.route.path,
+          )
+            ? { route: request.route.path }
+            : {}),
+          ...(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'].includes(request.method)
+            ? { method: request.method }
+            : {}),
+        }),
+      );
+    }
     if (status === 429) response.setHeader('Retry-After', '60');
     response.status(status).json({ code, status, requestId });
   }

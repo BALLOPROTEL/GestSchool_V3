@@ -78,7 +78,25 @@ export function parseSecretJson(value: string, name: string): unknown {
   }
 }
 
+export function validateDeploymentEnvironment(environment: NodeJS.ProcessEnv): void {
+  const mode = environment['APP_ENV'];
+  // Existing local/CI commands remain compatible; remote deployments set APP_ENV explicitly.
+  if (mode === undefined) {
+    if (environment['IAM_ENV'] === 'staging')
+      throw new Error('Staging IAM requires explicit APP_ENV=staging');
+    return;
+  }
+  if (!['development', 'test', 'staging', 'production'].includes(mode))
+    throw new Error('APP_ENV must select development, test, staging or production');
+  const remote = mode === 'staging' || mode === 'production';
+  if (environment['NODE_ENV'] !== (remote ? 'production' : mode))
+    throw new Error('APP_ENV and NODE_ENV must agree');
+  if (environment['IAM_ENV'] !== (remote ? mode : 'local'))
+    throw new Error('APP_ENV and IAM_ENV must agree');
+}
+
 export function validateProductionInfrastructure(environment: NodeJS.ProcessEnv): void {
+  validateDeploymentEnvironment(environment);
   if (environment['NODE_ENV'] !== 'production') return;
   requirePublicHttps(environment['APP_PUBLIC_ORIGIN'], 'APP_PUBLIC_ORIGIN', true);
   requirePublicHttps(environment['DOCUMENT_PUBLIC_ORIGIN'], 'DOCUMENT_PUBLIC_ORIGIN', true);

@@ -1,6 +1,7 @@
 import { setTimeout } from 'node:timers/promises';
 import { createClient } from 'redis';
 import { IamError } from '../domain/context.js';
+import { IamRedisUnavailable } from './operational-diagnostics.js';
 import { tokenHash } from './crypto.js';
 
 const countScript = `local value = redis.call('INCR', KEYS[1]); if value == 1 then redis.call('PEXPIRE', KEYS[1], ARGV[1]) end; return value`;
@@ -54,7 +55,7 @@ export class RateLimiter {
       }
     } catch (error) {
       if (error instanceof IamError) throw error;
-      throw new IamError('AUTH_UNAVAILABLE', 503);
+      throw new IamRedisUnavailable(error);
     }
   }
   async checkTenantAction(endpoint: string, tenantId: string, userId: string): Promise<void> {
@@ -68,7 +69,7 @@ export class RateLimiter {
       if (count > 20) throw new IamError('AUTH_RATE_LIMITED', 429);
     } catch (error) {
       if (error instanceof IamError) throw error;
-      throw new IamError('AUTH_UNAVAILABLE', 503);
+      throw new IamRedisUnavailable(error);
     }
   }
 }

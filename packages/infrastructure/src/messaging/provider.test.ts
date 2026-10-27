@@ -24,6 +24,60 @@ const config: MessagingConfig = {
 afterEach(() => vi.unstubAllGlobals());
 
 describe('messaging providers', () => {
+  it.each([false, true])(
+    'blocks staging sends with WhatsApp configured=%s until an exact test inbox is authorized',
+    async (whatsAppConfigured) => {
+      const network = vi.fn(
+        async () => new Response(JSON.stringify({ messageId: 'staging-test' }), { status: 201 }),
+      );
+      vi.stubGlobal('fetch', network);
+      const email = {
+        messageId: 'staging',
+        idempotencyKey: 'staging',
+        to: 'controlled@example.com',
+        subject: 'Test',
+        html: '<p>Test</p>',
+      };
+      const emailOnly = whatsAppConfigured
+        ? config
+        : { ...config, whatsAppSender: null, whatsAppTemplateIds: {} };
+      const disabled = new BrevoMessagingProvider({ ...emailOnly, stagingEmailRecipient: null });
+      expect(() => disabled.sendEmail(email)).toThrow('STAGING_RECIPIENT_NOT_AUTHORIZED');
+      expect(() =>
+        disabled.sendWhatsApp({
+          messageId: 'staging',
+          to: '+33612345678',
+          text: 'Test',
+          locale: 'fr',
+        }),
+      ).toThrow('STAGING_CHANNEL_NOT_AUTHORIZED');
+      expect(network).not.toHaveBeenCalled();
+      const allowed = new BrevoMessagingProvider({
+        ...emailOnly,
+        stagingEmailRecipient: 'controlled@example.com',
+      });
+      expect(() => allowed.sendEmail({ ...email, to: 'another@example.com' })).toThrow(
+        'STAGING_RECIPIENT_NOT_AUTHORIZED',
+      );
+      expect(() =>
+        allowed.sendWhatsApp({
+          messageId: 'staging',
+          to: '+33612345678',
+          text: 'Test',
+          locale: 'fr',
+        }),
+      ).toThrow('STAGING_CHANNEL_NOT_AUTHORIZED');
+      expect(network).not.toHaveBeenCalled();
+      await allowed.sendEmail(email);
+      expect(network).toHaveBeenCalledTimes(1);
+    },
+  );
+
+  it('rejects missing WhatsApp sender outside staging', () => {
+    expect(() => new BrevoMessagingProvider({ ...config, whatsAppSender: null })).toThrow(
+      'Brevo provider configuration is incomplete',
+    );
+  });
   it('forces local mode under NODE_ENV=test even with Brevo configuration', () => {
     vi.stubEnv('NODE_ENV', 'test');
     expect(createMessagingProvider(config).name).toBe('LOCAL');

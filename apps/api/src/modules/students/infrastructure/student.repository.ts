@@ -7,6 +7,7 @@ import { hasScope, tenantPermission } from '../../people/domain/policy.js';
 import { assignedWhere } from '../../academics/infrastructure/read-scopes.js';
 import {
   PeopleDatabase,
+  linkedUser,
   audit,
   editable,
   found,
@@ -107,6 +108,7 @@ export class PrismaStudentRepository extends StudentRepository {
       const row = await db.student.create({
         data: {
           tenantId: context.tenantId,
+          ...(await linkedUser(db, context.tenantId, input.userId)),
           firstName: input.firstName,
           lastName: input.lastName,
           matricule: input.matricule ?? (await nextReference(db, context.tenantId, 'students')),

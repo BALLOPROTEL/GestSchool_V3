@@ -6,6 +6,7 @@ import {
   type AccessScope,
 } from '@gestschool/database';
 import { IamError, type RequestMetadata } from '../domain/context.js';
+import { observeIamDatabase } from './operational-diagnostics.js';
 
 const membershipInclude = {
   tenant: true,
@@ -25,32 +26,44 @@ export class IamRepository {
   }
   async atomic<T>(userId: string, run: (repository: IamRepository) => Promise<T>): Promise<T> {
     if (!this.root) return run(this);
-    return this.root.$transaction(
-      async (transaction) => {
-        await transaction.$queryRaw`SELECT id FROM users WHERE id = ${userId}::uuid FOR UPDATE`;
-        return run(new IamRepository(transaction));
-      },
-      { timeout: 15000 },
+    return observeIamDatabase('TRANSACTION', () =>
+      this.root!.$transaction(
+        async (transaction) => {
+          await transaction.$queryRaw`SELECT id FROM users WHERE id = ${userId}::uuid FOR UPDATE`;
+          return run(new IamRepository(transaction));
+        },
+        { timeout: 15000 },
+      ),
     );
   }
   userByEmail(email: string) {
-    return this.db.user.findUnique({ where: { email }, include: { identity: true } });
+    return observeIamDatabase('USER_LOOKUP', () =>
+      this.db.user.findUnique({ where: { email }, include: { identity: true } }),
+    );
   }
   user(userId: string) {
-    return this.db.user.findUnique({ where: { id: userId }, include: { identity: true } });
+    return observeIamDatabase('USER_LOOKUP', () =>
+      this.db.user.findUnique({ where: { id: userId }, include: { identity: true } }),
+    );
   }
   memberships(userId: string) {
-    return this.db.membership.findMany({
-      where: { userId },
-      include: membershipInclude,
-      orderBy: { id: 'asc' },
-    });
+    return observeIamDatabase('MEMBERSHIPS_LOOKUP', () =>
+      this.db.membership.findMany({
+        where: { userId },
+        include: membershipInclude,
+        orderBy: { id: 'asc' },
+      }),
+    );
   }
   membership(id: string, userId: string) {
-    return this.db.membership.findFirst({ where: { id, userId }, include: membershipInclude });
+    return observeIamDatabase('MEMBERSHIP_LOOKUP', () =>
+      this.db.membership.findFirst({ where: { id, userId }, include: membershipInclude }),
+    );
   }
   session(id: string) {
-    return this.db.session.findUnique({ where: { id } });
+    return observeIamDatabase('SESSION_LOOKUP', () =>
+      this.db.session.findUnique({ where: { id } }),
+    );
   }
   listSessions(userId: string) {
     return this.db.session.findMany({
@@ -76,25 +89,29 @@ export class IamRepository {
     metadata: RequestMetadata,
     mfa: boolean,
   ) {
-    return this.db.session.create({
-      data: {
-        userId,
-        tenantId,
-        membershipId,
-        tokenHash: hash,
-        expiresAt,
-        userAgent: metadata.userAgent,
-        ipAddress: metadata.ipAddress,
-        mfaVerifiedAt: mfa ? new Date() : null,
-        refreshTokens: { create: { tokenHash: hash, expiresAt } },
-      },
-    });
+    return observeIamDatabase('SESSION_CREATE', () =>
+      this.db.session.create({
+        data: {
+          userId,
+          tenantId,
+          membershipId,
+          tokenHash: hash,
+          expiresAt,
+          userAgent: metadata.userAgent,
+          ipAddress: metadata.ipAddress,
+          mfaVerifiedAt: mfa ? new Date() : null,
+          refreshTokens: { create: { tokenHash: hash, expiresAt } },
+        },
+      }),
+    );
   }
   refresh(hash: string) {
-    return this.db.refreshToken.findUnique({
-      where: { tokenHash: hash },
-      include: { session: true },
-    });
+    return observeIamDatabase('REFRESH_LOOKUP', () =>
+      this.db.refreshToken.findUnique({
+        where: { tokenHash: hash },
+        include: { session: true },
+      }),
+    );
   }
   async rotate(sessionId: string, oldId: string, hash: string, expiresAt: Date): Promise<void> {
     await this.db.refreshToken.update({ where: { id: oldId }, data: { consumedAt: new Date() } });
@@ -105,15 +122,19 @@ export class IamRepository {
     });
   }
   revoke(userId: string, sessionId?: string) {
-    return this.db.session.updateMany({
-      where: { userId, ...(sessionId ? { id: sessionId } : {}), status: 'ACTIVE' },
-      data: { status: 'REVOKED', revokedAt: new Date() },
-    });
+    return observeIamDatabase('SESSION_REVOKE', () =>
+      this.db.session.updateMany({
+        where: { userId, ...(sessionId ? { id: sessionId } : {}), status: 'ACTIVE' },
+        data: { status: 'REVOKED', revokedAt: new Date() },
+      }),
+    );
   }
   token(hash: string, purpose: AuthTokenPurpose) {
-    return this.db.authToken.findFirst({
-      where: { tokenHash: hash, purpose, usedAt: null, expiresAt: { gt: new Date() } },
-    });
+    return observeIamDatabase('TOKEN_LOOKUP', () =>
+      this.db.authToken.findFirst({
+        where: { tokenHash: hash, purpose, usedAt: null, expiresAt: { gt: new Date() } },
+      }),
+    );
   }
   async createToken(
     userId: string,
@@ -123,17 +144,21 @@ export class IamRepository {
     membershipId?: string,
     encryptedSecret?: string,
   ): Promise<{ id: string }> {
-    return this.db.authToken.create({
-      data: {
-        userId,
-        tokenHash: hash,
-        purpose,
-        expiresAt,
-        ...(membershipId ? { membershipId } : {}),
-        ...(encryptedSecret ? { encryptedSecret } : {}),
-      },
-      select: { id: true },
-    });
+    return observeIamDatabase(
+      purpose === 'MFA_ENROLL' || purpose === 'MFA_LOGIN' ? 'MFA_CHALLENGE_CREATE' : 'TOKEN_CREATE',
+      () =>
+        this.db.authToken.create({
+          data: {
+            userId,
+            tokenHash: hash,
+            purpose,
+            expiresAt,
+            ...(membershipId ? { membershipId } : {}),
+            ...(encryptedSecret ? { encryptedSecret } : {}),
+          },
+          select: { id: true },
+        }),
+    );
   }
   requestDelivery(tenantId: string, tokenId: string, purpose: 'ACTIVATION' | 'PASSWORD_RESET') {
     return this.db.outboxEvent.create({
@@ -175,16 +200,20 @@ export class IamRepository {
     });
   }
   setMfa(userId: string, encrypted: string, counter: bigint) {
-    return this.db.authIdentity.update({
-      where: { userId },
-      data: { mfaSecret: encrypted, mfaEnabledAt: new Date(), mfaLastCounter: counter },
-    });
+    return observeIamDatabase('MFA_WRITE', () =>
+      this.db.authIdentity.update({
+        where: { userId },
+        data: { mfaSecret: encrypted, mfaEnabledAt: new Date(), mfaLastCounter: counter },
+      }),
+    );
   }
   advanceMfa(userId: string, counter: bigint) {
-    return this.db.authIdentity.updateMany({
-      where: { userId, mfaLastCounter: { lt: counter } },
-      data: { mfaLastCounter: counter },
-    });
+    return observeIamDatabase('MFA_WRITE', () =>
+      this.db.authIdentity.updateMany({
+        where: { userId, mfaLastCounter: { lt: counter } },
+        data: { mfaLastCounter: counter },
+      }),
+    );
   }
   clearMfa(userId: string) {
     return this.db.authIdentity.update({
@@ -199,15 +228,17 @@ export class IamRepository {
     tenantId?: string,
     subjectId?: string,
   ) {
-    return this.db.iamAuditLog.create({
-      data: {
-        action,
-        requestId: metadata.requestId,
-        ...(userId ? { userId } : {}),
-        ...(tenantId ? { tenantId } : {}),
-        ...(subjectId ? { subjectId } : {}),
-      },
-    });
+    return observeIamDatabase(action === 'login.failed' ? 'LOGIN_FAILURE_AUDIT' : 'AUDIT', () =>
+      this.db.iamAuditLog.create({
+        data: {
+          action,
+          requestId: metadata.requestId,
+          ...(userId ? { userId } : {}),
+          ...(tenantId ? { tenantId } : {}),
+          ...(subjectId ? { subjectId } : {}),
+        },
+      }),
+    );
   }
   role(id: string) {
     return this.db.role.findUnique({ where: { id } });

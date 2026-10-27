@@ -7,7 +7,18 @@ const steps = [
     ['--filter', '@gestschool/config...', '--filter', '@gestschool/infrastructure...', 'build'],
   ],
   ['node', ['scripts/security-secrets.mjs']],
-  ['pnpm', ['--filter', '@gestschool/config', 'exec', 'vitest', 'run', 'src/security.test.ts']],
+  [
+    'pnpm',
+    [
+      '--filter',
+      '@gestschool/config',
+      'exec',
+      'vitest',
+      'run',
+      'src/security.test.ts',
+      'src/messaging.test.ts',
+    ],
+  ],
   [
     'pnpm',
     [
@@ -17,7 +28,10 @@ const steps = [
       'vitest',
       'run',
       'src/security-hardening.test.ts',
+      'src/infrastructure/staging-bootstrap-startup.test.ts',
+      'src/infrastructure/lot14-certification',
       'src/modules/iam/domain/security.test.ts',
+      'src/modules/iam/infrastructure/operational-diagnostics.test.ts',
       'src/modules/messaging/domain/webhook-auth.test.ts',
       'src/modules/messaging/application/webhook.service.test.ts',
     ],
@@ -31,9 +45,11 @@ const steps = [
       'vitest',
       'run',
       'src/queue-security.test.ts',
+      'src/database/postgres-health.test.ts',
       'src/storage/storage-security.test.ts',
       'src/documents/renderer.test.ts',
       'src/reports/serializers.test.ts',
+      'src/messaging/provider.test.ts',
     ],
   ],
   [
@@ -45,11 +61,28 @@ const steps = [
       'vitest',
       'run',
       'src/jobs/reports/security.test.ts',
+      'src/infrastructure/http-health.test.ts',
+      'src/infrastructure/environment-verifier.service.test.ts',
     ],
   ],
   ['node', ['--test', 'scripts/security-web.test.mjs']],
+  ['node', ['--test', 'scripts/staging-targets.test.mjs']],
+  ['node', ['--test', 'scripts/staging-storage-probe.test.mjs']],
+  ['node', ['--test', 'scripts/staging-redis-probe.test.mjs']],
+  ['node', ['--test', 'scripts/staging-migrate.test.mjs']],
+  ['node', ['--test', 'scripts/staging-bootstrap.test.mjs']],
   ['node', ['--test', 'scripts/security-runtime.test.mjs']],
-  ['pnpm', ['--filter', '@gestschool/api', 'test:iam', 'tests/security.test.ts']],
+  [
+    'pnpm',
+    [
+      '--filter',
+      '@gestschool/api',
+      'test:iam',
+      'tests/security.test.ts',
+      'tests/people.test.ts',
+      'tests/iam-diagnostics.test.ts',
+    ],
+  ],
 ];
 for (const [command, args] of steps) {
   const result = spawnSync(command, args, { stdio: 'inherit', env: process.env });

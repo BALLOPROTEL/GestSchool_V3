@@ -4,7 +4,7 @@ Le monorepo est organisé autour de trois applications et de six packages intern
 
 - `apps/web` : interface Next.js du LOT 1, localisée en français, anglais et arabe ;
 - `apps/api` : sondes de santé, IAM LOT 4, annuaires LOT 5, référentiel académique LOT 6, inscriptions LOT 7, Finance LOT 8, résultats LOT 9, documents LOT 10, messagerie LOT 11 et dashboards/rapports LOT 12, durcis au LOT13 ;
-- `apps/worker` : contexte NestJS sans serveur HTTP, outbox, génération documentaire, messagerie et exports via BullMQ/Chromium ;
+- `apps/worker` : contexte NestJS, outbox, génération documentaire, messagerie et exports via BullMQ/Chromium ; sonde HTTP explicitement activée en staging ;
 - `packages/config` : configurations TypeScript communes ;
 - `packages/ui` : tokens et composants visuels réutilisables du LOT 1 ;
 - `packages/database` : propriétaire unique du schéma Prisma 7.10, des migrations, du client, du
@@ -51,4 +51,13 @@ Le LOT 11 ajoute messagerie/notifications, capture privée DEV/TEST et adapter B
 
 ## Sécurité LOT13
 
-Le [rapport de certification locale](lot13-certification.md) détaille les 88 points de revue, résultats, premiers échecs et risques résiduels. Voir l’[audit](security-audit-lot13.md), le [modèle de menace](security-threat-model.md), les [contrôles de durcissement](security-hardening.md) et la [checklist de production future](security-production-checklist.md). Aucun déploiement LOT14/15 n’est effectué.
+Le [rapport de certification locale](lot13-certification.md) détaille les 88 points de revue, résultats, premiers échecs et risques résiduels. Voir l’[audit](security-audit-lot13.md), le [modèle de menace](security-threat-model.md), les [contrôles de durcissement](security-hardening.md) et la [checklist de production future](security-production-checklist.md). Ces preuves LOT13 sont locales ; la certification staging acquise ensuite est décrite ci-dessous.
+
+## Certification LOT14
+
+Le [rapport final](lot14-certification.md) conclut **GO STAGING FONCTIONNEL**, en
+attente de merge final. L'[architecture](lot14-staging.md), le [runbook](deployment/staging.md)
+et le [manifeste sûr](lot14-final-evidence.json) consolident 49 smoke distants,
+la stabilité worker, 14/14 Tenant A/B et le workflow report réel. Les flags sont OFF.
+Le [plan de cutover V2→V3](deployment/cutover-v2-v3.md) reste non exécuté ; V2 est
+intacte. Les prérequis d'exploitation restent au backlog LOT15 / Not started.
