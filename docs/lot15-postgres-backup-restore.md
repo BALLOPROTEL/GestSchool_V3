@@ -28,10 +28,11 @@ Séquence :
 2. création d'une base de restauration isolée avec un nom aléatoire ;
 3. `pg_restore --exit-on-error` dans cette base ;
 4. comparaison des empreintes de toutes les lignes de toutes les tables ;
-5. comparaison des empreintes de schéma (colonnes, contraintes, index, séquences) ;
+5. comparaison de l'état des séquences ;
 6. présence de l'historique `_prisma_migrations` ;
-7. mesure des durées backup / restore / vérification ;
-8. suppression de la base restaurée et de l'artefact temporaire.
+7. exécution de la suite d'intégrité DB existante directement sur la base restaurée ;
+8. mesure des durées backup / restore / vérification ;
+9. suppression de la base restaurée et de l'artefact temporaire.
 
 Aucun mot de passe ni URL de connexion n'est journalisé.
 

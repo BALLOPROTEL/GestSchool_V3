@@ -93,27 +93,6 @@ async function fingerprintRows(client) {
   return output;
 }
 
-function normalizedSchemaDump(database) {
-  const dump = runPostgresTool('pg_dump', [
-    '-h',
-    sourceUrl.hostname,
-    '-p',
-    port,
-    '-U',
-    username,
-    '-d',
-    database,
-    '--schema-only',
-    '--no-owner',
-    '--no-privileges',
-  ])
-    .toString('utf8')
-    .split('\n')
-    .filter((line) => !/^\\(?:un)?restrict\s/.test(line))
-    .join('\n');
-  return createHash('sha256').update(dump).digest('hex');
-}
-
 async function fingerprintSequenceState(client) {
   const sequences = await client.query(
     `SELECT sequencename,last_value
@@ -189,20 +168,24 @@ try {
     fingerprintSequenceState(source),
     fingerprintSequenceState(target),
   ]);
-  const sourceSchema = normalizedSchemaDump(sourceDatabase);
-  const targetSchema = normalizedSchemaDump(targetDatabase);
-  verifyMs = performance.now() - verifyStarted;
 
   if (JSON.stringify(sourceRows) !== JSON.stringify(targetRows))
     throw new Error('Restored PostgreSQL row fingerprints do not match source');
-  if (sourceSchema !== targetSchema)
-    throw new Error('Restored PostgreSQL schema dump does not match source');
   if (sourceSequenceState !== targetSequenceState)
     throw new Error('Restored PostgreSQL sequence state does not match source');
 
   const migrationProof = targetRows.find((item) => item.table === '_prisma_migrations');
   if (!migrationProof || migrationProof.count === 0)
     throw new Error('Restored PostgreSQL database is missing migration history');
+
+  const integrity = spawnSync('pnpm', ['db:test'], {
+    cwd: process.cwd(),
+    encoding: 'utf8',
+    env: { ...process.env, DATABASE_URL: targetUrl.toString() },
+    timeout: 120_000,
+  });
+  if (integrity.status !== 0) throw new Error('Restored PostgreSQL integrity suite failed');
+  verifyMs = performance.now() - verifyStarted;
 
   process.stdout.write(
     JSON.stringify({
