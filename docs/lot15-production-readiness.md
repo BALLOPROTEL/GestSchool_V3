@@ -47,22 +47,22 @@ sauvegarde/restauration, ni capacité de production.
 
 ## Matrice d'écarts
 
-| Domaine | Staging certifié | Exigence avant pilote réel | État LOT15 |
-| --- | --- | --- | --- |
-| Web | Vercel Hobby staging, HTTPS et smoke distants | Domaine/certificat détenus, politique de déploiement, rollback et protections adaptées | À définir |
-| API | Render staging, readiness fail-closed | Runtime durable, disponibilité cible, scaling/capacité, rollback et observabilité | À définir |
-| Worker | Web Service staging, E2E report PASS | Exécution durable, réveil/dispatch fiable, reprise après incident et supervision | À définir |
-| PostgreSQL | PG18 staging temporaire, TLS verify-full | Base durable, moindre privilège, capacité, sauvegardes, restauration, RPO/RTO et HA selon besoin | #69 |
-| Redis/BullMQ | TLS/auth, workflow réel traversé | Persistance/éviction/ACL/quotas, reprise de file, idempotence et incidents | #70 |
-| Storage | Bucket privé S3-compatible, accès anonymes refusés | Cycle de vie, rétention, chiffrement, moindre privilège, sauvegarde/restauration si requise | À définir avec #69/#72 |
-| IAM | RBAC/tenant/MFA/session certifiés | Rotation secrets, procédures incident, config production et contrôles d'accès opérateurs | #72 |
-| CSP/Web security | Protections présentes, dette `unsafe-inline` documentée | Nonce/hash ou acceptation formelle du risque avec re-certification | #72 |
-| Messaging/Brevo | Email staging configuré, aucun envoi non autorisé | Domaine/sender validé, webhook, idempotence, erreurs/retry, destinataires autorisés | #73 |
-| Reports | E2E report PASS avec `classId` | Corriger `studentId`, re-tester tenant/RBAC/export | #74 |
-| Monitoring | Health/readiness et diagnostics sûrs | Métriques, alertes, seuils, dashboards, runbook incident | #71 |
-| Capacité | Quelques mesures staging, pas de charge production | Profils de charge, p50/p95/p99, saturation, seuils GO/NO-GO | #75 |
-| Sauvegarde/DR | Non certifié production | Backup chiffré, restauration isolée, RPO/RTO mesurés | #69 |
-| Cutover | V2 explicitement intacte | Plan de migration, rollback, critères GO/NO-GO et répétition | #76 |
+| Domaine          | Staging certifié                                        | Exigence avant pilote réel                                                                       | État LOT15             |
+| ---------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------ | ---------------------- |
+| Web              | Vercel Hobby staging, HTTPS et smoke distants           | Domaine/certificat détenus, politique de déploiement, rollback et protections adaptées           | À définir              |
+| API              | Render staging, readiness fail-closed                   | Runtime durable, disponibilité cible, scaling/capacité, rollback et observabilité                | À définir              |
+| Worker           | Web Service staging, E2E report PASS                    | Exécution durable, réveil/dispatch fiable, reprise après incident et supervision                 | À définir              |
+| PostgreSQL       | PG18 staging temporaire, TLS verify-full                | Base durable, moindre privilège, capacité, sauvegardes, restauration, RPO/RTO et HA selon besoin | #69                    |
+| Redis/BullMQ     | TLS/auth, workflow réel traversé                        | Persistance/éviction/ACL/quotas, reprise de file, idempotence et incidents                       | #70                    |
+| Storage          | Bucket privé S3-compatible, accès anonymes refusés      | Cycle de vie, rétention, chiffrement, moindre privilège, sauvegarde/restauration si requise      | À définir avec #69/#72 |
+| IAM              | RBAC/tenant/MFA/session certifiés                       | Rotation secrets, procédures incident, config production et contrôles d'accès opérateurs         | #72                    |
+| CSP/Web security | Protections présentes, dette `unsafe-inline` documentée | Nonce/hash ou acceptation formelle du risque avec re-certification                               | #72                    |
+| Messaging/Brevo  | Email staging configuré, aucun envoi non autorisé       | Domaine/sender validé, webhook, idempotence, erreurs/retry, destinataires autorisés              | #73                    |
+| Reports          | E2E report PASS avec `classId`                          | Corriger `studentId`, re-tester tenant/RBAC/export                                               | #74                    |
+| Monitoring       | Health/readiness et diagnostics sûrs                    | Métriques, alertes, seuils, dashboards, runbook incident                                         | #71                    |
+| Capacité         | Quelques mesures staging, pas de charge production      | Profils de charge, p50/p95/p99, saturation, seuils GO/NO-GO                                      | #75                    |
+| Sauvegarde/DR    | Non certifié production                                 | Backup chiffré, restauration isolée, RPO/RTO mesurés                                             | #69                    |
+| Cutover          | V2 explicitement intacte                                | Plan de migration, rollback, critères GO/NO-GO et répétition                                     | #76                    |
 
 ## Ordre d'exécution
 
@@ -95,6 +95,7 @@ Monitoring, alertes, runbooks et charge/capacité ont des preuves mesurées.
 ### Gate D — autorisation pilote
 
 Le propriétaire/client valide explicitement :
+
 - le fournisseur et le budget éventuel ;
 - la création des ressources finales ;
 - le périmètre pilote ;
@@ -107,6 +108,7 @@ Avant Gate D, **aucune dépense et aucun établissement réel**.
 
 Le futur verdict LOT15 devra être formulé séparément du LOT14. Il devra
 explicitement préciser :
+
 - ce qui a été certifié ;
 - sur quelle infrastructure ;
 - quelles limites résiduelles restent acceptées ;
@@ -120,6 +122,7 @@ gates applicables et autorisation explicite du propriétaire.
 Issue mère : #66.
 
 Sous-chantiers :
+
 - #68 architecture / garde-fou zéro coût ;
 - #69 PostgreSQL / backup / restore ;
 - #70 Redis / BullMQ ;

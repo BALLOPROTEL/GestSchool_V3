@@ -33,11 +33,7 @@ async function report(actor: FinanceAccount, filters: Record<string, string> = {
   return actor.browser.send<ReportPage>(`reports/students?${query.toString()}`);
 }
 
-async function requestExport(
-  actor: FinanceAccount,
-  format: 'CSV' | 'XLSX',
-  studentId: string,
-) {
+async function requestExport(actor: FinanceAccount, format: 'CSV' | 'XLSX', studentId: string) {
   return actor.browser.send<ReportExportView>(
     'report-exports',
     {
