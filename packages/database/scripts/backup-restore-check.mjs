@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
-import { mkdtemp, rm, stat } from 'node:fs/promises';
+import { mkdtemp, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { performance } from 'node:perf_hooks';
@@ -43,7 +43,7 @@ const admin = new pg.Client({ connectionString: adminUrl.toString() });
 
 const quote = (value) => '"' + value.replaceAll('"', '""') + '"';
 
-function runPostgresTool(command, args) {
+function runPostgresTool(command, args, input) {
   const result = spawnSync(
     'docker',
     [
@@ -57,20 +57,21 @@ function runPostgresTool(command, args) {
       'no-new-privileges:true',
       '-e',
       'PGPASSWORD',
-      '-v',
-      `${workdir}:/backup:rw`,
       '--entrypoint',
       command,
       POSTGRES_IMAGE,
       ...args,
     ],
     {
-      encoding: 'utf8',
+      encoding: null,
       env: { ...process.env, PGPASSWORD: password },
+      input,
+      maxBuffer: 64 * 1024 * 1024,
       timeout: 120_000,
     },
   );
   if (result.status !== 0) throw new Error(`PostgreSQL ${command} certification step failed`);
+  return result.stdout ?? Buffer.alloc(0);
 }
 
 async function fingerprintRows(client) {
@@ -133,7 +134,7 @@ try {
   await admin.connect();
 
   const backupStarted = performance.now();
-  runPostgresTool('pg_dump', [
+  const dump = runPostgresTool('pg_dump', [
     '-h',
     sourceUrl.hostname,
     '-p',
@@ -145,13 +146,14 @@ try {
     '-Fc',
     '--no-owner',
     '--no-privileges',
-    '-f',
-    '/backup/backup.dump',
   ]);
   backupMs = performance.now() - backupStarted;
 
+  if (dump.length <= 5 || dump.subarray(0, 5).toString('ascii') !== 'PGDMP')
+    throw new Error('PostgreSQL backup artifact is invalid');
+  await writeFile(dumpPath, dump, { mode: 0o600 });
   const backup = await stat(dumpPath);
-  if (backup.size <= 0) throw new Error('PostgreSQL backup artifact is empty');
+  if (backup.size !== dump.length) throw new Error('PostgreSQL backup artifact size mismatch');
 
   await admin.query(
     `CREATE DATABASE ${quote(targetDatabase)} TEMPLATE template0 ENCODING 'UTF8'`,
@@ -159,20 +161,23 @@ try {
   targetCreated = true;
 
   const restoreStarted = performance.now();
-  runPostgresTool('pg_restore', [
-    '-h',
-    sourceUrl.hostname,
-    '-p',
-    port,
-    '-U',
-    username,
-    '-d',
-    targetDatabase,
-    '--no-owner',
-    '--no-privileges',
-    '--exit-on-error',
-    '/backup/backup.dump',
-  ]);
+  runPostgresTool(
+    'pg_restore',
+    [
+      '-h',
+      sourceUrl.hostname,
+      '-p',
+      port,
+      '-U',
+      username,
+      '-d',
+      targetDatabase,
+      '--no-owner',
+      '--no-privileges',
+      '--exit-on-error',
+    ],
+    dump,
+  );
   restoreMs = performance.now() - restoreStarted;
 
   await target.connect();
