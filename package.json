@@ -48,7 +48,8 @@
     "messaging:test": "pnpm --filter @gestschool/worker... build && pnpm --filter @gestschool/worker test:messaging",
     "reports:test": "pnpm --filter @gestschool/worker... build && pnpm --filter @gestschool/api test:iam tests/reports.test.ts",
     "iam:test": "pnpm --filter @gestschool/api... build && pnpm --filter @gestschool/api test:iam",
-    "db:backup-restore:test": "pnpm --filter @gestschool/database db:backup-restore:test"
+    "db:backup-restore:test": "pnpm --filter @gestschool/database db:backup-restore:test",
+    "redis:recovery:test": "pnpm --filter @gestschool/infrastructure... build && node scripts/lot15-redis-bullmq-recovery.mjs"
   },
   "devDependencies": {
     "@gestschool/config": "workspace:*",
