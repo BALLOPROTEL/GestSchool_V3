@@ -83,6 +83,9 @@ jobs:
       - name: Test database integrity
         run: pnpm db:test
 
+      - name: Certify PostgreSQL backup and restore locally
+        run: pnpm db:backup-restore:test
+
       - name: Certify messaging on a fresh isolated database
         env:
           DATABASE_NAME: gestschool_lot11_ci
