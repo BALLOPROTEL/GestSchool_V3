@@ -4,7 +4,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { bootstrapPlan, applyBootstrap } from './staging-bootstrap.mjs';
 import { roleGrants } from '../packages/contracts/dist/iam.js';
-import { Passwords } from '../apps/api/dist/modules/iam/infrastructure/crypto.js';
+import { IamCrypto, Passwords } from '../apps/api/dist/modules/iam/infrastructure/crypto.js';
 const { Client } = createRequire(
   new URL('../packages/infrastructure/package.json', import.meta.url),
 )('pg');
@@ -86,6 +86,8 @@ try {
     await import('../apps/api/dist/modules/iam/presentation/http/security.js');
   const { authenticate } =
     await import('../apps/api/dist/infrastructure/lot14-certification/authentication.js');
+  const { cleanupSession } =
+    await import('../apps/api/dist/infrastructure/lot14-certification/cleanup.js');
   const { readAuthState } =
     await import('../apps/api/dist/infrastructure/lot14-certification/auth-state.js');
   const { fixtures, scenario } =
@@ -155,9 +157,19 @@ try {
   assert.equal(enrolledState.unusedMfaChallenges, 0);
   assert.equal(enrolledState.usedMfaChallenges, 5);
   stage = 'http-session-cleanup';
+  // Local-only signed expired JWT: prove AuthenticationGuard refuses it before cleanup
+  // recovers through the real refresh cookie, without changing the runtime JWT policy.
+  const expired = accounts[0];
+  expired.http.access = await new IamCrypto({ ...iam.config, accessSeconds: -301 }).sign({
+    sub: expired.userId,
+    sid: expired.sessionId,
+    tid: expired.tenantId,
+    mid: expired.membershipId,
+  });
+  assert.equal((await expired.http.send('auth/me')).status, 401);
+  const cleanupSignal = AbortSignal.timeout(20000);
   for (const account of accounts) {
-    assert.equal((await account.http.send('auth/logout', 'POST', {})).status, 201);
-    assert.equal((await account.http.send('auth/me')).status, 401);
+    await cleanupSession(account, cleanupSignal);
     account.http.clear();
   }
   assert.equal(
@@ -187,6 +199,7 @@ try {
       fixtureRerun: true,
       mfaEnrollmentAndRerun: true,
       sessionsRevoked: true,
+      expiredAccessCleanup: true,
       remoteRun: false,
     }) + '\n',
   );

@@ -1,5 +1,6 @@
 import { readAuthState } from './auth-state.js';
 import { authenticate } from './authentication.js';
+import { cleanupSession } from './cleanup.js';
 import { createHash, randomUUID } from 'node:crypto';
 import { createRequire } from 'node:module';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -326,16 +327,10 @@ export function productionTasks(
       // The run abort signal may already be expired. Use a separate bounded cleanup window.
       const cleanupSignal = AbortSignal.timeout(20_000);
       for (const account of accounts) {
-        const cleanup = new CertificationHttp(port, cleanupSignal);
-        cleanup.access = account.http.access;
         try {
-          requireStatus(await cleanup.send('auth/csrf'), 200);
-          requireStatus(await cleanup.send('auth/logout', 'POST', {}), 201);
-          requireStatus(await cleanup.send('auth/me'), 401, 'AUTH_SESSION_EXPIRED');
+          await cleanupSession(account, cleanupSignal);
         } catch {
           failed = true;
-        } finally {
-          cleanup.clear();
         }
       }
       for (const http of sessions) http.clear();

@@ -67,6 +67,47 @@ describe('private loopback HTTP transport', () => {
     );
     await expect(client.send('../health')).rejects.toThrow('LOT14_CERTIFICATION_FAILED');
   });
+  it('forks session state privately and keeps rotated refresh cookies isolated in memory', async () => {
+    const observed: { path: string; cookie: string; csrf: string }[] = [];
+    const client = await listen((req, res) => {
+      observed.push({
+        path: req.url!,
+        cookie: req.headers.cookie ?? '',
+        csrf: String(req.headers['x-csrf-token'] ?? ''),
+      });
+      res.setHeader('Content-Type', 'application/json');
+      if (req.url?.endsWith('csrf')) {
+        res.setHeader('Set-Cookie', '__Host-gs_csrf=PRIVATE_CSRF; Path=/; Secure');
+        res.end(JSON.stringify({ csrfToken: 'PRIVATE_CSRF' }));
+      } else {
+        const rotated = req.url?.endsWith('refresh');
+        res.setHeader(
+          'Set-Cookie',
+          `__Secure-gs_refresh=${rotated ? 'PRIVATE_ROTATED' : 'PRIVATE_INITIAL'}; Path=/api/v1/auth; Secure; HttpOnly`,
+        );
+        res.end('{}');
+      }
+    });
+    await client.send('auth/csrf');
+    await client.send('auth/login', 'POST', {});
+    const continuation = client.fork(AbortSignal.timeout(5000));
+    expect(continuation.signal).not.toBe(client.signal);
+    await continuation.send('auth/refresh', 'POST', {});
+    expect(observed.at(-1)).toMatchObject({
+      cookie: '__Host-gs_csrf=PRIVATE_CSRF; __Secure-gs_refresh=PRIVATE_INITIAL',
+      csrf: 'PRIVATE_CSRF',
+    });
+    await continuation.send('auth/refresh', 'POST', {});
+    expect(observed.at(-1)?.cookie).toContain('__Secure-gs_refresh=PRIVATE_ROTATED');
+    await client.send('auth/me');
+    expect(observed.at(-1)?.cookie).toContain('__Secure-gs_refresh=PRIVATE_INITIAL');
+    client.clear();
+    await continuation.send('auth/refresh', 'POST', {});
+    expect(observed.at(-1)?.cookie).toContain('__Secure-gs_refresh=PRIVATE_ROTATED');
+    continuation.clear();
+    await continuation.send('auth/me');
+    expect(observed.at(-1)).toEqual({ path: '/api/v1/auth/me', cookie: '', csrf: '' });
+  });
   it('sanitizes malformed responses and rejects unexpected cookies', async () => {
     const client = await listen((_req, res) => {
       res.setHeader('Set-Cookie', 'unsafe=private-canary; Path=/; Secure');

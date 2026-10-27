@@ -30,6 +30,16 @@ export class CertificationHttp {
   ) {
     if (!Number.isInteger(port) || port < 1 || port > 65535) throw failure();
   }
+  /** Continue this session with an independent deadline, without exporting credentials.
+   * Cookie entries are copied so rotation/clear in either client cannot mutate the other.
+   */
+  fork(signal: AbortSignal): CertificationHttp {
+    const client = new CertificationHttp(this.port, signal);
+    client.access = this.access;
+    client.csrf = this.csrf;
+    for (const [name, cookie] of this.cookies) client.cookies.set(name, { ...cookie });
+    return client;
+  }
   clear() {
     this.access = '';
     this.csrf = '';
