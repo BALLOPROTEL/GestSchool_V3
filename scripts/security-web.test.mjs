@@ -10,15 +10,18 @@ test('production CSP prevents framing, objects and eval, and sets HTTPS/browser 
   assert.ok(csp.includes("frame-ancestors 'none'"));
   assert.ok(csp.includes("frame-src 'self' blob:"));
   assert.ok(csp.includes("object-src 'none'"));
+  assert.ok(csp.includes("script-src-attr 'none'"));
+  assert.ok(csp.includes('upgrade-insecure-requests'));
   assert.ok(!csp.includes('unsafe-eval'));
   assert.equal(headers['X-Content-Type-Options'], 'nosniff');
   assert.equal(headers['X-Frame-Options'], 'DENY');
+  assert.ok(headers['Permissions-Policy'].includes('browsing-topics=()'));
   assert.ok(headers['Strict-Transport-Security']);
-  assert.ok(
-    !Object.fromEntries(securityHeaders(false).map(({ key, value }) => [key, value]))[
-      'Strict-Transport-Security'
-    ],
+  const development = Object.fromEntries(
+    securityHeaders(false).map(({ key, value }) => [key, value]),
   );
+  assert.ok(!development['Strict-Transport-Security']);
+  assert.ok(!development['Content-Security-Policy'].includes('upgrade-insecure-requests'));
 });
 test('workflow executes deterministic security certification with least privileges', () => {
   const workflow = readFileSync('.github/workflows/ci.yml', 'utf8');
