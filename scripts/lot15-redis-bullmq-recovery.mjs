@@ -113,11 +113,7 @@ try {
   queue = createDocumentQueue(redisUrl);
   queue.on('error', () => undefined);
   await queue.waitUntilReady();
-  await queue.add(
-    DOCUMENT_GENERATION_EVENT,
-    { tenantId, documentId: firstId },
-    { jobId: firstId },
-  );
+  await queue.add(DOCUMENT_GENERATION_EVENT, { tenantId, documentId: firstId }, { jobId: firstId });
   await queue.close();
   queue = undefined;
 
@@ -143,11 +139,7 @@ try {
   if (!completed || (await completed.getState()) !== 'completed')
     throw new Error('Recovered BullMQ job did not complete');
 
-  await queue.add(
-    DOCUMENT_GENERATION_EVENT,
-    { tenantId, documentId: firstId },
-    { jobId: firstId },
-  );
+  await queue.add(DOCUMENT_GENERATION_EVENT, { tenantId, documentId: firstId }, { jobId: firstId });
   await setTimeout(750);
   if (processed.get(firstId) !== 1)
     throw new Error('BullMQ jobId deduplication allowed duplicate processing');
