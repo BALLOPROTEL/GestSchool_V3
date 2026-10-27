@@ -135,9 +135,7 @@ try {
   const backup = await stat(dumpPath);
   if (backup.size !== dump.length) throw new Error('PostgreSQL backup artifact size mismatch');
 
-  await admin.query(
-    `CREATE DATABASE ${quote(targetDatabase)} TEMPLATE template0 ENCODING 'UTF8'`,
-  );
+  await admin.query(`CREATE DATABASE ${quote(targetDatabase)} TEMPLATE template0 ENCODING 'UTF8'`);
   targetCreated = true;
 
   const restoreStarted = performance.now();
