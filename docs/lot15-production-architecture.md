@@ -23,6 +23,7 @@ sélectionne aucun fournisseur, aucun plan payant et n'autorise aucune dépense.
 Frontend Next.js servi en HTTPS derrière un fournisseur géré.
 
 Exigences :
+
 - domaine et DNS détenus/contrôlés ;
 - TLS automatique et renouvellement vérifié ;
 - déploiement immuable par commit ;
@@ -35,6 +36,7 @@ Exigences :
 Service NestJS stateless derrière HTTPS.
 
 Exigences :
+
 - au moins une instance durable pendant le pilote ;
 - readiness séparée de la liveness ;
 - connexion PostgreSQL TLS avec vérification complète ;
@@ -50,6 +52,7 @@ Exigences :
 Worker séparé de l'API.
 
 Exigences :
+
 - exécution durable ou mécanisme explicitement garanti pour consommer BullMQ ;
 - pas de dépendance au trafic HTTP pour se réveiller ;
 - même configuration DB/Redis/storage que l'API, avec secrets distincts si nécessaire ;
@@ -63,6 +66,7 @@ Exigences :
 Base gérée et durable.
 
 Exigences minimales :
+
 - TLS verify-full ou équivalent strict ;
 - stockage persistant ;
 - sauvegardes chiffrées ;
@@ -79,6 +83,7 @@ Exigences minimales :
 Redis géré et durable pour sessions/rate-limit/queues.
 
 Exigences :
+
 - TLS et authentification ;
 - politique d'éviction connue et compatible avec les usages IAM/queues ;
 - mémoire/quota supervisés ;
@@ -92,6 +97,7 @@ Exigences :
 Bucket privé S3-compatible.
 
 Exigences :
+
 - accès public bloqué ;
 - chiffrement au repos ;
 - credentials serveur à moindre privilège ;
@@ -105,6 +111,7 @@ Exigences :
 Brevo ou fournisseur validé ultérieurement.
 
 Exigences :
+
 - domaine/sender vérifiés ;
 - secret webhook séparé ;
 - idempotence ;
@@ -132,6 +139,7 @@ choix d'un plan payant.
 ## Séparation des environnements
 
 Production devra avoir des identifiants séparés pour :
+
 - base PostgreSQL ;
 - Redis ;
 - stockage objet ;
@@ -147,6 +155,7 @@ Aucune clé staging ne doit être promue telle quelle en production.
 ### Gate A — architecture prête
 
 PASS lorsque :
+
 - cette architecture est revue ;
 - les dépendances critiques sont identifiées ;
 - les décisions fournisseur/budget restent explicitement différées ;
@@ -156,6 +165,7 @@ PASS lorsque :
 ### Gate B — données et sécurité prêtes
 
 Nécessite au minimum :
+
 - #69 backup/restore ;
 - #70 Redis/BullMQ ;
 - #72 hardening sécurité ;
@@ -164,6 +174,7 @@ Nécessite au minimum :
 ### Gate C — exploitation prête
 
 Nécessite :
+
 - #71 monitoring/incident ;
 - #73 communications ;
 - #75 charge/capacité.
@@ -171,6 +182,7 @@ Nécessite :
 ### Gate D — pilote autorisé
 
 Nécessite :
+
 - choix fournisseur et budget explicitement validés ;
 - ressources finales explicitement autorisées ;
 - #76 cutover/rollback approuvé ;
@@ -179,6 +191,7 @@ Nécessite :
 ## Décisions volontairement différées
 
 Ne pas décider dans #68 sans validation :
+
 - fournisseur final API/worker ;
 - plan PostgreSQL ;
 - plan Redis ;
