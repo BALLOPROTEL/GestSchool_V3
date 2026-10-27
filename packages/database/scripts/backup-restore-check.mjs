@@ -93,35 +93,35 @@ async function fingerprintRows(client) {
   return output;
 }
 
-async function fingerprintSchema(client) {
-  const queries = [
-    `SELECT table_name,column_name,ordinal_position,is_nullable,data_type,udt_name,
-       coalesce(column_default,'') AS column_default
-       FROM information_schema.columns
-       WHERE table_schema='public'
-       ORDER BY table_name,ordinal_position`,
-    `SELECT c.relname AS table_name,con.conname,
-       pg_get_constraintdef(con.oid,true) AS definition
-       FROM pg_constraint con
-       JOIN pg_class c ON c.oid=con.conrelid
-       JOIN pg_namespace n ON n.oid=c.relnamespace
-       WHERE n.nspname='public'
-       ORDER BY c.relname,con.conname`,
-    `SELECT tablename,indexname,indexdef
-       FROM pg_indexes
-       WHERE schemaname='public'
-       ORDER BY tablename,indexname`,
-    `SELECT sequencename,data_type,start_value,min_value,max_value,increment_by,cycle
+function normalizedSchemaDump(database) {
+  const dump = runPostgresTool('pg_dump', [
+    '-h',
+    sourceUrl.hostname,
+    '-p',
+    port,
+    '-U',
+    username,
+    '-d',
+    database,
+    '--schema-only',
+    '--no-owner',
+    '--no-privileges',
+  ])
+    .toString('utf8')
+    .split('\n')
+    .filter((line) => !/^\\(?:un)?restrict\s/.test(line))
+    .join('\n');
+  return createHash('sha256').update(dump).digest('hex');
+}
+
+async function fingerprintSequenceState(client) {
+  const sequences = await client.query(
+    `SELECT sequencename,last_value
        FROM pg_sequences
        WHERE schemaname='public'
        ORDER BY sequencename`,
-  ];
-  const hash = createHash('sha256');
-  for (const query of queries) {
-    const rows = await client.query(query);
-    hash.update(JSON.stringify(rows.rows));
-  }
-  return hash.digest('hex');
+  );
+  return createHash('sha256').update(JSON.stringify(sequences.rows)).digest('hex');
 }
 
 const started = performance.now();
@@ -183,18 +183,22 @@ try {
 
   await target.connect();
   const verifyStarted = performance.now();
-  const [sourceRows, targetRows, sourceSchema, targetSchema] = await Promise.all([
+  const [sourceRows, targetRows, sourceSequenceState, targetSequenceState] = await Promise.all([
     fingerprintRows(source),
     fingerprintRows(target),
-    fingerprintSchema(source),
-    fingerprintSchema(target),
+    fingerprintSequenceState(source),
+    fingerprintSequenceState(target),
   ]);
+  const sourceSchema = normalizedSchemaDump(sourceDatabase);
+  const targetSchema = normalizedSchemaDump(targetDatabase);
   verifyMs = performance.now() - verifyStarted;
 
   if (JSON.stringify(sourceRows) !== JSON.stringify(targetRows))
     throw new Error('Restored PostgreSQL row fingerprints do not match source');
   if (sourceSchema !== targetSchema)
-    throw new Error('Restored PostgreSQL schema fingerprint does not match source');
+    throw new Error('Restored PostgreSQL schema dump does not match source');
+  if (sourceSequenceState !== targetSequenceState)
+    throw new Error('Restored PostgreSQL sequence state does not match source');
 
   const migrationProof = targetRows.find((item) => item.table === '_prisma_migrations');
   if (!migrationProof || migrationProof.count === 0)
