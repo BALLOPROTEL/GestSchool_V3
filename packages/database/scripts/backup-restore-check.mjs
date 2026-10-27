@@ -49,6 +49,7 @@ function runPostgresTool(command, args, input) {
     [
       'run',
       '--rm',
+      '-i',
       '--network',
       'host',
       '--cap-drop',
