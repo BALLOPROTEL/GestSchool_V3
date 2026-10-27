@@ -62,6 +62,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: LOT15 Redis format diagnostic
+        run: |
+          pnpm exec prettier scripts/lot15-redis-bullmq-recovery.mjs
+          exit 1
+
       - name: Generate Prisma client
         run: pnpm db:generate
 
