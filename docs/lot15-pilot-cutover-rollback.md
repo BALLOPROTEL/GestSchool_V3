@@ -290,10 +290,13 @@ Aucun secret, cookie, token, payload utilisateur ou PII ne doit être copié dan
 
 - PR #77 reste **draft** ;
 - aucune production n'est autorisée ;
-- V2 reste intacte ;
-- #75 doit être vert dans la CI avant validation ;
-- #76 fournit le plan opérateur, mais Gate D reste fermé tant que les décisions propriétaire/client
-  ne sont pas explicitement prises ;
+- V2 rollback est figée sur `da4728e3084480f06db04603dbf1fdb5387b1ab1` et CI #108 est PASS ;
+- #75 est vert dans la CI V3 ;
+- la répétition rollback documentaire/CI est consignée dans
+  `docs/lot15-rollback-rehearsal-evidence.md` avec verdict
+  **GO TECHNIQUE PRÉPARATOIRE / NO-GO PILOTE RÉEL** ;
+- #76 reste ouvert pour les décisions Gate D : routage, fenêtre, périmètre pilote,
+  communications, responsabilités et autorisation explicite ;
 - aucun tag `lot-15-go` ne doit être créé avant revue finale et autorisation explicite.
 
 ## 13. Cible de rollback GestSchool V2
