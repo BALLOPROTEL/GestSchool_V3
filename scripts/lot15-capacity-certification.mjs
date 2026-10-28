@@ -78,9 +78,7 @@ function summarize(durations, elapsedMs, errors = 0) {
     p50Ms: Math.round(percentile(durations, 0.5)),
     p95Ms: Math.round(percentile(durations, 0.95)),
     p99Ms: Math.round(percentile(durations, 0.99)),
-    throughputPerSec: Number(
-      ((durations.length / Math.max(elapsedMs, 1)) * 1000).toFixed(2),
-    ),
+    throughputPerSec: Number(((durations.length / Math.max(elapsedMs, 1)) * 1000).toFixed(2)),
   };
 }
 
@@ -359,10 +357,7 @@ try {
   requireLimit(postgresHealth.p95Ms <= limits.postgresP95Ms, 'POSTGRES_P95');
   requireLimit(redisHealth.p95Ms <= limits.redisP95Ms, 'REDIS_P95');
   requireLimit(bullmq.p95Ms <= limits.bullmqP95Ms, 'BULLMQ_P95');
-  requireLimit(
-    bullmq.throughputPerSec >= limits.bullmqMinThroughputPerSec,
-    'BULLMQ_THROUGHPUT',
-  );
+  requireLimit(bullmq.throughputPerSec >= limits.bullmqMinThroughputPerSec, 'BULLMQ_THROUGHPUT');
   requireLimit(csv.p95Ms <= limits.csvP95Ms, 'CSV_P95');
   requireLimit(xlsx.p95Ms <= limits.xlsxP95Ms, 'XLSX_P95');
   requireLimit(pdfMs <= limits.pdfMaxMs, 'PDF_DURATION');
