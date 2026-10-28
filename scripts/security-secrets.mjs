@@ -28,6 +28,10 @@ const publicFixtures = new Map([
   ],
   ['test-webhook-secret-at-least-32-bytes', new Set(['packages/config/src/messaging.test.ts'])],
   ['GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ', new Set(['apps/web/src/e2e-mfa-state.test.ts'])],
+  [
+    'gestschool-lot15-capacity-ci-only',
+    new Set(['scripts/lot15-capacity-certification.mjs']),
+  ],
 ]);
 function scan(content, path, revision) {
   if (content.includes('\0')) return;

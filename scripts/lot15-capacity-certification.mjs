@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
 import { spawn, spawnSync } from 'node:child_process';
 import { performance } from 'node:perf_hooks';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -19,7 +19,7 @@ const REDIS_IMAGE =
   'redis:8.10.1-alpine3.23@sha256:ef216d85ec44f4fdf7c0e6df2d1757a4734ed32fbb278cabd3181b5a27353b79';
 const API_PORT = 3199;
 const REDIS_PORT = 6382;
-const redisPassword = 'gestschool-lot15-capacity-ci-only';
+const redisPassword = randomBytes(24).toString('base64url');
 const suffix = randomUUID().replaceAll('-', '').slice(0, 12);
 const redisContainer = `gestschool-lot15-capacity-${suffix}`;
 const redisUrl = `redis://:${redisPassword}@127.0.0.1:${REDIS_PORT}/0`;
