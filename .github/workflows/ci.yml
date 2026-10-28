@@ -62,6 +62,15 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: LOT15 monitoring format diagnostic
+        run: |
+          echo "__LOT15_MONITORING_DOC__"
+          pnpm exec prettier docs/lot15-monitoring-incident-runbook.md
+          echo "__LOT15_MONITORING_TEST__"
+          pnpm exec prettier packages/infrastructure/src/operations/monitoring.test.ts
+          echo "__LOT15_MONITORING_END__"
+          exit 1
+
       - name: Generate Prisma client
         run: pnpm db:generate
 
