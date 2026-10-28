@@ -15,6 +15,7 @@ const config: MessagingConfig = {
   apiKey: 'test-only-not-a-real-key',
   emailSender: 'sender@example.invalid',
   emailSenderName: 'GestSchool',
+  whatsAppEnabled: true,
   whatsAppSender: '33612345678',
   whatsAppTemplateIds: { fr: 10, en: 11, ar: 12 },
   webhookSecret: 'test-only-webhook-secret-32-bytes-long',
@@ -73,10 +74,33 @@ describe('messaging providers', () => {
     },
   );
 
-  it('rejects missing WhatsApp sender outside staging', () => {
-    expect(() => new BrevoMessagingProvider({ ...config, whatsAppSender: null })).toThrow(
-      'Brevo provider configuration is incomplete',
+  it('supports email-only Brevo while blocking WhatsApp unless explicitly authorized', async () => {
+    const network = vi.fn(
+      async () => new Response(JSON.stringify({ messageId: 'email-only' }), { status: 201 }),
     );
+    vi.stubGlobal('fetch', network);
+    const provider = new BrevoMessagingProvider({
+      ...config,
+      whatsAppEnabled: false,
+      whatsAppSender: null,
+      whatsAppTemplateIds: {},
+    });
+    await provider.sendEmail({
+      messageId: 'email-only',
+      idempotencyKey: 'email-only',
+      to: 'recipient@example.invalid',
+      subject: 'Safe',
+      html: '<p>Safe</p>',
+    });
+    expect(() =>
+      provider.sendWhatsApp({
+        messageId: 'blocked',
+        to: '+33612345678',
+        text: 'Blocked',
+        locale: 'fr',
+      }),
+    ).toThrow('WHATSAPP_NOT_AUTHORIZED');
+    expect(network).toHaveBeenCalledTimes(1);
   });
   it('forces local mode under NODE_ENV=test even with Brevo configuration', () => {
     vi.stubEnv('NODE_ENV', 'test');
