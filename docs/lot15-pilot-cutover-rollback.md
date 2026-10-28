@@ -302,7 +302,7 @@ La cible V2 fournie par le propriétaire est :
 
 - dépôt : `BALLOPROTEL/GESTSCHOOL_V2`
 - branche : `main`
-- SHA immuable observé : `ad037f4aa685eac12055935ef6046fbb83f350b2`
+- SHA immuable observé : `da4728e3084480f06db04603dbf1fdb5387b1ab1`
 - architecture documentée : frontend Vercel, API Render, PostgreSQL source de vérité,
   Redis obligatoire, Supabase Storage privé ;
 - runbook V2 existant : `docs/runbooks/deployment-rollback.md`
