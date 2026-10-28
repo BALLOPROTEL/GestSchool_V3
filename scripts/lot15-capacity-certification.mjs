@@ -262,7 +262,12 @@ try {
     if (!bytes.subarray(0, 2).equals(Buffer.from('PK')))
       throw new Error('XLSX capacity output invalid');
   });
-  const pdfPage = { ...reportPage, items: reportPage.items.slice(0, 100), pageSize: 100, total: 100 };
+  const pdfPage = {
+    ...reportPage,
+    items: reportPage.items.slice(0, 100),
+    pageSize: 100,
+    total: 100,
+  };
   const pdfStarted = performance.now();
   const pdfBytes = await serializePdf(pdfPage, 'fr');
   const pdfMs = Math.round(performance.now() - pdfStarted);
