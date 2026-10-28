@@ -14,3 +14,4 @@ export * from './reports/data.js';
 export * from './reports/dashboard.js';
 export * from './reports/serializers.js';
 export * from './reports/queue.js';
+export * from './operations/monitoring.js';
