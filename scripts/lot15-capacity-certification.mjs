@@ -67,7 +67,7 @@ async function waitForHttp(path, status, timeoutMs = 30_000) {
 
 function percentile(values, ratio) {
   if (!values.length) return 0;
-  const sorted = [...values].sort((a, b) => a - b);
+  const sorted = values.toSorted((a, b) => a - b);
   return sorted[Math.max(0, Math.ceil(sorted.length * ratio) - 1)] ?? 0;
 }
 
