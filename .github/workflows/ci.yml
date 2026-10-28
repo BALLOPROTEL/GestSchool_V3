@@ -113,6 +113,9 @@ jobs:
           pnpm db:test
           pnpm reports:test
 
+      - name: Certify bounded local capacity and partial failure
+        run: pnpm capacity:test
+
       - name: Check formatting
         run: pnpm format:check
 
