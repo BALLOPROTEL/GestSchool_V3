@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  evaluateMonitoringSnapshot,
-  type MonitoringSnapshot,
-} from './monitoring.js';
+import { evaluateMonitoringSnapshot, type MonitoringSnapshot } from './monitoring.js';
 
 const healthy = (): MonitoringSnapshot => ({
   apiReady: true,

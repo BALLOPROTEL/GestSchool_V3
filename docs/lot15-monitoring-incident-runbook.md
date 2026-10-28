@@ -61,21 +61,21 @@ connexion, corps de message, contenu document, email d'utilisateur ou autre PII.
 La politique testée est implémentée dans
 `packages/infrastructure/src/operations/monitoring.ts`.
 
-| Signal | Warning | Critical |
-| --- | ---: | ---: |
-| API/worker readiness | — | immédiatement down |
-| PostgreSQL/Redis/storage | — | immédiatement down |
-| disponibilité API 5 min | < 99 % | < 95 % |
-| API p95 | >= 1 500 ms | >= 3 000 ms |
-| taux 5xx API, minimum 20 req/5 min | >= 2 % | >= 5 % |
-| jobs waiting | >= 100 | >= 500 |
-| âge du plus vieux job | >= 60 s | >= 300 s |
-| jobs failed sur 5 min | >= 1 | >= 10 |
-| saturation pool PostgreSQL | >= 80 % | >= 95 % |
-| mémoire Redis | >= 75 % | >= 90 % |
-| erreurs storage sur 5 min | >= 1 | >= 5 |
-| erreurs auth 5xx sur 5 min | >= 5 | >= 20 |
-| âge dernière sauvegarde réussie | >= 26 h | >= 36 h |
+| Signal                             |     Warning |           Critical |
+| ---------------------------------- | ----------: | -----------------: |
+| API/worker readiness               |           — | immédiatement down |
+| PostgreSQL/Redis/storage           |           — | immédiatement down |
+| disponibilité API 5 min            |      < 99 % |             < 95 % |
+| API p95                            | >= 1 500 ms |        >= 3 000 ms |
+| taux 5xx API, minimum 20 req/5 min |      >= 2 % |             >= 5 % |
+| jobs waiting                       |      >= 100 |             >= 500 |
+| âge du plus vieux job              |     >= 60 s |           >= 300 s |
+| jobs failed sur 5 min              |        >= 1 |              >= 10 |
+| saturation pool PostgreSQL         |     >= 80 % |            >= 95 % |
+| mémoire Redis                      |     >= 75 % |            >= 90 % |
+| erreurs storage sur 5 min          |        >= 1 |               >= 5 |
+| erreurs auth 5xx sur 5 min         |        >= 5 |              >= 20 |
+| âge dernière sauvegarde réussie    |     >= 26 h |            >= 36 h |
 
 Les alertes ne transportent que des **codes stables + severity**. Les valeurs
 techniques utiles restent dans le dashboard ou les métriques, sans données
