@@ -298,11 +298,12 @@ Aucun secret, cookie, token, payload utilisateur ou PII ne doit être copié dan
 
 ## 13. Cible de rollback GestSchool V2
 
-La cible V2 fournie par le propriétaire est :
+La cible V2 officielle de rollback est désormais :
 
 - dépôt : `BALLOPROTEL/GESTSCHOOL_V2`
 - branche : `main`
-- SHA immuable observé : `da4728e3084480f06db04603dbf1fdb5387b1ab1`
+- SHA figé : `da4728e3084480f06db04603dbf1fdb5387b1ab1`
+- PR de remédiation : `#2` — **MERGED**
 - architecture documentée : frontend Vercel, API Render, PostgreSQL source de vérité,
   Redis obligatoire, Supabase Storage privé ;
 - runbook V2 existant : `docs/runbooks/deployment-rollback.md`
@@ -310,50 +311,53 @@ La cible V2 fournie par le propriétaire est :
 
 ### Preuves observées
 
-- CI V2 run #84 sur ce SHA : **SUCCESS** ;
-- statut Vercel sur ce SHA : **SUCCESS** ;
-- `main` pointe bien sur ce SHA.
+Sur le SHA `da4728e3084480f06db04603dbf1fdb5387b1ab1` :
 
-### Réserve sécurité actuelle
+- CI post-merge V2 #108 : **PASS complet** ;
+- quality / migrations / API tests / API E2E : **PASS** ;
+- Web Admin tests / smoke / build : **PASS** ;
+- audit dépendances production : **PASS / 0 advisories** ;
+- audit complet des dépendances : **PASS** ;
+- secrets/configuration, Semgrep et SBOM : **PASS** ;
+- images API / worker / migration reproductibles : **PASS** ;
+- PostgreSQL backup / restore : **PASS** ;
+- Trivy : **PASS** ;
+- strict mocked visual audit : **PASS** ;
+- Required CI gate : **PASS** ;
+- Vercel : **PASS**.
 
-Le dernier audit planifié des dépendances V2 (26 octobre 2026, run `40313928193`)
-est **FAIL**. La politique V2 signale 13 advisories dans les dépendances de
-production :
+### Statut de la cible
 
-- `GHSA-x5fp-wj9c-mxmx`
-- `GHSA-4mjr-xmp4-gh2g`
-- `GHSA-rgj7-g3m4-5g8c`
-- `GHSA-2883-xcg3-v3hh`
-- `GHSA-wc9g-mqfw-jrwm`
-- `GHSA-qfvm-cv95-jqjf`
-- `GHSA-qvfw-j98x-7q72`
-- `GHSA-535w-7cp7-47q4`
-- `GHSA-3pph-fpjx-jg34`
-- `GHSA-jqcg-44mw-7w3h`
-- `GHSA-wq5f-xc86-pv6w`
-- `GHSA-27r3-jxmh-p828`
-- `GHSA-q7qp-rjg7-q26m`
+V2 est désormais une cible de rollback **identifiée, remédiée, reproductible et
+validée sur `main`**.
 
-Conséquence : V2 est une **cible de rollback techniquement identifiable et
-reproductible**, mais elle ne doit pas être qualifiée de cible saine pour un
-cutover réel tant que cet audit n'est pas remédié ou qu'un risque résiduel
-explicite n'est pas accepté par le propriétaire.
+La dette sécurité qui bloquait auparavant le Gate D est levée.
 
 ### Répétition non destructive autorisée
 
-Avant Gate D, la répétition peut prouver sans toucher à la production :
+Avant Gate D, la répétition doit encore prouver sans toucher à la production :
 
-1. résolution du dépôt et du SHA V2 ci-dessus ;
-2. vérification que `main` pointe toujours vers ce SHA ou qu'un nouveau SHA
-   approuvé le remplace ;
-3. vérification de la CI de livraison V2 ;
-4. vérification du dernier audit de dépendances V2 ;
-5. lecture des manifests Render/Vercel et du runbook V2 ;
-6. simulation opérateur de l'ordre de rollback :
+1. résolution du dépôt, de `main` et du SHA V2 figé ;
+2. vérification que `main` pointe toujours vers le SHA approuvé ;
+3. vérification de la CI post-merge V2 et des audits de dépendances ;
+4. lecture des manifests Render/Vercel et du runbook V2 ;
+5. simulation opérateur de l'ordre de rollback :
    worker V3 → API V3 → routage frontend → V2 ;
+6. validation documentaire du mécanisme de routage et de la fenêtre de bascule ;
 7. aucune modification DNS, aucune promotion Render/Vercel, aucune migration,
    aucune donnée réelle et aucune activation provider pendant la répétition.
 
-Le Gate D reste fermé si l'audit V2 est rouge, si le SHA de rollback n'est pas
-figé ou si la fenêtre et le mécanisme de routage ne sont pas explicitement
-autorisés.
+### Condition Gate D
+
+Le Gate D reste fermé tant que ne sont pas explicitement validés :
+
+- la répétition de rollback non destructive ;
+- le mécanisme de routage / bascule ;
+- la fenêtre de cutover ;
+- le périmètre pilote ;
+- les destinataires de communication ;
+- les responsabilités de rollback ;
+- l'autorisation explicite du propriétaire.
+
+Aucun établissement réel, aucune donnée réelle et aucun `lot-15-go` ne sont
+autorisés avant cette validation.
