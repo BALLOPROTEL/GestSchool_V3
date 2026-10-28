@@ -296,7 +296,6 @@ Aucun secret, cookie, token, payload utilisateur ou PII ne doit être copié dan
   ne sont pas explicitement prises ;
 - aucun tag `lot-15-go` ne doit être créé avant revue finale et autorisation explicite.
 
-
 ## 13. Cible de rollback GestSchool V2
 
 La cible V2 fournie par le propriétaire est :
