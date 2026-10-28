@@ -19,10 +19,11 @@ const REDIS_IMAGE =
   'redis:8.10.1-alpine3.23@sha256:ef216d85ec44f4fdf7c0e6df2d1757a4734ed32fbb278cabd3181b5a27353b79';
 const API_PORT = 3199;
 const REDIS_PORT = 6382;
+const redisPassword = 'gestschool-lot15-capacity-ci-only';
 const suffix = randomUUID().replaceAll('-', '').slice(0, 12);
 const redisContainer = `gestschool-lot15-capacity-${suffix}`;
-const redisUrl = `redis://127.0.0.1:${REDIS_PORT}/0`;
-const queueRedisUrl = `redis://127.0.0.1:${REDIS_PORT}/13`;
+const redisUrl = `redis://:${redisPassword}@127.0.0.1:${REDIS_PORT}/0`;
+const queueRedisUrl = `redis://:${redisPassword}@127.0.0.1:${REDIS_PORT}/13`;
 const apiBase = `http://127.0.0.1:${API_PORT}`;
 const databaseUrl = process.env['DATABASE_URL'];
 
@@ -38,7 +39,10 @@ function docker(args, allowFailure = false) {
 async function waitForRedis(timeoutMs = 15_000) {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
-    const result = docker(['exec', redisContainer, 'redis-cli', 'PING'], true);
+    const result = docker(
+      ['exec', redisContainer, 'redis-cli', '--no-auth-warning', '-a', redisPassword, 'PING'],
+      true,
+    );
     if (result.status === 0 && result.stdout.trim() === 'PONG') return;
     await delay(200);
   }
@@ -146,6 +150,8 @@ try {
     '64mb',
     '--maxmemory-policy',
     'noeviction',
+    '--requirepass',
+    redisPassword,
     '--protected-mode',
     'yes',
   ]);
@@ -269,10 +275,28 @@ try {
   );
 
   const memoryInfo = parseRedisInfo(
-    docker(['exec', redisContainer, 'redis-cli', 'INFO', 'memory']).stdout,
+    docker([
+      'exec',
+      redisContainer,
+      'redis-cli',
+      '--no-auth-warning',
+      '-a',
+      redisPassword,
+      'INFO',
+      'memory',
+    ]).stdout,
   );
   const clientInfo = parseRedisInfo(
-    docker(['exec', redisContainer, 'redis-cli', 'INFO', 'clients']).stdout,
+    docker([
+      'exec',
+      redisContainer,
+      'redis-cli',
+      '--no-auth-warning',
+      '-a',
+      redisPassword,
+      'INFO',
+      'clients',
+    ]).stdout,
   );
   const usedMemoryBytes = Number(memoryInfo.get('used_memory') ?? '0');
   const maxMemoryBytes = Number(memoryInfo.get('maxmemory') ?? '0');
