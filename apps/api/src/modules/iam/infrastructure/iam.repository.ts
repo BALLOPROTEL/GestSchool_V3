@@ -401,10 +401,7 @@ export class IamRepository {
           roleCode: input.roleCode,
         };
       },
-      {
-        maxWait: 10_000,
-        timeout: 30_000,
-      },
+      { maxWait: 10_000, timeout: 30_000 },
     );
   }
 
