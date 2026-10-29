@@ -301,6 +301,13 @@ export class IamRepository {
   membershipTarget(id: string, tenantId: string) {
     return this.db.membership.findFirst({ where: { id, tenantId } });
   }
+
+  private ownerMigrationTransaction<T>(
+    run: (transaction: Prisma.TransactionClient) => Promise<T>,
+  ): Promise<T> {
+    if (!this.root) throw new IamError('LEGACY_V2_MIGRATION_UNAVAILABLE', 503);
+    return this.root.$transaction(run, { maxWait: 10_000, timeout: 30_000 });
+  }
   async importLegacyV2Owner(input: {
     email: string;
     displayName: string;
@@ -312,8 +319,7 @@ export class IamRepository {
     grants: readonly { permission: string; scope: AccessScope }[];
     requestId: string;
   }): Promise<{ userId: string; tenantId: string; membershipId: string; roleCode: string }> {
-    if (!this.root) throw new IamError('LEGACY_V2_MIGRATION_UNAVAILABLE', 503);
-    return this.root.$transaction(async (transaction) => {
+    return this.ownerMigrationTransaction(async (transaction) => {
       await transaction.$queryRaw`SELECT pg_advisory_xact_lock(hashtext('lot16-owner-migration'))`;
       const alreadyUsed = await transaction.iamAuditLog.findFirst({
         where: { action: 'legacy.v2.owner.migrated' },
