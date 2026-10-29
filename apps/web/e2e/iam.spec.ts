@@ -28,7 +28,7 @@ test('requires MFA before entering the portal and revokes the session on logout'
     readFileSync(new URL('../../../.local/iam-e2e.json', import.meta.url), 'utf8'),
   ) as { mfa: { email: string; password: string } };
   await page.goto('/fr/login');
-  await page.getByLabel('Adresse e-mail', { exact: true }).fill(fixture.mfa.email);
+  await page.getByLabel('E-mail ou identifiant', { exact: true }).fill(fixture.mfa.email);
   await page.getByLabel('Mot de passe', { exact: true }).fill(fixture.mfa.password);
   await page.getByRole('button', { name: /Se connecter/ }).click();
   await expect(page.getByRole('heading', { name: 'Vérification en deux étapes' })).toBeVisible();
