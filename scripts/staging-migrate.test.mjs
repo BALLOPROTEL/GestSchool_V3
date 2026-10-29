@@ -63,7 +63,7 @@ test('rejects missing apply, production, V2, localhost, wrong database and ambig
   assert.deepEqual(f.calls, []);
 });
 
-test('only deploys the pinned 14 migrations and keeps the application URL unchanged', async () => {
+test('only deploys the pinned 15 migrations and keeps the application URL unchanged', async () => {
   const f = fixture({
     run: async (request) => {
       assert.deepEqual(request.args, [
@@ -87,7 +87,7 @@ test('only deploys the pinned 14 migrations and keeps the application URL unchan
   assert.equal(environment.DATABASE_URL, original);
   assert.deepEqual(
     f.output.map((s) => JSON.parse(s)),
-    [{ check: 'LOT14_MIGRATIONS', status: 'PASS', applied: 14, checksumsVerified: true }],
+    [{ check: 'LOT14_MIGRATIONS', status: 'PASS', applied: 15, checksumsVerified: true }],
   );
 });
 
