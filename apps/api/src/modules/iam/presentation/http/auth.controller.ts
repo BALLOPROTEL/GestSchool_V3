@@ -25,6 +25,11 @@ const loginInput = z.union([
   z.strictObject({ identifier, password }),
   z.strictObject({ email, password }),
 ]);
+const legacyMigrationInput = z.strictObject({
+  identifier,
+  password,
+  migrationCode: z.string().min(20).max(128),
+});
 const token = z.string().regex(/^[A-Za-z0-9_-]{43}$/);
 const code = z.string().regex(/^\d{6}$/);
 const id = z.uuid();
@@ -62,6 +67,18 @@ export class AuthController {
     const loginIdentifier = 'identifier' in input ? input.identifier : input.email;
     const result = await this.iam.auth.login(loginIdentifier, input.password, request.metadata);
     return 'refresh' in result ? this.session(response, result) : result.body;
+  }
+  @Public()
+  @Post('migrate-v2')
+  async migrateV2(@Body() body: unknown, @Req() request: IamRequest) {
+    const input = legacyMigrationInput.parse(body);
+    await this.iam.legacyV2OwnerMigration.migrate(
+      input.identifier,
+      input.password,
+      input.migrationCode,
+      request.metadata,
+    );
+    return { ok: true };
   }
   @Public()
   @Post('refresh')

@@ -635,7 +635,16 @@
     "testimonialAuthor": "الدكتورة فاطمة ديوب",
     "testimonialRole": "مديرة ثانوية داكار الحديثة",
     "validEmail": "أدخل بريداً إلكترونياً صالحاً.",
-    "validPassword": "يجب أن تتكون كلمة المرور من 8 أحرف على الأقل."
+    "validPassword": "يجب أن تتكون كلمة المرور من 8 أحرف على الأقل.",
+    "migrationTitle": "استيراد حساب V2",
+    "migrationDescription": "انقل حساب GestSchool V2 إلى بيئة V3 التجريبية مع الاحتفاظ بنفس بيانات الدخول.",
+    "migrationIdentifier": "اسم مستخدم أو بريد V2",
+    "migrationCode": "رمز الترحيل",
+    "migrationSubmit": "ترحيل حسابي",
+    "migrationLoading": "جارٍ الترحيل…",
+    "migrationDone": "تم استيراد حساب V2",
+    "migrationDoneDescription": "حسابك جاهز على بيئة V3 التجريبية. سجّل الدخول بنفس اسم المستخدم وكلمة المرور.",
+    "migrationBack": "تسجيل الدخول إلى V3"
   },
   "Dashboard": {
     "academicPeriod": "الفترة الدراسية",
@@ -1044,6 +1053,13 @@
     "AUTH_UNAVAILABLE": "الخدمة غير متاحة مؤقتاً.",
     "AUTH_FORBIDDEN": "ليس لديك الإذن المطلوب.",
     "AUTH_INVALID_REQUEST": "تحقق من المعلومات المدخلة.",
-    "AUTH_REQUIRED": "سجل الدخول للمتابعة."
+    "AUTH_REQUIRED": "سجل الدخول للمتابعة.",
+    "LEGACY_V2_MIGRATION_DISABLED": "ترحيل V2 غير متاح.",
+    "LEGACY_V2_MIGRATION_INVALID": "رمز الترحيل أو بيانات دخول V2 غير صحيحة.",
+    "LEGACY_V2_MIGRATION_ALREADY_USED": "تم استخدام ترحيل المالك مسبقاً.",
+    "LEGACY_V2_MIGRATION_EMAIL_REQUIRED": "لا يحتوي حساب V2 هذا على بريد إلكتروني صالح لـ V3.",
+    "LEGACY_V2_MIGRATION_UNSUPPORTED": "دور حساب V2 هذا غير مدعوم.",
+    "LEGACY_V2_MIGRATION_COLLISION": "يوجد حساب أو مؤسسة مطابقة بالفعل في V3.",
+    "LEGACY_V2_MIGRATION_UNAVAILABLE": "GestSchool V2 غير متاح مؤقتاً. حاول لاحقاً."
   }
 }

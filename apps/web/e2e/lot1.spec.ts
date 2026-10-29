@@ -57,6 +57,7 @@ test.beforeEach(async ({ page }, testInfo) => {
 const routes = [
   '/',
   '/login',
+  '/migrate-v2',
   '/forgot-password',
   '/activation',
   '/reset-password',

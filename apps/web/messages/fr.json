@@ -635,7 +635,16 @@
     "testimonialAuthor": "Dr Fatou Diop",
     "testimonialRole": "Directrice, Lycée Moderne de Dakar",
     "validEmail": "Saisissez une adresse e-mail valide.",
-    "validPassword": "Le mot de passe doit contenir au moins 8 caractères."
+    "validPassword": "Le mot de passe doit contenir au moins 8 caractères.",
+    "migrationTitle": "Importer mon compte V2",
+    "migrationDescription": "Migre ton compte GestSchool V2 vers le staging V3 en conservant tes identifiants.",
+    "migrationIdentifier": "Identifiant ou e-mail V2",
+    "migrationCode": "Code de migration",
+    "migrationSubmit": "Migrer mon compte",
+    "migrationLoading": "Migration en cours…",
+    "migrationDone": "Compte V2 importé",
+    "migrationDoneDescription": "Ton compte est prêt sur le staging V3. Connecte-toi avec le même identifiant et le même mot de passe.",
+    "migrationBack": "Se connecter à V3"
   },
   "Dashboard": {
     "academicPeriod": "Période scolaire",
@@ -1044,6 +1053,13 @@
     "AUTH_UNAVAILABLE": "Le service est temporairement indisponible.",
     "AUTH_FORBIDDEN": "Vous ne disposez pas de l’autorisation nécessaire.",
     "AUTH_INVALID_REQUEST": "Vérifiez les informations saisies.",
-    "AUTH_REQUIRED": "Connectez-vous pour continuer."
+    "AUTH_REQUIRED": "Connectez-vous pour continuer.",
+    "LEGACY_V2_MIGRATION_DISABLED": "La migration V2 n’est pas disponible.",
+    "LEGACY_V2_MIGRATION_INVALID": "Le code de migration ou les identifiants V2 sont invalides.",
+    "LEGACY_V2_MIGRATION_ALREADY_USED": "La migration propriétaire a déjà été utilisée.",
+    "LEGACY_V2_MIGRATION_EMAIL_REQUIRED": "Ce compte V2 n’a pas d’adresse e-mail exploitable pour V3.",
+    "LEGACY_V2_MIGRATION_UNSUPPORTED": "Le rôle de ce compte V2 n’est pas pris en charge.",
+    "LEGACY_V2_MIGRATION_COLLISION": "Un compte ou établissement correspondant existe déjà dans V3.",
+    "LEGACY_V2_MIGRATION_UNAVAILABLE": "GestSchool V2 est temporairement indisponible. Réessaie plus tard."
   }
 }
