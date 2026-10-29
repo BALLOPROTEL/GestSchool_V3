@@ -399,7 +399,7 @@ export class IamRepository {
         membershipId: membership.id,
         roleCode: input.roleCode,
       };
-    });
+    }, { maxWait: 10_000, timeout: 30_000 });
   }
 
   async invite(email: string, displayName: string, tenantId: string, roleId: string) {
