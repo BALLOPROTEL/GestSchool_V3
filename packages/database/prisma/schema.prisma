@@ -324,6 +324,7 @@ model Membership {
   userId           String              @map("user_id") @db.Uuid
   status           MembershipStatus    @default(ACTIVE)
   preferredLocale  String?             @map("preferred_locale") @db.VarChar(10)
+  legacyUsername   String?             @map("legacy_username") @db.VarChar(150)
   joinedAt         DateTime            @default(now()) @map("joined_at") @db.Timestamptz(6)
   createdAt        DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt        DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -353,8 +354,10 @@ model Membership {
   reportExports ReportExport[]
 
   @@unique([tenantId, userId])
+  @@unique([tenantId, legacyUsername])
   @@unique([tenantId, id])
   @@unique([tenantId, id, userId])
+  @@index([legacyUsername])
   @@index([tenantId, status])
   @@map("memberships")
 }
