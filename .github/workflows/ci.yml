@@ -116,6 +116,9 @@ jobs:
       - name: Certify bounded local capacity and partial failure
         run: pnpm capacity:test
 
+      - name: Certify LOT16 identity migration dry-run
+        run: pnpm lot16:identity:dry-run:test
+
       - name: Check formatting
         run: pnpm format:check
 
