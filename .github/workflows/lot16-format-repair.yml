@@ -1,0 +1,53 @@
+name: LOT16 format repair
+
+on:
+  push:
+    branches:
+      - feat/lot16-v2-identity-continuity
+    paths:
+      - .github/workflows/lot16-format-repair.yml
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: feat/lot16-v2-identity-continuity
+          fetch-depth: 0
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320
+        with:
+          version: 10.24.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: 24.20.0
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Format LOT16 files
+        run: |
+          pnpm exec prettier --write \
+            docs/lot16-identity-continuity.md \
+            docs/lot16-staging-access.md \
+            scripts/lot16-identity-dry-run.mjs
+
+      - name: Remove temporary formatter
+        run: rm .github/workflows/lot16-format-repair.yml
+
+      - name: Commit formatted files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/lot16-identity-continuity.md docs/lot16-staging-access.md scripts/lot16-identity-dry-run.mjs .github/workflows/lot16-format-repair.yml
+          git commit -m "style(lot16): format identity continuity artifacts"
+          git push origin HEAD:feat/lot16-v2-identity-continuity
