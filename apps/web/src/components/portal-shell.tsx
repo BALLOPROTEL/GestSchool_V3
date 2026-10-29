@@ -504,6 +504,7 @@ function NotificationMenu() {
         {items.map((notice) => (
           <DropdownItem
             className="items-start py-2.5"
+            data-notification-status={notice.status}
             key={notice.id}
             onSelect={() => void mark(notice)}
           >
