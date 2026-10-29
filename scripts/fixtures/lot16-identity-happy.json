@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "users": [
+    {
+      "sourceUserId": "u-admin",
+      "tenantId": "tenant-a",
+      "username": "admin-a",
+      "email": "admin-a@example.invalid",
+      "role": "ADMIN",
+      "accountType": "STAFF",
+      "status": "ACTIVE",
+      "isActive": true,
+      "passwordHashKind": "BCRYPT"
+    },
+    {
+      "sourceUserId": "u-school",
+      "tenantId": "tenant-a",
+      "username": "school-a",
+      "email": "school-a@example.invalid",
+      "role": "SCOLARITE",
+      "accountType": "STAFF",
+      "status": "ACTIVE",
+      "isActive": true,
+      "passwordHashKind": "BCRYPT"
+    },
+    {
+      "sourceUserId": "u-teacher",
+      "tenantId": "tenant-a",
+      "username": "teacher-a",
+      "email": "teacher-a@example.invalid",
+      "role": "ENSEIGNANT",
+      "accountType": "STAFF",
+      "status": "ACTIVE",
+      "isActive": true,
+      "passwordHashKind": "BCRYPT"
+    },
+    {
+      "sourceUserId": "u-accountant",
+      "tenantId": "tenant-b",
+      "username": "accountant-b",
+      "email": "accountant-b@example.invalid",
+      "role": "COMPTABLE",
+      "accountType": "STAFF",
+      "status": "ACTIVE",
+      "isActive": true,
+      "passwordHashKind": "BCRYPT"
+    },
+    {
+      "sourceUserId": "u-parent",
+      "tenantId": "tenant-b",
+      "username": "parent-b",
+      "email": "parent-b@example.invalid",
+      "role": "PARENT",
+      "accountType": "PARENT",
+      "status": "ACTIVE",
+      "isActive": true,
+      "passwordHashKind": "BCRYPT"
+    },
+    {
+      "sourceUserId": "u-student",
+      "tenantId": "tenant-b",
+      "username": "student-b",
+      "email": "student-b@example.invalid",
+      "role": "STUDENT",
+      "accountType": "STUDENT",
+      "status": "ACTIVE",
+      "isActive": true,
+      "passwordHashKind": "BCRYPT"
+    }
+  ]
+}
