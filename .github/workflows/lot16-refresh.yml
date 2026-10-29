@@ -31,11 +31,12 @@ jobs:
           cache: pnpm
       - name: Refresh lockfile
         run: pnpm install --lockfile-only
+      - name: Install refreshed dependencies
+        run: pnpm install --frozen-lockfile
       - name: Format LOT16 files
         run: >
           pnpm exec prettier --write
           packages/database/prisma/schema.prisma
-          packages/database/prisma/migrations/20261029093000_legacy_identity_continuity/migration.sql
           apps/api/src/modules/iam/infrastructure/crypto.ts
           apps/api/src/modules/iam/infrastructure/iam.repository.ts
           apps/api/src/modules/iam/application/auth.service.ts
