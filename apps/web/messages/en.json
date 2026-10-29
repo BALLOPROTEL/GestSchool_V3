@@ -614,6 +614,7 @@
     "forgotDescription": "Enter the address linked to your account. We will send you a reset link.",
     "forgotTitle": "Forgot password",
     "hidePassword": "Hide password",
+    "identifier": "Email or username",
     "login": "Sign in",
     "loginDescription": "Access your school management workspace",
     "loginTitle": "Sign in",
