@@ -49,6 +49,10 @@ export class AuthService {
     }
 
     const expectedHash = user.identity.passwordHash;
+    if (!expectedHash) {
+      await this.repository.audit('login.failed', metadata);
+      deny('AUTH_INVALID_CREDENTIALS', 401);
+    }
     try {
       return await this.repository.atomic(user.id, async (repository) => {
         const current = await repository.user(user.id);
