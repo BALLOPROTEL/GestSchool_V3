@@ -241,7 +241,9 @@ describe('auth tests', () => {
       data: { legacyUsername },
     });
 
-    const first = await (await new Browser().init()).send('/api/v1/auth/login', {
+    const first = await (
+      await new Browser().init()
+    ).send('/api/v1/auth/login', {
       identifier: legacyUsername,
       password: legacyPassword,
     });
@@ -254,7 +256,9 @@ describe('auth tests', () => {
     expect(upgraded.passwordHash).not.toBe(legacyHash);
     expect(upgraded.passwordChangedAt).toBeNull();
 
-    const second = await (await new Browser().init()).send('/api/v1/auth/login', {
+    const second = await (
+      await new Browser().init()
+    ).send('/api/v1/auth/login', {
       identifier: legacyUsername,
       password: legacyPassword,
     });
@@ -275,7 +279,9 @@ describe('auth tests', () => {
       data: { legacyUsername },
     });
 
-    const result = await (await new Browser().init()).send('/api/v1/auth/login', {
+    const result = await (
+      await new Browser().init()
+    ).send('/api/v1/auth/login', {
       identifier: legacyUsername,
       password,
     });
@@ -292,7 +298,9 @@ describe('auth tests', () => {
       data: { legacyUsername, status: 'SUSPENDED' },
     });
 
-    const result = await (await new Browser().init()).send('/api/v1/auth/login', {
+    const result = await (
+      await new Browser().init()
+    ).send('/api/v1/auth/login', {
       identifier: legacyUsername,
       password,
     });

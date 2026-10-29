@@ -38,7 +38,10 @@ export class AuthService {
   ): Promise<SessionResult | { body: Extract<LoginResult, { kind: 'mfa' }> }> {
     const resolved = await this.resolveIdentifier(identifier);
     const user = resolved?.user;
-    const verification = await this.passwords.verifyForLogin(user?.identity?.passwordHash, password);
+    const verification = await this.passwords.verifyForLogin(
+      user?.identity?.passwordHash,
+      password,
+    );
 
     if (!verification.valid || !user?.identity?.activatedAt || user.disabledAt) {
       await this.repository.audit('login.failed', metadata);
