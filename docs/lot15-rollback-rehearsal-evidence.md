@@ -31,22 +31,22 @@ ni un test de trafic réel.
 
 ## Contrôles de répétition
 
-| Contrôle | Preuve | Résultat |
-| --- | --- | --- |
-| Résolution dépôt / branche / SHA V2 | `GESTSCHOOL_V2@da4728e...` | PASS |
-| CI post-merge V2 | run #108 | PASS |
-| Audit dépendances V2 production + complet | CI #108 | PASS |
-| Manifest API V2 | `render.yaml`, auto-deploy désactivé, readiness `/api/v1/health/ready` | PASS |
-| Manifest frontend V2 | `vercel.json` | PASS |
-| Runbook rollback V2 | `docs/runbooks/deployment-rollback.md` | PASS |
-| Ordre rollback applicatif V2 | worker → API → frontend | PASS |
-| Backup / restore V3 | preuve LOT15 #69 / CI | PASS |
-| Recovery Redis / BullMQ V3 | preuve LOT15 #70 / CI | PASS |
-| Aucun secret requis dans la preuve | références SHA / docs uniquement | PASS |
-| Aucune suppression ou mutation V2 | aucune action destructive exécutée | PASS |
-| Aucune modification DNS | aucune action exécutée | PASS |
-| Aucune promotion Render/Vercel | aucune action exécutée | PASS |
-| Aucune migration ou donnée réelle | aucune action exécutée | PASS |
+| Contrôle                                  | Preuve                                                                 | Résultat |
+| ----------------------------------------- | ---------------------------------------------------------------------- | -------- |
+| Résolution dépôt / branche / SHA V2       | `GESTSCHOOL_V2@da4728e...`                                             | PASS     |
+| CI post-merge V2                          | run #108                                                               | PASS     |
+| Audit dépendances V2 production + complet | CI #108                                                                | PASS     |
+| Manifest API V2                           | `render.yaml`, auto-deploy désactivé, readiness `/api/v1/health/ready` | PASS     |
+| Manifest frontend V2                      | `vercel.json`                                                          | PASS     |
+| Runbook rollback V2                       | `docs/runbooks/deployment-rollback.md`                                 | PASS     |
+| Ordre rollback applicatif V2              | worker → API → frontend                                                | PASS     |
+| Backup / restore V3                       | preuve LOT15 #69 / CI                                                  | PASS     |
+| Recovery Redis / BullMQ V3                | preuve LOT15 #70 / CI                                                  | PASS     |
+| Aucun secret requis dans la preuve        | références SHA / docs uniquement                                       | PASS     |
+| Aucune suppression ou mutation V2         | aucune action destructive exécutée                                     | PASS     |
+| Aucune modification DNS                   | aucune action exécutée                                                 | PASS     |
+| Aucune promotion Render/Vercel            | aucune action exécutée                                                 | PASS     |
+| Aucune migration ou donnée réelle         | aucune action exécutée                                                 | PASS     |
 
 ## Simulation opérateur GO → rollback
 
