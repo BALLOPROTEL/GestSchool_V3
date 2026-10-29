@@ -64,11 +64,11 @@ function addFinding(map, code, user) {
 
 function findings(map) {
   return [...map.entries()]
-    .sort(([a], [b]) => a.localeCompare(b))
+    .toSorted(([a], [b]) => a.localeCompare(b))
     .map(([code, values]) => ({
       code,
       count: values.size,
-      fingerprints: [...values].sort(),
+      fingerprints: [...values].toSorted(),
     }));
 }
 
@@ -84,7 +84,7 @@ export function analyzeV2IdentityDryRun(input) {
 
   const forbidden = scanForbidden(input);
   if (forbidden.length) {
-    throw new Error(`LOT16_FORBIDDEN_CREDENTIAL_MATERIAL:${forbidden.sort().join(',')}`);
+    throw new Error(`LOT16_FORBIDDEN_CREDENTIAL_MATERIAL:${forbidden.toSorted().join(',')}`);
   }
 
   const blockers = new Map();
@@ -204,7 +204,7 @@ export function analyzeV2IdentityDryRun(input) {
       uniqueEmailIdentities: emailGroups.size,
     },
     roleMapping: Object.fromEntries(
-      [...roleCounts.entries()].sort(([a], [b]) => a.localeCompare(b)),
+      [...roleCounts.entries()].toSorted(([a], [b]) => a.localeCompare(b)),
     ),
     blockers: blockerList,
     warnings: findings(warnings),
@@ -222,7 +222,7 @@ async function main() {
   const inputIndex = process.argv.indexOf('--input');
   const inputPath = inputIndex >= 0 ? process.argv[inputIndex + 1] : undefined;
   if (!inputPath) {
-    console.error('Usage: pnpm lot16:identity:dry-run -- --input <export.json>');
+    process.stderr.write('Usage: pnpm lot16:identity:dry-run -- --input <export.json>\n');
     process.exitCode = 64;
     return;
   }
