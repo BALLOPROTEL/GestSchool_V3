@@ -5,6 +5,7 @@ Statut : **PREPARED — AUCUN COMPTE RÉEL MIGRÉ**.
 ## Staging identifié
 
 Projet Vercel :
+
 - nom : `gestschool-v3-staging`
 - projet : `prj_3UdsP3bidz7SrLfkogJC7VqPrxU8`
 - équipe : `protels-projects`

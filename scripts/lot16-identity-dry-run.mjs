@@ -35,8 +35,12 @@ const fingerprint = (value) =>
 
 function recordFingerprint(user) {
   return fingerprint(
-    [text(user.tenantId), text(user.sourceUserId), normalized(user.username), normalized(user.email)]
-      .join('|'),
+    [
+      text(user.tenantId),
+      text(user.sourceUserId),
+      normalized(user.username),
+      normalized(user.email),
+    ].join('|'),
   );
 }
 
@@ -69,7 +73,12 @@ function findings(map) {
 }
 
 export function analyzeV2IdentityDryRun(input) {
-  if (!input || typeof input !== 'object' || input.schemaVersion !== 1 || !Array.isArray(input.users)) {
+  if (
+    !input ||
+    typeof input !== 'object' ||
+    input.schemaVersion !== 1 ||
+    !Array.isArray(input.users)
+  ) {
     throw new Error('LOT16_INPUT_INVALID');
   }
 
@@ -102,7 +111,8 @@ export function analyzeV2IdentityDryRun(input) {
     const hashKind = text(user.passwordHashKind).toUpperCase();
     const enabled = user.isActive !== false && !user.disabledAt && status === 'ACTIVE';
 
-    if (!sourceUserId || !tenantId || !username) addFinding(blockers, 'INVALID_SOURCE_IDENTITY', user);
+    if (!sourceUserId || !tenantId || !username)
+      addFinding(blockers, 'INVALID_SOURCE_IDENTITY', user);
 
     if (enabled) active += 1;
     else {
@@ -140,7 +150,8 @@ export function analyzeV2IdentityDryRun(input) {
 
     const targetRole = V2_TO_V3_ROLE_MAP[role];
     if (!targetRole) addFinding(blockers, 'UNMAPPED_ROLE', user);
-    else roleCounts.set(`${role}->${targetRole}`, (roleCounts.get(`${role}->${targetRole}`) ?? 0) + 1);
+    else
+      roleCounts.set(`${role}->${targetRole}`, (roleCounts.get(`${role}->${targetRole}`) ?? 0) + 1);
 
     if (hashKind === 'BCRYPT') bcryptCompatible += 1;
     else addFinding(blockers, 'UNSUPPORTED_PASSWORD_HASH_KIND', user);
@@ -192,7 +203,9 @@ export function analyzeV2IdentityDryRun(input) {
       mappedRoles: [...roleCounts.values()].reduce((sum, count) => sum + count, 0),
       uniqueEmailIdentities: emailGroups.size,
     },
-    roleMapping: Object.fromEntries([...roleCounts.entries()].sort(([a], [b]) => a.localeCompare(b))),
+    roleMapping: Object.fromEntries(
+      [...roleCounts.entries()].sort(([a], [b]) => a.localeCompare(b)),
+    ),
     blockers: blockerList,
     warnings: findings(warnings),
     guardrails: {

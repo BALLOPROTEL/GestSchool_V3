@@ -54,7 +54,6 @@ Les nouveaux mots de passe V3 restent Argon2id uniquement.
   tout apply ;
 - la recette propriétaire staging est suivie dans #83.
 
-
 ## Dry-run de migration
 
 Le dry-run #82 utilise `scripts/lot16-identity-dry-run.mjs`.
@@ -83,14 +82,14 @@ référencés uniquement par empreintes SHA-256 tronquées.
 
 ### Mapping de rôles
 
-| V2 | V3 |
-| --- | --- |
-| `ADMIN` | `SCHOOL_ADMIN` |
-| `SCOLARITE` | `ACADEMIC_STAFF` |
-| `ENSEIGNANT` | `TEACHER` |
-| `COMPTABLE` | `ACCOUNTANT` |
-| `PARENT` | `PARENT` |
-| `STUDENT` | `STUDENT` |
+| V2           | V3               |
+| ------------ | ---------------- |
+| `ADMIN`      | `SCHOOL_ADMIN`   |
+| `SCOLARITE`  | `ACADEMIC_STAFF` |
+| `ENSEIGNANT` | `TEACHER`        |
+| `COMPTABLE`  | `ACCOUNTANT`     |
+| `PARENT`     | `PARENT`         |
+| `STUDENT`    | `STUDENT`        |
 
 Tout rôle non listé est bloquant.
 
@@ -107,7 +106,6 @@ Le dry-run bloque notamment :
 - présence de données d'authentification sensibles dans l'export de diagnostic.
 
 Aucune écriture en base V3 n'est effectuée par ce script.
-
 
 ### Export V2 en lecture seule
 
