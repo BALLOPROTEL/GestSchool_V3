@@ -223,7 +223,7 @@ test('exercises real login, activation and password reset flows', async ({ page 
 
   await page.goto('/forgot-password');
   await waitForPageReady(page);
-  await page.getByLabel('E-mail ou identifiant', { exact: true }).fill(user.email);
+  await page.getByLabel('Adresse e-mail', { exact: true }).fill(user.email);
   await page.getByRole('button', { name: /Envoyer le lien/ }).click();
   await expect(page.getByRole('heading', { name: 'E-mail envoyé !' })).toBeVisible();
 
