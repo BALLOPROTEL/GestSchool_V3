@@ -302,19 +302,19 @@ export class IamRepository {
       return this.db.membership.findFirst({ where: { id, tenantId } });
     }
     async importLegacyV2Owner(input: {
-      email: string;
-      displayName: string;
-      legacyUsername: string;
-      passwordHash: string;
-      tenantSlug: string;
-      tenantName: string;
-      roleCode: string;
-      grants: readonly { permission: string; scope: AccessScope }[];
-      requestId: string;
-    }): Promise<{ userId: string; tenantId: string; membershipId: string; roleCode: string }> {
-      if (!this.root) throw new IamError('LEGACY_V2_MIGRATION_UNAVAILABLE', 503);
-      return this.root.$transaction(
-        async (transaction) => {
+    email: string;
+    displayName: string;
+    legacyUsername: string;
+    passwordHash: string;
+    tenantSlug: string;
+    tenantName: string;
+    roleCode: string;
+    grants: readonly { permission: string; scope: AccessScope }[];
+    requestId: string;
+  }): Promise<{ userId: string; tenantId: string; membershipId: string; roleCode: string }> {
+    if (!this.root) throw new IamError('LEGACY_V2_MIGRATION_UNAVAILABLE', 503);
+    return this.root.$transaction(
+      async (transaction) => {
         await transaction.$queryRaw`SELECT pg_advisory_xact_lock(hashtext('lot16-owner-migration'))`;
         const alreadyUsed = await transaction.iamAuditLog.findFirst({
           where: { action: 'legacy.v2.owner.migrated' },
