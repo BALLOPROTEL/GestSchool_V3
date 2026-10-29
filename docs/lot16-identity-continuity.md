@@ -53,3 +53,57 @@ Les nouveaux mots de passe V3 restent Argon2id uniquement.
 - les collisions email/username doivent être détectées par le dry-run #82 avant
   tout apply ;
 - la recette propriétaire staging est suivie dans #83.
+
+
+## Dry-run de migration
+
+Le dry-run #82 utilise `scripts/lot16-identity-dry-run.mjs`.
+
+Commande :
+
+```bash
+pnpm lot16:identity:dry-run -- --input <export-v2-sans-secret.json>
+```
+
+Le format d'entrée accepte uniquement les métadonnées nécessaires au diagnostic :
+
+- identifiant source ;
+- tenant source ;
+- username ;
+- email éventuel ;
+- rôle ;
+- statut d'activation ;
+- type de hash (`BCRYPT`), mais jamais le hash lui-même.
+
+Le dry-run refuse explicitement les champs sensibles comme les mots de passe,
+hashes, tokens, cookies, sessions et secrets MFA.
+
+Le rapport ne contient ni email ni username en clair. Les enregistrements sont
+référencés uniquement par empreintes SHA-256 tronquées.
+
+### Mapping de rôles
+
+| V2 | V3 |
+| --- | --- |
+| `ADMIN` | `SCHOOL_ADMIN` |
+| `SCOLARITE` | `ACADEMIC_STAFF` |
+| `ENSEIGNANT` | `TEACHER` |
+| `COMPTABLE` | `ACCOUNTANT` |
+| `PARENT` | `PARENT` |
+| `STUDENT` | `STUDENT` |
+
+Tout rôle non listé est bloquant.
+
+### Blocages détectés avant toute migration
+
+Le dry-run bloque notamment :
+
+- compte V2 sans email tant qu'une politique dédiée n'est pas approuvée ;
+- email global réutilisé par plusieurs comptes source distincts ;
+- username global ambigu entre plusieurs identités ;
+- doublon username/email à l'intérieur d'un même tenant V2 ;
+- rôle non mappé ;
+- format de hash autre que bcrypt ;
+- présence de données d'authentification sensibles dans l'export de diagnostic.
+
+Aucune écriture en base V3 n'est effectuée par ce script.
