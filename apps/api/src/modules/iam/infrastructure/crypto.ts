@@ -9,6 +9,7 @@ import {
   timingSafeEqual,
 } from 'node:crypto';
 import * as argon2 from 'argon2';
+import { compare as compareBcrypt } from 'bcryptjs';
 import { jwtVerify, SignJWT } from 'jose';
 import { Secret, TOTP } from 'otpauth';
 import { z } from 'zod';
@@ -47,9 +48,35 @@ export class Passwords {
       parallelism: 1,
     });
   }
+  isLegacyBcrypt(hash: string | null | undefined): hash is string {
+    return Boolean(hash && /^\$2[aby]\$\d{2}\$/.test(hash));
+  }
+  private async consumeDummy(password: string): Promise<void> {
+    await argon2.verify(await this.dummy, password).catch(() => false);
+  }
   async verify(hash: string | null | undefined, password: string): Promise<boolean> {
-    const valid = await argon2.verify(hash ?? (await this.dummy), password).catch(() => false);
-    return Boolean(hash) && valid;
+    if (!hash) {
+      await this.consumeDummy(password);
+      return false;
+    }
+    if (this.isLegacyBcrypt(hash)) {
+      const valid = await compareBcrypt(password, hash).catch(() => false);
+      if (!valid) await this.consumeDummy(password);
+      return valid;
+    }
+    if (!/^\$argon2(?:id|i|d)\$/.test(hash)) {
+      await this.consumeDummy(password);
+      return false;
+    }
+    return argon2.verify(hash, password).catch(() => false);
+  }
+  async verifyForLogin(
+    hash: string | null | undefined,
+    password: string,
+  ): Promise<{ valid: boolean; upgradedHash?: string }> {
+    const valid = await this.verify(hash, password);
+    if (!valid || !this.isLegacyBcrypt(hash)) return { valid };
+    return { valid: true, upgradedHash: await this.hash(password) };
   }
 }
 const claimsSchema = z.object({
