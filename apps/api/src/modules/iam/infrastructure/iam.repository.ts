@@ -301,6 +301,107 @@ export class IamRepository {
   membershipTarget(id: string, tenantId: string) {
     return this.db.membership.findFirst({ where: { id, tenantId } });
   }
+  async importLegacyV2Owner(input: {
+    email: string;
+    displayName: string;
+    legacyUsername: string;
+    passwordHash: string;
+    tenantSlug: string;
+    tenantName: string;
+    roleCode: string;
+    grants: readonly { permission: string; scope: AccessScope }[];
+    requestId: string;
+  }): Promise<{ userId: string; tenantId: string; membershipId: string; roleCode: string }> {
+    if (!this.root) throw new IamError('LEGACY_V2_MIGRATION_UNAVAILABLE', 503);
+    return this.root.$transaction(async (transaction) => {
+      await transaction.$queryRaw`SELECT pg_advisory_xact_lock(hashtext('lot16-owner-migration'))`;
+      const alreadyUsed = await transaction.iamAuditLog.findFirst({
+        where: { action: 'legacy.v2.owner.migrated' },
+        select: { id: true },
+      });
+      if (alreadyUsed) throw new IamError('LEGACY_V2_MIGRATION_ALREADY_USED', 409);
+
+      const [emailCollision, tenantCollision] = await Promise.all([
+        transaction.user.findUnique({ where: { email: input.email }, select: { id: true } }),
+        transaction.tenant.findUnique({ where: { slug: input.tenantSlug }, select: { id: true } }),
+      ]);
+      if (emailCollision || tenantCollision)
+        throw new IamError('LEGACY_V2_MIGRATION_COLLISION', 409);
+
+      const tenant = await transaction.tenant.create({
+        data: { slug: input.tenantSlug, name: input.tenantName },
+        select: { id: true },
+      });
+      const role = await transaction.role.create({
+        data: {
+          tenantId: tenant.id,
+          code: input.roleCode,
+          name: input.roleCode,
+          scope: 'TENANT',
+          isSystem: false,
+        },
+        select: { id: true },
+      });
+      for (const grant of input.grants) {
+        const permission = await transaction.permission.upsert({
+          where: { code: grant.permission },
+          update: {},
+          create: { code: grant.permission, description: grant.permission },
+          select: { id: true },
+        });
+        await transaction.rolePermission.create({
+          data: {
+            roleId: role.id,
+            permissionId: permission.id,
+            tenantId: tenant.id,
+            scope: grant.scope,
+          },
+        });
+      }
+
+      const user = await transaction.user.create({
+        data: { email: input.email, displayName: input.displayName, preferredLocale: 'fr' },
+        select: { id: true },
+      });
+      await transaction.authIdentity.create({
+        data: {
+          userId: user.id,
+          passwordHash: input.passwordHash,
+          activatedAt: new Date(),
+          passwordChangedAt: null,
+        },
+      });
+      const membership = await transaction.membership.create({
+        data: {
+          tenantId: tenant.id,
+          userId: user.id,
+          legacyUsername: input.legacyUsername,
+          status: 'ACTIVE',
+          preferredLocale: 'fr',
+        },
+        select: { id: true },
+      });
+      await transaction.membershipRole.create({
+        data: { tenantId: tenant.id, membershipId: membership.id, roleId: role.id },
+      });
+      await transaction.iamAuditLog.create({
+        data: {
+          requestId: input.requestId,
+          userId: user.id,
+          tenantId: tenant.id,
+          subjectId: user.id,
+          action: 'legacy.v2.owner.migrated',
+        },
+      });
+      return {
+        userId: user.id,
+        tenantId: tenant.id,
+        membershipId: membership.id,
+        roleCode: input.roleCode,
+      };
+    });
+  }
+
   async invite(email: string, displayName: string, tenantId: string, roleId: string) {
     const user = await this.db.user.upsert({
       where: { email },

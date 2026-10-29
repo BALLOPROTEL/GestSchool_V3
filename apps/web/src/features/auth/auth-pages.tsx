@@ -295,6 +295,98 @@ export function LoginPage() {
   );
 }
 
+export function MigrateV2Page() {
+  const translate = useTranslations('Auth');
+  const router = useRouter();
+  const [done, setDone] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    setLoading(true);
+    setError('');
+    try {
+      await authRequest<{ ok: true }>('migrate-v2', {
+        identifier: String(data.get('migration-identifier')),
+        password: String(data.get('migration-password')),
+        migrationCode: String(data.get('migration-code')),
+      });
+      setDone(true);
+    } catch (failure) {
+      setError(failure instanceof AuthClientError ? failure.code : 'AUTH_UNAVAILABLE');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <AuthShell>
+      <Link
+        className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground"
+        href="/login"
+      >
+        <ArrowLeft className="size-4 rtl:rotate-180" />
+        {translate('backToLogin')}
+      </Link>
+      <div className="mb-7">
+        <h2 className="text-3xl font-bold tracking-tight">
+          {done ? translate('migrationDone') : translate('migrationTitle')}
+        </h2>
+        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+          {done ? translate('migrationDoneDescription') : translate('migrationDescription')}
+        </p>
+      </div>
+      <Card>
+        <CardContent className="p-7">
+          {done ? (
+            <div className="text-center">
+              <CheckCircle2 className="mx-auto size-14 text-success" />
+              <Button className="mt-6 w-full" onClick={() => router.push('/login')} size="lg">
+                {translate('migrationBack')}
+                <ArrowRight className="rtl:rotate-180" />
+              </Button>
+            </div>
+          ) : (
+            <form className="space-y-5" onSubmit={submit}>
+              <div className="space-y-2">
+                <Label htmlFor="migration-identifier">{translate('migrationIdentifier')}</Label>
+                <Input
+                  autoCapitalize="none"
+                  autoComplete="username"
+                  id="migration-identifier"
+                  name="migration-identifier"
+                  required
+                  spellCheck={false}
+                  type="text"
+                />
+              </div>
+              <PasswordInput id="migration-password" label={translate('password')} />
+              <div className="space-y-2">
+                <Label htmlFor="migration-code">{translate('migrationCode')}</Label>
+                <Input
+                  autoComplete="one-time-code"
+                  id="migration-code"
+                  minLength={20}
+                  maxLength={128}
+                  name="migration-code"
+                  required
+                  type="password"
+                />
+              </div>
+              <ErrorNotice error={error} />
+              <Button className="w-full" disabled={loading} size="lg" type="submit">
+                {loading ? translate('migrationLoading') : translate('migrationSubmit')}
+                <ArrowRight className="rtl:rotate-180" />
+              </Button>
+            </form>
+          )}
+        </CardContent>
+      </Card>
+    </AuthShell>
+  );
+}
+
 export function ForgotPasswordPage() {
   const common = useTranslations('Common');
   const translate = useTranslations('Auth');

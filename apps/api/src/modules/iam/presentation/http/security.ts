@@ -204,9 +204,11 @@ export class BrowserSecurityGuard implements CanActivate {
     let identifier =
       typeof fields['email'] === 'string'
         ? fields['email'].trim().toLowerCase()
-        : typeof fields['challenge'] === 'string'
-          ? fields['challenge']
-          : undefined;
+        : typeof fields['identifier'] === 'string'
+          ? fields['identifier'].trim().toLowerCase()
+          : typeof fields['challenge'] === 'string'
+            ? fields['challenge']
+            : undefined;
     if (request.path.endsWith('/refresh')) {
       const hash = cookie(request, refreshCookie(this.iam));
       if (hash.length === 43)

@@ -37,7 +37,9 @@ export class RateLimiter {
   }
   async check(endpoint: string, ip: string, identifier?: string): Promise<void> {
     const sensitive =
-      /login|forgot-password|reset-password|refresh|activation|mfa|webhooks\/brevo/.test(endpoint);
+      /login|migrate-v2|forgot-password|reset-password|refresh|activation|mfa|webhooks\/brevo/.test(
+        endpoint,
+      );
     if (!sensitive) return;
     const refresh = endpoint.endsWith('/refresh');
     const limits: [string, number][] = [[`ip:${tokenHash(ip)}`, refresh ? 120 : 40]];

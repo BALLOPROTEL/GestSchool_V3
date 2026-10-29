@@ -6,6 +6,7 @@ import { MembershipsService } from '../application/memberships.service.js';
 import { SessionsService } from '../application/sessions.service.js';
 import { MfaService } from '../application/mfa.service.js';
 import { UsersService } from '../application/users.service.js';
+import { LegacyV2OwnerMigrationService } from '../application/legacy-v2-owner-migration.service.js';
 import { IamCrypto, Passwords } from './crypto.js';
 import type { IamConfig } from './iam-config.js';
 import { IamRepository } from './iam.repository.js';
@@ -22,6 +23,7 @@ export class IamRuntime implements OnModuleInit, OnModuleDestroy {
   readonly credentials: CredentialsService;
   readonly mfa: MfaService;
   readonly users: UsersService;
+  readonly legacyV2OwnerMigration: LegacyV2OwnerMigrationService;
   constructor(
     readonly config: IamConfig,
     databaseUrl: string,
@@ -37,6 +39,10 @@ export class IamRuntime implements OnModuleInit, OnModuleDestroy {
     this.credentials = new CredentialsService(this.repository, this.passwords);
     this.mfa = new MfaService(this.repository, this.crypto, this.passwords, this.sessions);
     this.users = new UsersService(this.repository, this.credentials);
+    this.legacyV2OwnerMigration = new LegacyV2OwnerMigrationService(
+      this.repository,
+      this.passwords,
+    );
   }
   async onModuleInit(): Promise<void> {
     await this.limiter.open();
