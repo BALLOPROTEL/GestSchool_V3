@@ -107,3 +107,32 @@ Le dry-run bloque notamment :
 - présence de données d'authentification sensibles dans l'export de diagnostic.
 
 Aucune écriture en base V3 n'est effectuée par ce script.
+
+
+### Export V2 en lecture seule
+
+Le fichier `scripts/lot16-v2-identity-export.sql` prépare l'entrée du dry-run.
+
+Il lit uniquement :
+
+- identifiant du compte source ;
+- tenant ;
+- username ;
+- email éventuel ;
+- rôle et type de compte ;
+- statut actif/inactif ;
+- indicateur de format bcrypt.
+
+Il ne sélectionne jamais `password_hash`, refresh tokens, security tokens,
+sessions ou secrets.
+
+Exemple opérateur, uniquement dans un environnement V2 autorisé :
+
+```bash
+psql "$V2_DATABASE_URL" -X -t -A -f scripts/lot16-v2-identity-export.sql > /tmp/lot16-v2-identities.json
+pnpm lot16:identity:dry-run -- --input /tmp/lot16-v2-identities.json
+```
+
+Le fichier exporté est temporaire et contient des identifiants personnels. Il ne
+doit pas être committé, joint à une issue GitHub ou conservé comme artefact CI.
+Seul le rapport anonymisé du dry-run peut être conservé.
