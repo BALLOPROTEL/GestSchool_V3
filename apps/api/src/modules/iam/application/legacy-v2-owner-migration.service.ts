@@ -121,8 +121,7 @@ export class LegacyV2OwnerMigrationService {
       method: 'POST',
       body: JSON.stringify({ username: identifier.trim(), password }),
     });
-    if (loginResponse.status === 401)
-      throw new IamError('LEGACY_V2_MIGRATION_INVALID', 401);
+    if (loginResponse.status === 401) throw new IamError('LEGACY_V2_MIGRATION_INVALID', 401);
     if (loginResponse.status === 429) throw new IamError('AUTH_RATE_LIMITED', 429);
     if (!loginResponse.ok) throw new IamError('LEGACY_V2_MIGRATION_UNAVAILABLE', 503);
 

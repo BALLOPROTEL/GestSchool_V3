@@ -7,7 +7,7 @@ on:
       - main
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   quality:
@@ -118,40 +118,6 @@ jobs:
 
       - name: Certify LOT16 identity migration dry-run
         run: pnpm lot16:identity:dry-run:test
-
-      - name: Auto-format LOT16 migration branch
-        if: github.event_name == 'pull_request' && github.head_ref == 'feat/lot16-owner-staging-migration'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
-          git fetch origin "${GITHUB_HEAD_REF}" main
-          git checkout -B "${GITHUB_HEAD_REF}" "origin/${GITHUB_HEAD_REF}"
-          pnpm exec prettier --write \
-            apps/api/src/modules/iam/application/legacy-v2-owner-migration.service.ts \
-            apps/api/src/modules/iam/application/legacy-v2-owner-migration.service.test.ts \
-            apps/api/src/modules/iam/infrastructure/iam.repository.ts \
-            apps/api/src/modules/iam/infrastructure/iam-runtime.ts \
-            apps/api/src/modules/iam/infrastructure/rate-limiter.ts \
-            apps/api/src/modules/iam/presentation/http/auth.controller.ts \
-            apps/api/src/modules/iam/presentation/http/security.ts \
-            apps/web/src/features/auth/auth-pages.tsx \
-            'apps/web/src/app/[locale]/(auth)/migrate-v2/page.tsx' \
-            apps/web/e2e/lot1.spec.ts \
-            apps/web/messages/fr.json \
-            apps/web/messages/en.json \
-            apps/web/messages/ar.json
-          git checkout origin/main -- .github/workflows/ci.yml
-          rm -f .github/workflows/lot16-format-refresh.yml
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          if git diff --cached --quiet; then
-            echo "No formatting changes."
-          else
-            git commit -m "style(lot16): apply repository formatting"
-            git push origin HEAD:"${GITHUB_HEAD_REF}"
-          fi
 
       - name: Check formatting
         run: pnpm format:check

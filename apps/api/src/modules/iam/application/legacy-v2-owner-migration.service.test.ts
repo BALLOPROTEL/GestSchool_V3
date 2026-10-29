@@ -6,9 +6,7 @@ import { LegacyV2OwnerMigrationService } from './legacy-v2-owner-migration.servi
 const migrationCode = 'owner-migration-code-2026-secure';
 const environment = {
   LEGACY_V2_OWNER_MIGRATION_ENABLED: 'true',
-  LEGACY_V2_OWNER_MIGRATION_CODE_SHA256: createHash('sha256')
-    .update(migrationCode)
-    .digest('hex'),
+  LEGACY_V2_OWNER_MIGRATION_CODE_SHA256: createHash('sha256').update(migrationCode).digest('hex'),
   APP_ENV: 'staging',
   NODE_ENV: 'production',
   IAM_ENV: 'staging',
@@ -52,8 +50,9 @@ describe('LegacyV2OwnerMigrationService', () => {
       environment,
       fetcher as typeof fetch,
     );
-    await expect(service.migrate('owner', 'secret', 'wrong-code-that-is-long-enough', metadata))
-      .rejects.toMatchObject({ code: 'LEGACY_V2_MIGRATION_INVALID', status: 401 });
+    await expect(
+      service.migrate('owner', 'secret', 'wrong-code-that-is-long-enough', metadata),
+    ).rejects.toMatchObject({ code: 'LEGACY_V2_MIGRATION_INVALID', status: 401 });
     expect(fetcher).not.toHaveBeenCalled();
   });
 
