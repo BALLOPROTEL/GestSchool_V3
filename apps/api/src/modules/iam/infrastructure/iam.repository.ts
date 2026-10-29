@@ -313,7 +313,8 @@ export class IamRepository {
     requestId: string;
   }): Promise<{ userId: string; tenantId: string; membershipId: string; roleCode: string }> {
     if (!this.root) throw new IamError('LEGACY_V2_MIGRATION_UNAVAILABLE', 503);
-    return this.root.$transaction(async (transaction) => {
+    return this.root.$transaction(
+      async (transaction) => {
       await transaction.$queryRaw`SELECT pg_advisory_xact_lock(hashtext('lot16-owner-migration'))`;
       const alreadyUsed = await transaction.iamAuditLog.findFirst({
         where: { action: 'legacy.v2.owner.migrated' },
@@ -399,7 +400,9 @@ export class IamRepository {
         membershipId: membership.id,
         roleCode: input.roleCode,
       };
-    }, { maxWait: 10_000, timeout: 30_000 });
+      },
+      { maxWait: 10_000, timeout: 30_000 },
+    );
   }
 
   async invite(email: string, displayName: string, tenantId: string, roleId: string) {
