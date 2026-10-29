@@ -32,7 +32,7 @@ export async function ready(page: Page) {
 }
 export async function login(page: Page, credentials: Credentials, mfa: boolean) {
   await page.goto('/fr/login');
-  await page.getByLabel('Adresse e-mail', { exact: true }).fill(credentials.email);
+  await page.getByLabel('E-mail ou identifiant', { exact: true }).fill(credentials.email);
   await page.getByLabel('Mot de passe', { exact: true }).fill(credentials.password);
   await page.getByRole('button', { name: /Se connecter/ }).click();
   if (mfa) await completeMfa(page, credentials);

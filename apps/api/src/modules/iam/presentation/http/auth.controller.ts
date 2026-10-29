@@ -20,6 +20,11 @@ const email = z
   .max(254)
   .transform((value) => value.trim().toLowerCase());
 const password = z.string().min(1).max(256);
+const identifier = z.string().trim().min(1).max(254);
+const loginInput = z.union([
+  z.strictObject({ identifier, password }),
+  z.strictObject({ email, password }),
+]);
 const token = z.string().regex(/^[A-Za-z0-9_-]{43}$/);
 const code = z.string().regex(/^\d{6}$/);
 const id = z.uuid();
@@ -53,8 +58,9 @@ export class AuthController {
     @Req() request: IamRequest,
     @Res({ passthrough: true }) response: Response,
   ) {
-    const input = z.strictObject({ email, password }).parse(body);
-    const result = await this.iam.auth.login(input.email, input.password, request.metadata);
+    const input = loginInput.parse(body);
+    const loginIdentifier = 'identifier' in input ? input.identifier : input.email;
+    const result = await this.iam.auth.login(loginIdentifier, input.password, request.metadata);
     return 'refresh' in result ? this.session(response, result) : result.body;
   }
   @Public()

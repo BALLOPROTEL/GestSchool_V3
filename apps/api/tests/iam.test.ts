@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import { randomUUID } from 'node:crypto';
 import { Controller, Get, Module, Req } from '@nestjs/common';
+import { hash as bcryptHash } from 'bcryptjs';
 import { NestFactory } from '@nestjs/core';
 import type { INestApplication } from '@nestjs/common';
 import { createPrismaClient } from '@gestschool/database';
@@ -223,6 +224,90 @@ describe('auth tests', () => {
     expect(result.body['tenantId']).toBe(user.tenant.id);
     expect(JSON.stringify(result.body).includes('passwordHash')).toBe(false);
   });
+
+  it('accepts a V2 legacy username and upgrades bcrypt to Argon2id on first login', async () => {
+    const record = await fixture();
+    const legacyPassword = `Legacy ${opaqueToken()}`;
+    const legacyUsername = `legacy-${randomUUID()}`;
+    secretValues.add(legacyPassword);
+    const legacyHash = await bcryptHash(legacyPassword, 10);
+
+    await database.authIdentity.update({
+      where: { userId: record.user.id },
+      data: { passwordHash: legacyHash, passwordChangedAt: null },
+    });
+    await database.membership.update({
+      where: { id: record.membership.id },
+      data: { legacyUsername },
+    });
+
+    const first = await (
+      await new Browser().init()
+    ).send('/api/v1/auth/login', {
+      identifier: legacyUsername,
+      password: legacyPassword,
+    });
+    expect(first.status).toBe(201);
+
+    const upgraded = await database.authIdentity.findUniqueOrThrow({
+      where: { userId: record.user.id },
+    });
+    expect(upgraded.passwordHash?.startsWith('$argon2id$')).toBe(true);
+    expect(upgraded.passwordHash).not.toBe(legacyHash);
+    expect(upgraded.passwordChangedAt).toBeNull();
+
+    const second = await (
+      await new Browser().init()
+    ).send('/api/v1/auth/login', {
+      identifier: legacyUsername,
+      password: legacyPassword,
+    });
+    expect(second.status).toBe(201);
+  });
+
+  it('rejects an ambiguous V2 username without disclosing which account owns it', async () => {
+    const first = await fixture();
+    const second = await fixture();
+    const legacyUsername = `shared-${randomUUID()}`;
+
+    await database.membership.update({
+      where: { id: first.membership.id },
+      data: { legacyUsername },
+    });
+    await database.membership.update({
+      where: { id: second.membership.id },
+      data: { legacyUsername },
+    });
+
+    const result = await (
+      await new Browser().init()
+    ).send('/api/v1/auth/login', {
+      identifier: legacyUsername,
+      password,
+    });
+    expect(result.status).toBe(401);
+    expect(result.body['code']).toBe('AUTH_INVALID_CREDENTIALS');
+  });
+
+  it('does not accept a legacy username from a suspended membership', async () => {
+    const record = await fixture();
+    const legacyUsername = `suspended-${randomUUID()}`;
+
+    await database.membership.update({
+      where: { id: record.membership.id },
+      data: { legacyUsername, status: 'SUSPENDED' },
+    });
+
+    const result = await (
+      await new Browser().init()
+    ).send('/api/v1/auth/login', {
+      identifier: legacyUsername,
+      password,
+    });
+    expect(result.status).toBe(401);
+    expect(result.body['code']).toBe('AUTH_INVALID_CREDENTIALS');
+  });
+
   it('uses indistinguishable errors for wrong password and unknown user', async () => {
     const user = await fixture();
     const browser = await new Browser().init();
@@ -239,6 +324,7 @@ describe('auth tests', () => {
     expect(a.body['code']).toBe(b.body['code']);
     expect(Object.keys(a.body).toSorted()).toEqual(['code', 'requestId', 'status']);
   });
+
   it.each(['user', 'membership', 'tenant'] as const)('rejects disabled %s', async (target) => {
     const user = await fixture();
     if (target === 'user')
@@ -258,6 +344,7 @@ describe('auth tests', () => {
     ).send('/api/v1/auth/login', { email: user.user.email, password });
     expect(result.status).toBe(401);
   });
+
   it('rejects anonymous requests and protected routes without explicit permission metadata', async () => {
     const browser = await new Browser().init();
     expect((await browser.send('/api/v1/auth/me', undefined, 'GET')).status).toBe(401);

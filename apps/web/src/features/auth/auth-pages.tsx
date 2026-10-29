@@ -9,8 +9,8 @@ import {
   Eye,
   EyeOff,
   LockKeyhole,
-  Mail,
   ShieldCheck,
+  UserRound,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { FormEvent, ReactNode } from 'react';
@@ -139,7 +139,6 @@ function ErrorNotice({ error }: { error: string }) {
 }
 
 export function LoginPage() {
-  const common = useTranslations('Common');
   const translate = useTranslations('Auth');
   const iam = useTranslations('Iam');
   const router = useRouter();
@@ -161,7 +160,7 @@ export function LoginPage() {
             code: String(data.get('totp')),
           })
         : await authRequest<LoginResult>('login', {
-            email: String(data.get('email')),
+            identifier: String(data.get('identifier')),
             password: String(data.get('login-password')),
           });
       if (result.kind === 'session') {
@@ -237,16 +236,18 @@ export function LoginPage() {
             ) : (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="login-email">{common('email')}</Label>
+                  <Label htmlFor="login-identifier">{translate('identifier')}</Label>
                   <div className="relative">
-                    <Mail className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                    <UserRound className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
+                      autoCapitalize="none"
                       autoComplete="username"
                       className="ps-9"
-                      id="login-email"
-                      name="email"
+                      id="login-identifier"
+                      name="identifier"
                       required
-                      type="email"
+                      spellCheck={false}
+                      type="text"
                     />
                   </div>
                 </div>

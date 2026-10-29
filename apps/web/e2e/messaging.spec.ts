@@ -75,7 +75,9 @@ async function certifyNotifications(page: Page, credentials: Credentials) {
   await expect(page.getByText('Paiement validé', { exact: true })).toBeVisible();
   await expect(page.getByText('Bulletin disponible', { exact: true })).toBeVisible();
   await expect(page.getByText('Document disponible', { exact: true })).toBeVisible();
-  await page.getByText('Paiement validé', { exact: true }).click();
+  const unreadNotice = page.locator('[data-notification-status="UNREAD"]').first();
+  await expect(unreadNotice).toBeVisible();
+  await unreadNotice.click();
   await expect(bell).not.toHaveAccessibleName(initialLabel);
   await bell.click();
   await page.getByText('Tout marquer comme lu', { exact: true }).click();

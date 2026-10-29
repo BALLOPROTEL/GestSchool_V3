@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "users": [
+    {
+      "sourceUserId": "u1",
+      "tenantId": "tenant-a",
+      "username": "shared",
+      "email": "same@example.invalid",
+      "role": "ADMIN",
+      "status": "ACTIVE",
+      "isActive": true,
+      "passwordHashKind": "BCRYPT"
+    },
+    {
+      "sourceUserId": "u2",
+      "tenantId": "tenant-b",
+      "username": "shared",
+      "email": "same@example.invalid",
+      "role": "SCOLARITE",
+      "status": "ACTIVE",
+      "isActive": true,
+      "passwordHashKind": "BCRYPT"
+    },
+    {
+      "sourceUserId": "u3",
+      "tenantId": "tenant-c",
+      "username": "shared",
+      "email": null,
+      "role": "UNKNOWN",
+      "status": "ACTIVE",
+      "isActive": true,
+      "passwordHashKind": "OTHER"
+    }
+  ]
+}

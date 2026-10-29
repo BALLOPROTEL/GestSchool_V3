@@ -12,6 +12,7 @@ import { IamError } from '../domain/context.js';
 
 export type IamDatabaseOperation =
   | 'USER_LOOKUP'
+  | 'LEGACY_LOGIN_LOOKUP'
   | 'MEMBERSHIPS_LOOKUP'
   | 'MEMBERSHIP_LOOKUP'
   | 'SESSION_LOOKUP'
@@ -23,6 +24,7 @@ export type IamDatabaseOperation =
   | 'TOKEN_CREATE'
   | 'SESSION_CREATE'
   | 'LOGIN_FAILURE_AUDIT'
+  | 'PASSWORD_HASH_UPGRADE'
   | 'AUDIT'
   | 'TRANSACTION';
 export interface IamDiagnostic {

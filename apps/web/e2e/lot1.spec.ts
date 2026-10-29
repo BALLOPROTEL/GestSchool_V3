@@ -216,7 +216,7 @@ test('exercises real login, activation and password reset flows', async ({ page 
   if (!user || !fixture.activation.token || !fixture.reset.token)
     throw new Error('Missing IAM fixture');
   await page.goto('/login');
-  await page.getByLabel('Adresse e-mail', { exact: true }).fill(user.email);
+  await page.getByLabel('E-mail ou identifiant', { exact: true }).fill(user.email);
   await page.getByLabel('Mot de passe', { exact: true }).fill(user.password);
   await page.getByRole('button', { name: /Se connecter/ }).click();
   await expect(page).toHaveURL(/\/fr$/);

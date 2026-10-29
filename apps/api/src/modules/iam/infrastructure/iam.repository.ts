@@ -41,6 +41,22 @@ export class IamRepository {
       this.db.user.findUnique({ where: { email }, include: { identity: true } }),
     );
   }
+  legacyLoginCandidates(username: string) {
+    return observeIamDatabase('LEGACY_LOGIN_LOOKUP', () =>
+      this.db.membership.findMany({
+        where: {
+          legacyUsername: username,
+          status: 'ACTIVE',
+          tenant: { is: { status: 'ACTIVE' } },
+        },
+        select: {
+          id: true,
+          user: { include: { identity: true } },
+        },
+        orderBy: { id: 'asc' },
+      }),
+    );
+  }
   user(userId: string) {
     return observeIamDatabase('USER_LOOKUP', () =>
       this.db.user.findUnique({ where: { id: userId }, include: { identity: true } }),
@@ -198,6 +214,19 @@ export class IamRepository {
       },
       update: { passwordHash: hash, activatedAt: new Date(), passwordChangedAt: new Date() },
     });
+  }
+  async upgradeLegacyPasswordHash(
+    userId: string,
+    expectedHash: string,
+    nextHash: string,
+  ): Promise<boolean> {
+    const result = await observeIamDatabase('PASSWORD_HASH_UPGRADE', () =>
+      this.db.authIdentity.updateMany({
+        where: { userId, passwordHash: expectedHash },
+        data: { passwordHash: nextHash },
+      }),
+    );
+    return result.count === 1;
   }
   setMfa(userId: string, encrypted: string, counter: bigint) {
     return observeIamDatabase('MFA_WRITE', () =>
