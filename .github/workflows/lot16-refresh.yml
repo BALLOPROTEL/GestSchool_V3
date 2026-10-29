@@ -36,7 +36,6 @@ jobs:
       - name: Format LOT16 files
         run: >
           pnpm exec prettier --write
-          packages/database/prisma/schema.prisma
           apps/api/src/modules/iam/infrastructure/crypto.ts
           apps/api/src/modules/iam/infrastructure/iam.repository.ts
           apps/api/src/modules/iam/application/auth.service.ts
