@@ -242,6 +242,7 @@ const students: Handler = (db, a, q, limit, offset) =>
   LEFT JOIN levels l ON (l.tenant_id,l.id)=(c.tenant_id,c.level_id)
   LEFT JOIN academic_years y ON (y.tenant_id,y.id)=(e.tenant_id,e.academic_year_id)
   WHERE s.tenant_id=${a.tenantId}::uuid AND ${reportStudentScope(a, 'students.read')}
+    ${q.studentId ? Prisma.sql`AND s.id=${q.studentId}::uuid` : Prisma.empty}
     ${q.classId ? Prisma.sql`AND e.school_class_id=${q.classId}::uuid` : Prisma.empty}
     ${q.levelId ? Prisma.sql`AND c.level_id=${q.levelId}::uuid` : Prisma.empty}
     ${status(q, Prisma.sql`s.status::text`)} ${search(q, Prisma.sql`s.matricule||' '||s.first_name||' '||s.last_name`)}

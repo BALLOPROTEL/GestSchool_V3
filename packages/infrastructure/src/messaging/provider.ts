@@ -66,12 +66,7 @@ export class MessagingProviderError extends Error {
 export class BrevoMessagingProvider implements MessagingProvider {
   readonly name = 'BREVO' as const;
   constructor(private readonly config: MessagingConfig) {
-    if (
-      config.mode !== 'brevo' ||
-      !config.apiKey ||
-      !config.emailSender ||
-      (config.stagingEmailRecipient === undefined && !config.whatsAppSender)
-    )
+    if (config.mode !== 'brevo' || !config.apiKey || !config.emailSender)
       throw new Error('Brevo provider configuration is incomplete');
   }
   private async send(path: string, payload: unknown): Promise<ProviderReceipt> {
@@ -121,6 +116,10 @@ export class BrevoMessagingProvider implements MessagingProvider {
   sendWhatsApp(message: OutgoingWhatsApp): Promise<ProviderReceipt> {
     if (this.config.stagingEmailRecipient !== undefined)
       throw new MessagingProviderError('STAGING_CHANNEL_NOT_AUTHORIZED');
+    if (this.config.whatsAppEnabled !== true)
+      throw new MessagingProviderError('WHATSAPP_NOT_AUTHORIZED');
+    if (!this.config.whatsAppSender)
+      throw new MessagingProviderError('BREVO_WHATSAPP_SENDER_MISSING');
     const templateId = this.config.whatsAppTemplateIds[message.locale];
     if (!templateId) throw new MessagingProviderError('BREVO_WHATSAPP_TEMPLATE_MISSING');
     // Brevo requires an approved utility template for the first contact. The

@@ -7,17 +7,22 @@ export function securityHeaders(production) {
     "frame-src 'self' blob:",
     "form-action 'self'",
     `script-src 'self' 'unsafe-inline'${production ? '' : " 'unsafe-eval'"}`,
+    "script-src-attr 'none'",
     "style-src 'self' 'unsafe-inline'",
     "font-src 'self' data:",
     "img-src 'self' data: blob:",
     `connect-src 'self'${production ? '' : ' ws: wss:'}`,
+    ...(production ? ['upgrade-insecure-requests'] : []),
   ].join('; ');
   return [
     { key: 'Content-Security-Policy', value: policy },
     { key: 'X-Content-Type-Options', value: 'nosniff' },
     { key: 'X-Frame-Options', value: 'DENY' },
     { key: 'Referrer-Policy', value: 'no-referrer' },
-    { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
+    {
+      key: 'Permissions-Policy',
+      value: 'camera=(), microphone=(), geolocation=(), browsing-topics=()',
+    },
     ...(production ? [{ key: 'Strict-Transport-Security', value: 'max-age=31536000' }] : []),
   ];
 }

@@ -83,6 +83,12 @@ jobs:
       - name: Test database integrity
         run: pnpm db:test
 
+      - name: Certify PostgreSQL backup and restore locally
+        run: pnpm db:backup-restore:test
+
+      - name: Certify Redis and BullMQ restart recovery locally
+        run: pnpm redis:recovery:test
+
       - name: Certify messaging on a fresh isolated database
         env:
           DATABASE_NAME: gestschool_lot11_ci
@@ -106,6 +112,9 @@ jobs:
           pnpm db:seed
           pnpm db:test
           pnpm reports:test
+
+      - name: Certify bounded local capacity and partial failure
+        run: pnpm capacity:test
 
       - name: Check formatting
         run: pnpm format:check

@@ -31,6 +31,7 @@ describe('remote email-only staging and production boundaries', () => {
       });
       expect(config.mode).toBe('brevo');
       expect(Buffer.from(config.tokenKey, 'base64')).toHaveLength(32);
+      expect(config.whatsAppEnabled).toBe(false);
       expect(config.whatsAppSender).toBeNull();
       expect(config.whatsAppTemplateIds).toEqual({});
       expect(config.stagingEmailRecipient).toBeNull();
@@ -52,24 +53,49 @@ describe('remote email-only staging and production boundaries', () => {
     ).toThrow('Production messaging requires Brevo');
   });
 
-  it('still rejects production without a WhatsApp sender', () => {
+  it('keeps production WhatsApp disabled by default without requiring sender or templates', () => {
+    const config = loadMessagingConfig({
+      ...remoteEnvironment('production'),
+      BREVO_WHATSAPP_SENDER: undefined,
+      BREVO_WHATSAPP_TEMPLATE_IDS_JSON: undefined,
+    });
+    expect(config.whatsAppEnabled).toBe(false);
+    expect(config.whatsAppSender).toBeNull();
+    expect(config.whatsAppTemplateIds).toEqual({});
+  });
+
+  it('requires a WhatsApp sender only after explicit production opt-in', () => {
     expect(() =>
       loadMessagingConfig({
         ...remoteEnvironment('production'),
+        BREVO_WHATSAPP_ENABLED: 'true',
         BREVO_WHATSAPP_SENDER: undefined,
       }),
     ).toThrow();
   });
 
-  it.each(['fr', 'en', 'ar'])('still rejects production without the %s template', (locale) => {
-    const templates: Record<string, number> = { fr: 1, en: 2, ar: 3 };
-    delete templates[locale];
-    expect(() =>
+  it.each(['fr', 'en', 'ar'])(
+    'requires the %s template only after explicit production WhatsApp opt-in',
+    (locale) => {
+      const templates: Record<string, number> = { fr: 1, en: 2, ar: 3 };
+      delete templates[locale];
+      expect(() =>
+        loadMessagingConfig({
+          ...remoteEnvironment('production'),
+          BREVO_WHATSAPP_ENABLED: 'true',
+          BREVO_WHATSAPP_TEMPLATE_IDS_JSON: JSON.stringify(templates),
+        }),
+      ).toThrow('Brevo requires approved FR/EN/AR WhatsApp template IDs');
+    },
+  );
+
+  it('never enables WhatsApp in staging even if the flag is supplied', () => {
+    expect(
       loadMessagingConfig({
-        ...remoteEnvironment('production'),
-        BREVO_WHATSAPP_TEMPLATE_IDS_JSON: JSON.stringify(templates),
-      }),
-    ).toThrow('Brevo requires approved FR/EN/AR WhatsApp template IDs');
+        ...remoteEnvironment('staging'),
+        BREVO_WHATSAPP_ENABLED: 'true',
+      }).whatsAppEnabled,
+    ).toBe(false);
   });
 
   describe.each(['staging', 'production'] as const)('%s token boundaries', (mode) => {
@@ -162,6 +188,7 @@ describe('messaging environment boundaries', () => {
       BREVO_API_KEY: randomBytes(32).toString('hex'),
       BREVO_EMAIL_SENDER: 'sender@example.com',
       BREVO_EMAIL_SENDER_NAME: 'GestSchool',
+      BREVO_WHATSAPP_ENABLED: 'true',
       BREVO_WHATSAPP_SENDER: '33612345678',
       BREVO_WHATSAPP_TEMPLATE_IDS_JSON: '{"fr":1,"en":2,"ar":3}',
       BREVO_WEBHOOK_SECRET: randomBytes(32).toString('hex'),
@@ -169,6 +196,7 @@ describe('messaging environment boundaries', () => {
     const config = loadMessagingConfig(environment);
     expect(config.mode).toBe('brevo');
     expect(config.appPublicOrigin).toBe('https://app.example.com');
+    expect(config.whatsAppEnabled).toBe(true);
     for (const recipient of [
       undefined,
       '<EMAIL_TEST>',

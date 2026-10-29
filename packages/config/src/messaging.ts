@@ -18,6 +18,7 @@ export interface MessagingConfig {
   appPublicOrigin: string;
   emailSender: string | null;
   emailSenderName: string;
+  whatsAppEnabled?: boolean;
   whatsAppSender: string | null;
   whatsAppTemplateIds: Partial<Record<'fr' | 'en' | 'ar', number>>;
   apiKey: string | null;
@@ -51,6 +52,9 @@ export function loadMessagingConfig(environment: NodeJS.ProcessEnv = process.env
   if (nodeEnvironment === 'production')
     requirePublicHttps(appPublicOrigin, 'APP_PUBLIC_ORIGIN', true);
 
+  const whatsAppEnabled =
+    !staging &&
+    z.enum(['true', 'false']).parse(environment['BREVO_WHATSAPP_ENABLED'] ?? 'false') === 'true';
   const templateIdsJson = environment['BREVO_WHATSAPP_TEMPLATE_IDS_JSON'];
   const templateIdsInput: unknown = JSON.parse(
     staging && !templateIdsJson?.trim() ? '{}' : (templateIdsJson ?? '{}'),
@@ -85,8 +89,8 @@ export function loadMessagingConfig(environment: NodeJS.ProcessEnv = process.env
       BREVO_WEBHOOK_SECRET: webhookSecret,
       BREVO_EMAIL_SENDER: emailSender,
     });
-    // Staging rejects WhatsApp before any provider call, even with an authorized inbox.
-    if (!staging) {
+    // WhatsApp is an explicit production opt-in. Staging always keeps it disabled.
+    if (whatsAppEnabled) {
       z.string()
         .regex(/^[1-9]\d{7,14}$/)
         .parse(whatsAppSender);
@@ -117,6 +121,7 @@ export function loadMessagingConfig(environment: NodeJS.ProcessEnv = process.env
     appPublicOrigin,
     emailSender,
     emailSenderName: environment['BREVO_EMAIL_SENDER_NAME'] ?? 'GestSchool',
+    whatsAppEnabled,
     whatsAppSender,
     whatsAppTemplateIds,
     apiKey,
