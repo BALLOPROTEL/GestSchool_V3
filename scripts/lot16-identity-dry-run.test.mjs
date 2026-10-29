@@ -61,4 +61,4 @@ assert.throws(
   /LOT16_FORBIDDEN_CREDENTIAL_MATERIAL/,
 );
 
-console.log('LOT16 identity migration dry-run = PASS');
+process.stdout.write('LOT16 identity migration dry-run = PASS\n');
