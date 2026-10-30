@@ -821,7 +821,8 @@
     "history": "سجل الحضور",
     "historyError": "تعذر تحميل سجل الحضور.",
     "historyEmpty": "لا توجد سجلات حضور لهذا التلميذ.",
-    "excused": "مبررة"
+    "excused": "مبررة",
+    "historyPage": "الصفحة {page} من {pages}"
   },
   "Finance": {
     "caption": "آخر الفواتير",
