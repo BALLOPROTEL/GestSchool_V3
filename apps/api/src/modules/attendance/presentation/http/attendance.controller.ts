@@ -1,4 +1,14 @@
-import { Body, Controller, Get, Inject, Put, Query, Req, Res, StreamableFile } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Inject,
+  Put,
+  Query,
+  Req,
+  Res,
+  StreamableFile,
+} from '@nestjs/common';
 import type { Response } from 'express';
 import { AttendanceService } from '../../application/attendance.service.js';
 import {

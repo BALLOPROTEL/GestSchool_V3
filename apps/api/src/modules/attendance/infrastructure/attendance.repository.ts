@@ -12,11 +12,7 @@ import { assignedWhere } from '../../academics/infrastructure/read-scopes.js';
 import type { RequestContext } from '../../iam/domain/context.js';
 import { ScopePolicy } from '../../iam/domain/scope-policy.js';
 import { AttendanceRepository } from '../domain/attendance.repository.js';
-import {
-  attendanceError,
-  attendanceFound,
-  attendanceTenant,
-} from '../domain/policy.js';
+import { attendanceError, attendanceFound, attendanceTenant } from '../domain/policy.js';
 import { AttendanceDatabase } from './database.js';
 
 type Db = Prisma.TransactionClient | AttendanceDatabase['client'];
@@ -45,10 +41,7 @@ async function classResource(
 
   const assignment = await db.teachingAssignment.findFirst({
     where: {
-      AND: [
-        assignedWhere(context),
-        { classSubject: { schoolClassId: classId } },
-      ],
+      AND: [assignedWhere(context), { classSubject: { schoolClassId: classId } }],
     },
     select: { id: true },
   });
@@ -80,10 +73,7 @@ async function studentResource(db: Db, context: RequestContext, studentId: strin
     Boolean(
       await db.teachingAssignment.findFirst({
         where: {
-          AND: [
-            assignedWhere(context),
-            { classSubject: { schoolClassId: { in: classIds } } },
-          ],
+          AND: [assignedWhere(context), { classSubject: { schoolClassId: { in: classIds } } }],
         },
         select: { id: true },
       }),
@@ -167,8 +157,7 @@ async function historicalRoster(
   return enrollments
     .filter((enrollment) => {
       const event = latest.get(enrollment.id);
-      if (event)
-        return event.toClassId === classId && event.toStatus === 'ACTIVE';
+      if (event) return event.toClassId === classId && event.toStatus === 'ACTIVE';
       return (
         enrollment.schoolClassId === classId &&
         enrollment.status === 'ACTIVE' &&
@@ -193,8 +182,7 @@ async function buildSheet(
   const targetDate = day(query.date);
   const startsOn = dateValue(schoolClass.academicYear.startsOn);
   const endsOn = dateValue(schoolClass.academicYear.endsOn);
-  if (query.date < startsOn || query.date > endsOn)
-    attendanceError('ATTENDANCE_DATE_OUTSIDE_YEAR');
+  if (query.date < startsOn || query.date > endsOn) attendanceError('ATTENDANCE_DATE_OUTSIDE_YEAR');
 
   const enrollments = await historicalRoster(
     db,

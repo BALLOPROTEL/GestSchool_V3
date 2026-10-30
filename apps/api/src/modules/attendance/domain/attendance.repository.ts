@@ -8,7 +8,10 @@ import type {
 import type { RequestContext } from '../../iam/domain/context.js';
 
 export abstract class AttendanceRepository {
-  abstract sheet(context: RequestContext, query: AttendanceSheetQuery): Promise<AttendanceSheetView>;
+  abstract sheet(
+    context: RequestContext,
+    query: AttendanceSheetQuery,
+  ): Promise<AttendanceSheetView>;
   abstract history(
     context: RequestContext,
     query: AttendanceHistoryQuery,

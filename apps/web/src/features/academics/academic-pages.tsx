@@ -65,13 +65,12 @@ function canAttendanceSheet(session: SessionView | undefined) {
   return Boolean(
     session?.grants.some(
       (grant) =>
-        grant.permission === 'attendance.read' &&
-        ['TENANT', 'ASSIGNED'].includes(grant.scope),
+        grant.permission === 'attendance.read' && ['TENANT', 'ASSIGNED'].includes(grant.scope),
     ) ||
-      (session?.roles.includes('SUPER_ADMIN') &&
-        session.grants.some(
-          (grant) => grant.permission === 'attendance.read' && grant.scope === 'PLATFORM',
-        )),
+    (session?.roles.includes('SUPER_ADMIN') &&
+      session.grants.some(
+        (grant) => grant.permission === 'attendance.read' && grant.scope === 'PLATFORM',
+      )),
   );
 }
 
@@ -130,7 +129,9 @@ export function AttendancePage() {
       cell: (student) => (
         <div className="flex items-center gap-2">
           <Avatar className="size-8">
-            <AvatarFallback className="text-[10px]">{getInitials(student.studentName)}</AvatarFallback>
+            <AvatarFallback className="text-[10px]">
+              {getInitials(student.studentName)}
+            </AvatarFallback>
           </Avatar>
           <div>
             <p className="whitespace-nowrap font-semibold">{student.studentName}</p>
@@ -172,9 +173,7 @@ export function AttendancePage() {
         <Input
           aria-label={translate('noteFor', { student: student.studentName })}
           value={draft[student.studentId]?.note ?? ''}
-          disabled={
-            !canWrite || saving || (draft[student.studentId]?.status ?? '') === ''
-          }
+          disabled={!canWrite || saving || (draft[student.studentId]?.status ?? '') === ''}
           maxLength={500}
           placeholder={translate('notePlaceholder')}
           onChange={(event) =>
@@ -295,21 +294,29 @@ export function AttendancePage() {
               />
               <label className="space-y-1 text-sm">
                 <span className="font-medium">{common('date')}</span>
-                <Input
-                  type="date"
-                  value={date}
-                  onChange={(event) => setDate(event.target.value)}
-                />
+                <Input type="date" value={date} onChange={(event) => setDate(event.target.value)} />
               </label>
             </CardContent>
           </Card>
 
           <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
             <KpiCard icon={UsersRound} label={translate('total')} value={String(summary.total)} />
-            <KpiCard icon={CheckCircle2} label={translate('presentToday')} value={String(summary.present)} />
-            <KpiCard icon={CircleAlert} label={translate('absentToday')} value={String(summary.absent)} />
+            <KpiCard
+              icon={CheckCircle2}
+              label={translate('presentToday')}
+              value={String(summary.present)}
+            />
+            <KpiCard
+              icon={CircleAlert}
+              label={translate('absentToday')}
+              value={String(summary.absent)}
+            />
             <KpiCard icon={Clock3} label={translate('lateToday')} value={String(summary.late)} />
-            <KpiCard icon={CalendarCheck} label={translate('unmarked')} value={String(summary.unmarked)} />
+            <KpiCard
+              icon={CalendarCheck}
+              label={translate('unmarked')}
+              value={String(summary.unmarked)}
+            />
           </div>
 
           {result.loading ? (
@@ -318,7 +325,10 @@ export function AttendancePage() {
             </p>
           ) : null}
           {result.error ? (
-            <p role="alert" className="mt-5 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+            <p
+              role="alert"
+              className="mt-5 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive"
+            >
               {translate('loadError')}
               {result.error instanceof PeopleError && result.error.requestId ? (
                 <span className="mt-1 block break-all font-mono text-[11px]">
@@ -362,7 +372,6 @@ export function AttendancePage() {
     </div>
   );
 }
-
 
 function ScopedAttendanceHistory() {
   const common = useTranslations('Common');
