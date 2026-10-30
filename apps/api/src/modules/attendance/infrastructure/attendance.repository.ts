@@ -24,7 +24,7 @@ async function classResource(
   db: Db,
   context: RequestContext,
   classId: string,
-  permission: 'attendance.read' | 'attendance.write',
+  permission: 'attendance.read' | 'attendance.write' | 'attendance.export',
 ) {
   const schoolClass = attendanceFound(
     await db.schoolClass.findFirst({
@@ -177,7 +177,7 @@ async function buildSheet(
   db: Db,
   context: RequestContext,
   query: AttendanceSheetQuery,
-  permission: 'attendance.read' | 'attendance.write' = 'attendance.read',
+  permission: 'attendance.read' | 'attendance.write' | 'attendance.export' = 'attendance.read',
 ): Promise<AttendanceSheetView> {
   const schoolClass = await classResource(db, context, query.classId, permission);
   const targetDate = day(query.date);
@@ -271,8 +271,12 @@ export class PrismaAttendanceRepository extends AttendanceRepository {
     super();
   }
 
-  override sheet(context: RequestContext, query: AttendanceSheetQuery) {
-    return buildSheet(this.database.client, context, query);
+  override sheet(
+    context: RequestContext,
+    query: AttendanceSheetQuery,
+    permission: 'attendance.read' | 'attendance.write' | 'attendance.export' = 'attendance.read',
+  ) {
+    return buildSheet(this.database.client, context, query, permission);
   }
 
   override async history(context: RequestContext, query: AttendanceHistoryQuery) {
