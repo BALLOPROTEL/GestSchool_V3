@@ -15,24 +15,17 @@ const defaults = {
   email: null,
   phone: null,
   address: null,
-  logoUrl: null,
   primaryColor: '#1D4ED8',
-  activeAcademicYearId: null,
-  gradingScale: '20',
-  automaticReports: true,
-  parentPortal: true,
-  notifications: {
-    email: true,
-    sms: false,
-    paymentReminders: true,
-    absenceAlerts: true,
-  },
 } as const;
 
 function objectValue(value: Prisma.JsonValue | null | undefined): Record<string, unknown> {
   return value && typeof value === 'object' && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : {};
+}
+
+function civilDate(value: Date) {
+  return value.toISOString().slice(0, 10);
 }
 
 function view(row: {
@@ -44,6 +37,12 @@ function view(row: {
     values: Prisma.JsonValue;
     updatedAt: Date;
   } | null;
+  activeAcademicYear: {
+    id: string;
+    name: string;
+    startsOn: Date;
+    endsOn: Date;
+  } | null;
 }): TenantSettingsView {
   const values = objectValue(row.setting?.values);
   const parsed = tenantSettingsUpdate.parse({
@@ -51,24 +50,37 @@ function view(row: {
     schoolCode: values['schoolCode'] ?? defaults.schoolCode,
     email: values['email'] ?? defaults.email,
     phone: values['phone'] ?? defaults.phone,
-    address: values['address'] ?? defaults.address,
-    logoUrl: values['logoUrl'] ?? defaults.logoUrl,
+    address: values['address'] ?? values['publicAddress'] ?? defaults.address,
     primaryColor: values['primaryColor'] ?? defaults.primaryColor,
     defaultCurrency: row.setting?.defaultCurrency ?? 'XOF',
     defaultLocale: row.setting?.defaultLocale ?? 'fr',
     timezone: row.setting?.timezone ?? 'Africa/Abidjan',
-    activeAcademicYearId: values['activeAcademicYearId'] ?? defaults.activeAcademicYearId,
-    gradingScale: values['gradingScale'] ?? defaults.gradingScale,
-    automaticReports: values['automaticReports'] ?? defaults.automaticReports,
-    parentPortal: values['parentPortal'] ?? defaults.parentPortal,
-    notifications: values['notifications'] ?? defaults.notifications,
   });
   return {
     ...parsed,
     tenantId: row.tenant.id,
     tenantSlug: row.tenant.slug,
     updatedAt: row.setting?.updatedAt.toISOString() ?? null,
+    activeAcademicYear: row.activeAcademicYear
+      ? {
+          id: row.activeAcademicYear.id,
+          name: row.activeAcademicYear.name,
+          startsOn: civilDate(row.activeAcademicYear.startsOn),
+          endsOn: civilDate(row.activeAcademicYear.endsOn),
+        }
+      : null,
   };
+}
+
+async function activeYear(
+  db: SettingsDatabase['client'] | Prisma.TransactionClient,
+  tenantId: string,
+) {
+  return db.academicYear.findFirst({
+    where: { tenantId, status: 'ACTIVE', archivedAt: null },
+    orderBy: [{ startsOn: 'desc' }, { id: 'desc' }],
+    select: { id: true, name: true, startsOn: true, endsOn: true },
+  });
 }
 
 @Injectable()
@@ -78,12 +90,19 @@ export class PrismaSettingsRepository extends SettingsRepository {
   }
 
   override async read(context: RequestContext) {
-    const tenant = await this.database.client.tenant.findUnique({
-      where: { id: context.tenantId },
-      include: { settings: true },
-    });
+    const [tenant, currentAcademicYear] = await Promise.all([
+      this.database.client.tenant.findUnique({
+        where: { id: context.tenantId },
+        include: { settings: true },
+      }),
+      activeYear(this.database.client, context.tenantId),
+    ]);
     if (!tenant) throw new IamError('SETTINGS_TENANT_NOT_FOUND', 404);
-    return view({ tenant, setting: tenant.settings });
+    return view({
+      tenant,
+      setting: tenant.settings,
+      activeAcademicYear: currentAcademicYear,
+    });
   }
 
   override update(context: RequestContext, input: TenantSettingsUpdate) {
@@ -94,54 +113,38 @@ export class PrismaSettingsRepository extends SettingsRepository {
       });
       if (!tenant) throw new IamError('SETTINGS_TENANT_NOT_FOUND', 404);
 
-      if (input.activeAcademicYearId) {
-        const year = await db.academicYear.findFirst({
-          where: {
-            tenantId: context.tenantId,
-            id: input.activeAcademicYearId,
-            archivedAt: null,
-          },
-          select: { id: true },
-        });
-        if (!year) throw new IamError('SETTINGS_ACADEMIC_YEAR_INVALID', 409);
-      }
-
+      const existingValues = objectValue(tenant.settings?.values);
       const values = {
+        ...existingValues,
         schoolCode: input.schoolCode,
         email: input.email,
         phone: input.phone,
         address: input.address,
-        logoUrl: input.logoUrl,
+        publicAddress: input.address,
         primaryColor: input.primaryColor.toUpperCase(),
-        activeAcademicYearId: input.activeAcademicYearId,
-        gradingScale: input.gradingScale,
-        automaticReports: input.automaticReports,
-        parentPortal: input.parentPortal,
-        notifications: input.notifications,
       };
 
-      const [updatedTenant, setting] = await Promise.all([
-        db.tenant.update({
-          where: { id: context.tenantId },
-          data: { name: input.schoolName },
-        }),
-        db.tenantSetting.upsert({
-          where: { tenantId: context.tenantId },
-          update: {
-            defaultCurrency: input.defaultCurrency,
-            defaultLocale: input.defaultLocale,
-            timezone: input.timezone,
-            values,
-          },
-          create: {
-            tenantId: context.tenantId,
-            defaultCurrency: input.defaultCurrency,
-            defaultLocale: input.defaultLocale,
-            timezone: input.timezone,
-            values,
-          },
-        }),
-      ]);
+      const updatedTenant = await db.tenant.update({
+        where: { id: context.tenantId },
+        data: { name: input.schoolName },
+      });
+      const setting = await db.tenantSetting.upsert({
+        where: { tenantId: context.tenantId },
+        update: {
+          defaultCurrency: input.defaultCurrency,
+          defaultLocale: input.defaultLocale,
+          timezone: input.timezone,
+          values,
+        },
+        create: {
+          tenantId: context.tenantId,
+          defaultCurrency: input.defaultCurrency,
+          defaultLocale: input.defaultLocale,
+          timezone: input.timezone,
+          values,
+        },
+      });
+      const currentAcademicYear = await activeYear(db, context.tenantId);
 
       await db.auditLog.create({
         data: {
@@ -153,7 +156,6 @@ export class PrismaSettingsRepository extends SettingsRepository {
           metadata: {
             requestId: context.requestId,
             schoolName: input.schoolName,
-            activeAcademicYearId: input.activeAcademicYearId,
             defaultLocale: input.defaultLocale,
             defaultCurrency: input.defaultCurrency,
             timezone: input.timezone,
@@ -161,7 +163,11 @@ export class PrismaSettingsRepository extends SettingsRepository {
         },
       });
 
-      return view({ tenant: updatedTenant, setting });
+      return view({
+        tenant: updatedTenant,
+        setting,
+        activeAcademicYear: currentAcademicYear,
+      });
     });
   }
 }
