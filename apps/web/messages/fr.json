@@ -992,7 +992,18 @@
     "users": "Utilisateurs & Rôles",
     "usersDescription": "Aperçu des groupes d’accès de l’établissement.",
     "yearEnd": "Fin de l’année scolaire",
-    "yearStart": "Début de l’année scolaire"
+    "yearStart": "Début de l’année scolaire",
+    "saved": "Paramètres enregistrés.",
+    "saving": "Enregistrement…",
+    "saveError": "Impossible d’enregistrer les paramètres.",
+    "loadError": "Impossible de charger les paramètres.",
+    "forbidden": "Vous n’avez pas accès aux paramètres de cet établissement.",
+    "logoUrl": "URL du logo",
+    "primaryColorPicker": "Sélecteur de couleur principale",
+    "activeAcademicYear": "Année scolaire active",
+    "defaultLocale": "Langue par défaut",
+    "defaultCurrency": "Devise par défaut",
+    "timezone": "Fuseau horaire"
   },
   "Profile": {
     "activity": "Activité",
