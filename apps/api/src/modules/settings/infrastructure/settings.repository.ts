@@ -52,8 +52,6 @@ function view(row: {
     phone: values['phone'] ?? defaults.phone,
     address: values['address'] ?? values['publicAddress'] ?? defaults.address,
     primaryColor: values['primaryColor'] ?? defaults.primaryColor,
-    defaultCurrency: row.setting?.defaultCurrency ?? 'XOF',
-    defaultLocale: row.setting?.defaultLocale ?? 'fr',
     timezone: row.setting?.timezone ?? 'Africa/Abidjan',
   });
   return {
@@ -131,15 +129,11 @@ export class PrismaSettingsRepository extends SettingsRepository {
       const setting = await db.tenantSetting.upsert({
         where: { tenantId: context.tenantId },
         update: {
-          defaultCurrency: input.defaultCurrency,
-          defaultLocale: input.defaultLocale,
           timezone: input.timezone,
           values,
         },
         create: {
           tenantId: context.tenantId,
-          defaultCurrency: input.defaultCurrency,
-          defaultLocale: input.defaultLocale,
           timezone: input.timezone,
           values,
         },
@@ -156,8 +150,6 @@ export class PrismaSettingsRepository extends SettingsRepository {
           metadata: {
             requestId: context.requestId,
             schoolName: input.schoolName,
-            defaultLocale: input.defaultLocale,
-            defaultCurrency: input.defaultCurrency,
             timezone: input.timezone,
           },
         },
