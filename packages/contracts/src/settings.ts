@@ -21,21 +21,10 @@ export const tenantSettingsUpdate = z.strictObject({
   email: z.email().max(254).nullable(),
   phone: optionalText(30),
   address: optionalText(500),
-  logoUrl: z.url().max(2048).nullable(),
   primaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
   defaultCurrency: z.string().regex(/^[A-Z]{3}$/),
   defaultLocale: z.enum(['fr', 'en', 'ar']),
   timezone: z.string().trim().min(1).max(80),
-  activeAcademicYearId: z.uuid().nullable(),
-  gradingScale: z.enum(['20', '100']),
-  automaticReports: z.boolean(),
-  parentPortal: z.boolean(),
-  notifications: z.strictObject({
-    email: z.boolean(),
-    sms: z.boolean(),
-    paymentReminders: z.boolean(),
-    absenceAlerts: z.boolean(),
-  }),
 });
 
 export type TenantSettingsUpdate = z.infer<typeof tenantSettingsUpdate>;
@@ -44,4 +33,10 @@ export interface TenantSettingsView extends TenantSettingsUpdate {
   tenantId: string;
   tenantSlug: string;
   updatedAt: string | null;
+  activeAcademicYear: {
+    id: string;
+    name: string;
+    startsOn: string;
+    endsOn: string;
+  } | null;
 }
