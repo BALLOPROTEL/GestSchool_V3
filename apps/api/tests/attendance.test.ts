@@ -201,6 +201,15 @@ describe('LOT17 attendance repository', () => {
         where: { tenantId: data.tenant.id, studentId: data.student.id },
       }),
     ).toBe(0);
+    expect(
+      (
+        await repository.history(data.context, {
+          studentId: data.student.id,
+          page: 1,
+          pageSize: 25,
+        })
+      ).total,
+    ).toBe(0);
   });
 
   it('preserves historical class membership across a dated transfer', async () => {
