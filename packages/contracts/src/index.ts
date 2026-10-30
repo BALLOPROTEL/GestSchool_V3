@@ -8,3 +8,4 @@ export * from './documents.js';
 export * from './messaging.js';
 export * from './reports.js';
 export * from './attendance.js';
+export * from './settings.js';

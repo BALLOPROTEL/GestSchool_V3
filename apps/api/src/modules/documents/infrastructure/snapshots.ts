@@ -26,14 +26,24 @@ export async function captureDocumentSource(
       include: { settings: true },
     }),
   );
-  const settings = tenant.settings?.values;
+  const settings =
+    tenant.settings?.values &&
+    typeof tenant.settings.values === 'object' &&
+    !Array.isArray(tenant.settings.values)
+      ? tenant.settings.values
+      : null;
   const publicAddress =
-    settings &&
-    typeof settings === 'object' &&
-    !Array.isArray(settings) &&
-    typeof settings['publicAddress'] === 'string'
+    settings && typeof settings['publicAddress'] === 'string'
       ? settings['publicAddress'].slice(0, 240)
-      : '';
+      : settings && typeof settings['address'] === 'string'
+        ? settings['address'].slice(0, 240)
+        : '';
+  const primaryColor =
+    settings &&
+    typeof settings['primaryColor'] === 'string' &&
+    /^#[0-9a-fA-F]{6}$/.test(settings['primaryColor'])
+      ? settings['primaryColor'].toUpperCase()
+      : '#3157A4';
   const base: DocumentSnapshot = {
     schemaVersion: 1,
     documentType: input.documentType,
@@ -44,7 +54,7 @@ export async function captureDocumentSource(
     academicPeriod: '',
     className: '',
     issuedAt: new Date().toISOString(),
-    template: { renderer: 'gestschool-v1', accent: '#3157a4', footer: 'GestSchool' },
+    template: { renderer: 'gestschool-v1', accent: primaryColor, footer: 'GestSchool' },
     report: null,
     receipt: null,
     enrollment: null,

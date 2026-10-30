@@ -104,6 +104,11 @@ beforeAll(async () => {
   b = await h.graph(other.id, foreign.browser);
   await h.db.academicYear.update({ where: { id: a.year.id }, data: { status: 'ACTIVE' } });
   await h.db.academicYear.update({ where: { id: b.year.id }, data: { status: 'ACTIVE' } });
+  await h.db.tenantSetting.upsert({
+    where: { tenantId: tenant.id },
+    update: { values: { primaryColor: '#123ABC' } },
+    create: { tenantId: tenant.id, values: { primaryColor: '#123ABC' } },
+  });
   const guardian = await h.db.guardian.create({
     data: {
       tenantId: tenant.id,
@@ -235,6 +240,8 @@ describe('LOT 10 — real official document pipeline', () => {
     expect(new Set(replies.map((r) => r.body.id)).size).toBe(1);
     certificate = replies[0]!.body;
     expect(certificate.status).toBe('PENDING');
+    const stored = await h.db.document.findUniqueOrThrow({ where: { id: certificate.id } });
+    expect(documentSnapshotSchema.parse(stored.snapshot).template.accent).toBe('#123ABC');
     expect(
       await h.db.outboxEvent.count({
         where: { aggregateId: certificate.id, eventType: 'documents.generation.requested.v1' },

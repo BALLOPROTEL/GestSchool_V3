@@ -31,6 +31,8 @@ async function waitForPageReady(page: Page): Promise<void> {
     await expect(section).toHaveAttribute('data-finance-ready', 'true');
   for (const section of await page.locator('[data-results-ready]').all())
     await expect(section).toHaveAttribute('data-results-ready', 'true');
+  for (const section of await page.locator('[data-settings-ready]').all())
+    await expect(section).toHaveAttribute('data-settings-ready', 'true');
 }
 
 test.beforeEach(async ({ page }, testInfo) => {
@@ -95,7 +97,7 @@ test('renders every LOT 1 page without runtime errors or document overflow', asy
     const url = new URL(request.url());
     if (
       url.pathname.startsWith('/api/') &&
-      !/^\/api\/v1\/(auth|students|guardians|teachers|academic-years|academic-periods|levels|classes|subjects|teaching-assignments|enrollments|enrollment-classes|finance|assessments|grades|results|report-cards|notifications|dashboard|reports|report-exports|me)(\/|$)/.test(
+      !/^\/api\/v1\/(auth|students|guardians|teachers|academic-years|academic-periods|levels|classes|subjects|teaching-assignments|enrollments|enrollment-classes|finance|assessments|grades|results|report-cards|notifications|dashboard|reports|report-exports|settings|me)(\/|$)/.test(
         url.pathname,
       )
     )

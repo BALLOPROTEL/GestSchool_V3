@@ -17,6 +17,7 @@ import { MessagingModule } from './modules/messaging/messaging.module.js';
 import { ReportsModule } from './modules/reports/reports.module.js';
 import { DashboardModule } from './modules/dashboard/dashboard.module.js';
 import { AttendanceModule } from './modules/attendance/attendance.module.js';
+import { SettingsModule } from './modules/settings/settings.module.js';
 
 @Module({
   controllers: [AppController],
@@ -37,6 +38,7 @@ import { AttendanceModule } from './modules/attendance/attendance.module.js';
     ReportsModule,
     DashboardModule,
     AttendanceModule,
+    SettingsModule,
   ],
 })
 export class AppModule {}
