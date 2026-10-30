@@ -351,27 +351,21 @@ export class IamRepository {
       const grantScopeByPermission = new Map(
         input.grants.map((grant) => [grant.permission, grant.scope] as const),
       );
-      await transaction.permission.createMany({
-        data: input.grants.map((grant) => ({
-          code: grant.permission,
-          description: grant.permission,
-        })),
-        skipDuplicates: true,
-      });
       const permissions = await transaction.permission.findMany({
         where: { code: { in: [...grantScopeByPermission.keys()] } },
         select: { id: true, code: true },
       });
       if (permissions.length !== grantScopeByPermission.size)
         throw new IamError('LEGACY_V2_MIGRATION_UNAVAILABLE', 503);
-      await transaction.rolePermission.createMany({
-        data: permissions.map((permission) => ({
-          roleId: role.id,
-          permissionId: permission.id,
-          tenantId: tenant.id,
-          scope: grantScopeByPermission.get(permission.code)!,
-        })),
-      });
+      for (const permission of permissions)
+        await transaction.rolePermission.create({
+          data: {
+            roleId: role.id,
+            permissionId: permission.id,
+            tenantId: tenant.id,
+            scope: grantScopeByPermission.get(permission.code)!,
+          },
+        });
 
       const user = await transaction.user.create({
         data: { email: input.email, displayName: input.displayName, preferredLocale: 'fr' },
