@@ -814,7 +814,9 @@
     "saveError": "Impossible d’enregistrer les présences.",
     "loadError": "Impossible de charger la feuille de présence.",
     "forbidden": "Vous n’avez pas accès aux présences.",
-    "empty": "Aucun élève actif dans cette classe."
+    "empty": "Aucun élève actif dans cette classe.",
+    "export": "Exporter la feuille",
+    "exportError": "Impossible d’exporter la feuille de présence."
   },
   "Finance": {
     "caption": "Factures récentes",
