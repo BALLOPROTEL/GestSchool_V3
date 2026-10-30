@@ -320,7 +320,7 @@ export class IamRepository {
     requestId: string;
   }): Promise<{ userId: string; tenantId: string; membershipId: string; roleCode: string }> {
     return this.ownerMigrationTransaction(async (transaction) => {
-      await transaction.$queryRaw`SELECT pg_advisory_xact_lock(hashtext('lot16-owner-migration'))`;
+      await transaction.$executeRaw`SELECT pg_advisory_xact_lock(hashtext('lot16-owner-migration'))`;
       const alreadyUsed = await transaction.iamAuditLog.findFirst({
         where: { action: 'legacy.v2.owner.migrated' },
         select: { id: true },
