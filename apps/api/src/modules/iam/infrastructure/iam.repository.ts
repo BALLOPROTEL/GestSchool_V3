@@ -397,31 +397,31 @@ export class IamRepository {
       const { user, membership } = await observeIamDatabase(
         'LEGACY_MIGRATION_IDENTITY',
         async () => {
-        const user = await transaction.user.create({
-          data: { email: input.email, displayName: input.displayName, preferredLocale: 'fr' },
-          select: { id: true },
-        });
-        await transaction.authIdentity.create({
-          data: {
-            userId: user.id,
-            passwordHash: input.passwordHash,
-            activatedAt: new Date(),
-            passwordChangedAt: null,
-          },
-        });
-        const membership = await transaction.membership.create({
-          data: {
-            tenantId: tenant.id,
-            userId: user.id,
-            legacyUsername: input.legacyUsername,
-            status: 'ACTIVE',
-            preferredLocale: 'fr',
-          },
-          select: { id: true },
-        });
-        await transaction.membershipRole.create({
-          data: { tenantId: tenant.id, membershipId: membership.id, roleId: role.id },
-        });
+          const user = await transaction.user.create({
+            data: { email: input.email, displayName: input.displayName, preferredLocale: 'fr' },
+            select: { id: true },
+          });
+          await transaction.authIdentity.create({
+            data: {
+              userId: user.id,
+              passwordHash: input.passwordHash,
+              activatedAt: new Date(),
+              passwordChangedAt: null,
+            },
+          });
+          const membership = await transaction.membership.create({
+            data: {
+              tenantId: tenant.id,
+              userId: user.id,
+              legacyUsername: input.legacyUsername,
+              status: 'ACTIVE',
+              preferredLocale: 'fr',
+            },
+            select: { id: true },
+          });
+          await transaction.membershipRole.create({
+            data: { tenantId: tenant.id, membershipId: membership.id, roleId: role.id },
+          });
           return { user, membership };
         },
       );
