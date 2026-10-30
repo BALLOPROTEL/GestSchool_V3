@@ -992,7 +992,18 @@
     "users": "Users & Roles",
     "usersDescription": "Overview of school access groups.",
     "yearEnd": "End of academic year",
-    "yearStart": "Start of academic year"
+    "yearStart": "Start of academic year",
+    "saved": "Settings saved.",
+    "saving": "Saving…",
+    "saveError": "Unable to save settings.",
+    "loadError": "Unable to load settings.",
+    "forbidden": "You do not have access to this school's settings.",
+    "logoUrl": "Logo URL",
+    "primaryColorPicker": "Primary colour picker",
+    "activeAcademicYear": "Active academic year",
+    "defaultLocale": "Default language",
+    "defaultCurrency": "Default currency",
+    "timezone": "Time zone"
   },
   "Profile": {
     "activity": "Activity",
