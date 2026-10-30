@@ -242,7 +242,11 @@ export class PrismaDocumentsRepository extends DocumentsRepository implements On
     }
     const source = await captureDocumentSource(db, context, input),
       template = await issuanceTemplate(db, context, input);
-    const snapshot = { ...source.snapshot, template: templateView(template).layout };
+    const layout = templateView(template).layout;
+    const snapshot = {
+      ...source.snapshot,
+      template: { ...layout, accent: source.snapshot.template.accent },
+    };
     const year = new Date().getUTCFullYear(),
       p = prefix[input.documentType];
     const counter = await db.documentCounter.upsert({
