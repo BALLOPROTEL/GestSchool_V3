@@ -412,7 +412,7 @@ function ScopedAttendanceHistory() {
         <CardContent className="p-4">
           <AcademicPicker
             label={common('student')}
-            path="students?status=ACTIVE"
+            path="students?status=ALL"
             value={studentId}
             onChange={(value) => {
               setStudentId(value);
