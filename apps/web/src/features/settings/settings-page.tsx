@@ -97,8 +97,6 @@ function editableFromView(value: TenantSettingsView): TenantSettingsUpdate {
     phone: value.phone,
     address: value.address,
     primaryColor: value.primaryColor,
-    defaultCurrency: value.defaultCurrency,
-    defaultLocale: value.defaultLocale,
     timezone: value.timezone,
   };
 }
@@ -307,29 +305,6 @@ export function SettingsPage() {
                   <p className="text-xs text-muted-foreground">
                     {translate('activeAcademicYearHint')}
                   </p>
-                </Field>
-                <Field htmlFor="default-locale" label={translate('defaultLocale')}>
-                  <Select
-                    id="default-locale"
-                    value={form.defaultLocale}
-                    disabled={!canWrite}
-                    onChange={(event) =>
-                      patch('defaultLocale', event.target.value as 'fr' | 'en' | 'ar')
-                    }
-                  >
-                    <SelectItem value="fr">Français</SelectItem>
-                    <SelectItem value="en">English</SelectItem>
-                    <SelectItem value="ar">العربية</SelectItem>
-                  </Select>
-                </Field>
-                <Field htmlFor="default-currency" label={translate('defaultCurrency')}>
-                  <Input
-                    id="default-currency"
-                    value={form.defaultCurrency}
-                    disabled={!canWrite}
-                    maxLength={3}
-                    onChange={(event) => patch('defaultCurrency', event.target.value.toUpperCase())}
-                  />
                 </Field>
                 <Field htmlFor="timezone" label={translate('timezone')}>
                   <Input
