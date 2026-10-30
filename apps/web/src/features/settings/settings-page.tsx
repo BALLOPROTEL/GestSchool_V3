@@ -142,7 +142,7 @@ export function SettingsPage() {
         />
         <p
           role="alert"
-          className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive"
+          className="rounded-lg border border-destructive/40 bg-destructive/5 p-4 text-sm font-medium text-foreground"
         >
           {translate('forbidden')}
         </p>
@@ -177,7 +177,7 @@ export function SettingsPage() {
       {result.error ? (
         <p
           role="alert"
-          className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive"
+          className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm font-medium text-foreground"
         >
           {translate('loadError')}
           {result.error instanceof PeopleError && result.error.requestId ? (
