@@ -46,34 +46,29 @@ function view(row: {
   } | null;
 }): TenantSettingsView {
   const values = objectValue(row.setting?.values);
-  return tenantSettingsUpdate
-    .extend({
-      tenantId: tenantSettingsUpdate.shape.schoolName.transform(() => row.tenant.id),
-      tenantSlug: tenantSettingsUpdate.shape.schoolName.transform(() => row.tenant.slug),
-      updatedAt: tenantSettingsUpdate.shape.schoolName
-        .transform(() => row.setting?.updatedAt.toISOString() ?? null)
-        .nullable(),
-    })
-    .parse({
-      schoolName: row.tenant.name,
-      schoolCode: values['schoolCode'] ?? defaults.schoolCode,
-      email: values['email'] ?? defaults.email,
-      phone: values['phone'] ?? defaults.phone,
-      address: values['address'] ?? defaults.address,
-      logoUrl: values['logoUrl'] ?? defaults.logoUrl,
-      primaryColor: values['primaryColor'] ?? defaults.primaryColor,
-      defaultCurrency: row.setting?.defaultCurrency ?? 'XOF',
-      defaultLocale: row.setting?.defaultLocale ?? 'fr',
-      timezone: row.setting?.timezone ?? 'Africa/Abidjan',
-      activeAcademicYearId: values['activeAcademicYearId'] ?? defaults.activeAcademicYearId,
-      gradingScale: values['gradingScale'] ?? defaults.gradingScale,
-      automaticReports: values['automaticReports'] ?? defaults.automaticReports,
-      parentPortal: values['parentPortal'] ?? defaults.parentPortal,
-      notifications: values['notifications'] ?? defaults.notifications,
-      tenantId: row.tenant.id,
-      tenantSlug: row.tenant.slug,
-      updatedAt: row.setting?.updatedAt.toISOString() ?? null,
-    });
+  const parsed = tenantSettingsUpdate.parse({
+    schoolName: row.tenant.name,
+    schoolCode: values['schoolCode'] ?? defaults.schoolCode,
+    email: values['email'] ?? defaults.email,
+    phone: values['phone'] ?? defaults.phone,
+    address: values['address'] ?? defaults.address,
+    logoUrl: values['logoUrl'] ?? defaults.logoUrl,
+    primaryColor: values['primaryColor'] ?? defaults.primaryColor,
+    defaultCurrency: row.setting?.defaultCurrency ?? 'XOF',
+    defaultLocale: row.setting?.defaultLocale ?? 'fr',
+    timezone: row.setting?.timezone ?? 'Africa/Abidjan',
+    activeAcademicYearId: values['activeAcademicYearId'] ?? defaults.activeAcademicYearId,
+    gradingScale: values['gradingScale'] ?? defaults.gradingScale,
+    automaticReports: values['automaticReports'] ?? defaults.automaticReports,
+    parentPortal: values['parentPortal'] ?? defaults.parentPortal,
+    notifications: values['notifications'] ?? defaults.notifications,
+  });
+  return {
+    ...parsed,
+    tenantId: row.tenant.id,
+    tenantSlug: row.tenant.slug,
+    updatedAt: row.setting?.updatedAt.toISOString() ?? null,
+  };
 }
 
 @Injectable()
