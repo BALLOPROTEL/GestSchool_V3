@@ -1,0 +1,48 @@
+name: LOT17 one-shot formatter
+
+on:
+  push:
+    branches:
+      - feat/lot17-attendance
+    paths:
+      - .github/workflows/lot17-format.yml
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout LOT17 branch
+        uses: actions/checkout@v6
+        with:
+          ref: feat/lot17-attendance
+          fetch-depth: 0
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.24.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24.15.0
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Format LOT17 attendance files
+        run: |
+          pnpm exec prettier --write             packages/contracts/src/attendance.ts             apps/api/src/modules/attendance             apps/api/tests/attendance.test.ts             apps/web/src/features/academics/academic-pages.tsx             apps/web/src/features/attendance/attendance-client.ts
+
+      - name: Remove one-shot workflow and commit formatting
+        run: |
+          git rm .github/workflows/lot17-format.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add             packages/contracts/src/attendance.ts             apps/api/src/modules/attendance             apps/api/tests/attendance.test.ts             apps/web/src/features/academics/academic-pages.tsx             apps/web/src/features/attendance/attendance-client.ts
+          git commit -m "style(lot17): format attendance implementation"
+          git push origin HEAD:feat/lot17-attendance
