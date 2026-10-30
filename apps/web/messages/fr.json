@@ -821,7 +821,8 @@
     "history": "Historique des présences",
     "historyError": "Impossible de charger l’historique des présences.",
     "historyEmpty": "Aucune présence enregistrée pour cet élève.",
-    "excused": "Justifiées"
+    "excused": "Justifiées",
+    "historyPage": "Page {page} sur {pages}"
   },
   "Finance": {
     "caption": "Factures récentes",
