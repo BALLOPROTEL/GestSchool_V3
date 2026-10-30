@@ -29,7 +29,7 @@ export const attendanceSheetQuery = z.strictObject({
 
 export const attendanceEntry = z.strictObject({
   studentId: z.uuid(),
-  status: z.enum([...attendanceStatuses]),
+  status: z.enum([...attendanceStatuses]).nullable(),
   note: attendanceNote,
 });
 
