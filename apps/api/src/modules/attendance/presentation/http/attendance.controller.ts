@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Inject, Put, Query, Req } from '@nestjs/common';
+import { Body, Controller, Get, Inject, Put, Query, Req, Res, StreamableFile } from '@nestjs/common';
+import type { Response } from 'express';
 import { AttendanceService } from '../../application/attendance.service.js';
 import {
   attendanceReadScopes,
@@ -30,5 +31,22 @@ export class AttendanceController {
   @RequirePermission('attendance.read', attendanceReadScopes)
   history(@Req() req: IamRequest, @Query() query: unknown) {
     return this.service.history(requestContext(req), query);
+  }
+
+  @Get('export')
+  @RequirePermission('attendance.export', attendanceWriteScopes)
+  async export(
+    @Req() req: IamRequest,
+    @Query() query: unknown,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const file = await this.service.export(requestContext(req), query);
+    response.setHeader('Cache-Control', 'private, no-store');
+    response.setHeader('Content-Security-Policy', "sandbox; default-src 'none'");
+    return new StreamableFile(Buffer.from(file.bytes), {
+      type: 'text/csv; charset=utf-8',
+      disposition: `attachment; filename="${file.fileName}"`,
+      length: file.bytes.length,
+    });
   }
 }
