@@ -1,14 +1,12 @@
 'use client';
 
 import {
-  Badge,
   Button,
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-  FileUpload,
   Input,
   Label,
   Select,
@@ -20,12 +18,21 @@ import {
   TabsTrigger,
   Textarea,
 } from '@gestschool/ui';
-import { Bell, Building2, CalendarDays, CreditCard, Save, ShieldCheck } from 'lucide-react';
+import type {
+  SessionView,
+  TenantSettingsUpdate,
+  TenantSettingsView,
+} from '@gestschool/contracts';
+import { Bell, Building2, CalendarDays, Save } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import type { FormEvent, ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
+import { toast } from 'sonner';
 
-import { useMockAction } from '../shared/mock-action';
+import { useAuth } from '../auth/auth-provider';
+import { AcademicPicker } from '../academics/academic-components';
+import { PeopleError, peopleRequest } from '../directory/people-client';
+import { usePeopleData } from '../directory/people-hooks';
 import { PageHeader } from '../shared/page-header';
 
 function Field({
@@ -75,13 +82,17 @@ function SettingsCard({
 }
 
 function ToggleSetting({
+  checked,
   description,
+  disabled,
   label,
-  on = true,
+  onCheckedChange,
 }: {
+  checked: boolean;
   description: string;
+  disabled: boolean;
   label: string;
-  on?: boolean;
+  onCheckedChange: (checked: boolean) => void;
 }) {
   return (
     <div className="flex items-start justify-between gap-4 border-b border-border py-4 last:border-0">
@@ -91,45 +102,145 @@ function ToggleSetting({
           {description}
         </p>
       </div>
-      <Switch aria-label={label} defaultChecked={on} />
+      <Switch
+        aria-label={label}
+        checked={checked}
+        disabled={disabled}
+        onCheckedChange={onCheckedChange}
+      />
     </div>
   );
+}
+
+function canSettings(session: SessionView | undefined, permission: 'settings.read' | 'settings.write') {
+  return Boolean(
+    session?.grants.some(
+      (grant) =>
+        grant.permission === permission &&
+        (grant.scope === 'TENANT' ||
+          (grant.scope === 'PLATFORM' && session.roles.includes('SUPER_ADMIN'))),
+    ),
+  );
+}
+
+function editableFromView(value: TenantSettingsView): TenantSettingsUpdate {
+  return {
+    schoolName: value.schoolName,
+    schoolCode: value.schoolCode,
+    email: value.email,
+    phone: value.phone,
+    address: value.address,
+    logoUrl: value.logoUrl,
+    primaryColor: value.primaryColor,
+    defaultCurrency: value.defaultCurrency,
+    defaultLocale: value.defaultLocale,
+    timezone: value.timezone,
+    activeAcademicYearId: value.activeAcademicYearId,
+    gradingScale: value.gradingScale,
+    automaticReports: value.automaticReports,
+    parentPortal: value.parentPortal,
+    notifications: value.notifications,
+  };
 }
 
 export function SettingsPage() {
   const common = useTranslations('Common');
   const nav = useTranslations('Nav');
   const translate = useTranslations('Settings');
-  const design = useTranslations('DesignSystem');
-  const usersText = useTranslations('Users');
-  const mockAction = useMockAction();
-  const submit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    mockAction(translate('save'));
-  };
+  const { session } = useAuth();
+  const canRead = canSettings(session?.session, 'settings.read');
+  const canWrite = canSettings(session?.session, 'settings.write');
+  const result = usePeopleData<TenantSettingsView>(canRead ? 'settings' : null);
+  const [form, setForm] = useState<TenantSettingsUpdate | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (result.data) setForm(editableFromView(result.data));
+  }, [result.data]);
+
+  function patch<K extends keyof TenantSettingsUpdate>(
+    key: K,
+    value: TenantSettingsUpdate[K],
+  ) {
+    setForm((current) => (current ? { ...current, [key]: value } : current));
+  }
+
+  async function save() {
+    if (!form || !canWrite || saving) return;
+    setSaving(true);
+    try {
+      const updated = await peopleRequest<TenantSettingsView>('settings', form, 'PATCH');
+      setForm(editableFromView(updated));
+      toast.success(translate('saved'));
+      window.dispatchEvent(new Event('gestschool:session'));
+    } catch {
+      toast.error(translate('saveError'));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (!canRead) {
+    return (
+      <div className="page-shell">
+        <PageHeader
+          description={translate('description')}
+          eyebrow={nav('system')}
+          title={translate('title')}
+        />
+        <p
+          role="alert"
+          className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive"
+        >
+          {translate('forbidden')}
+        </p>
+      </div>
+    );
+  }
 
   return (
-    <div className="page-shell">
+    <div className="page-shell" data-settings-ready={!result.loading}>
       <PageHeader
         actions={
-          <Button form="settings-form" type="submit">
-            <Save />
-            {translate('save')}
-          </Button>
+          canWrite && form ? (
+            <Button disabled={saving} onClick={() => void save()} type="button">
+              <Save />
+              {saving ? translate('saving') : translate('save')}
+            </Button>
+          ) : undefined
         }
         description={translate('description')}
         eyebrow={nav('system')}
         title={translate('title')}
       />
-      <form id="settings-form" onSubmit={submit}>
+
+      {result.loading ? (
+        <p role="status" className="text-sm text-muted-foreground">
+          {common('loading')}
+        </p>
+      ) : null}
+
+      {result.error ? (
+        <p
+          role="alert"
+          className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive"
+        >
+          {translate('loadError')}
+          {result.error instanceof PeopleError && result.error.requestId ? (
+            <span className="mt-1 block break-all font-mono text-[11px]">
+              {result.error.requestId}
+            </span>
+          ) : null}
+        </p>
+      ) : null}
+
+      {form ? (
         <Tabs defaultValue="school">
           <div className="max-w-full overflow-x-auto pb-1">
             <TabsList>
               <TabsTrigger value="school">{translate('school')}</TabsTrigger>
               <TabsTrigger value="academic">{translate('academic')}</TabsTrigger>
-              <TabsTrigger value="users">{translate('users')}</TabsTrigger>
               <TabsTrigger value="notifications">{translate('notifications')}</TabsTrigger>
-              <TabsTrigger value="billing">{translate('billing')}</TabsTrigger>
             </TabsList>
           </div>
 
@@ -141,54 +252,92 @@ export function SettingsPage() {
             >
               <div className="grid gap-5 md:grid-cols-2">
                 <Field htmlFor="school-name" label={translate('name')}>
-                  <Input defaultValue="Lycée Moderne Victor Hugo" id="school-name" />
+                  <Input
+                    id="school-name"
+                    value={form.schoolName}
+                    disabled={!canWrite}
+                    maxLength={160}
+                    onChange={(event) => patch('schoolName', event.target.value)}
+                  />
                 </Field>
                 <Field htmlFor="school-code" label={translate('code')}>
-                  <Input defaultValue="LMVH-CI-0042" id="school-code" />
+                  <Input
+                    id="school-code"
+                    value={form.schoolCode}
+                    disabled={!canWrite}
+                    maxLength={40}
+                    onChange={(event) => patch('schoolCode', event.target.value)}
+                  />
                 </Field>
                 <Field htmlFor="school-email" label={common('email')}>
-                  <Input defaultValue="direction@lyceevictor.ci" id="school-email" type="email" />
+                  <Input
+                    id="school-email"
+                    type="email"
+                    value={form.email ?? ''}
+                    disabled={!canWrite}
+                    onChange={(event) => patch('email', event.target.value || null)}
+                  />
                 </Field>
                 <Field htmlFor="school-phone" label={common('phone')}>
-                  <Input defaultValue="+225 27 22 44 00 11" id="school-phone" type="tel" />
+                  <Input
+                    id="school-phone"
+                    type="tel"
+                    value={form.phone ?? ''}
+                    disabled={!canWrite}
+                    onChange={(event) => patch('phone', event.target.value || null)}
+                  />
                 </Field>
                 <div className="md:col-span-2">
                   <Field htmlFor="school-address" label={translate('address')}>
                     <Textarea
-                      defaultValue="Boulevard Latrille, Cocody — Abidjan, Côte d’Ivoire"
                       id="school-address"
+                      value={form.address ?? ''}
+                      disabled={!canWrite}
+                      maxLength={500}
+                      onChange={(event) => patch('address', event.target.value || null)}
                     />
                   </Field>
                 </div>
               </div>
             </SettingsCard>
+
             <SettingsCard
               description={translate('brandingDescription')}
               icon={Building2}
               title={translate('branding')}
             >
-              <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_260px]">
-                <FileUpload
-                  labels={{
-                    browse: common('browse'),
-                    clear: common('clear'),
-                    drop: design('uploadDrop'),
-                    hint: design('uploadHint'),
-                  }}
-                />
-                <div className="rounded-xl border border-border bg-muted/40 p-5">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    {translate('primaryColor')}
-                  </p>
-                  <div className="mt-4 flex items-center gap-3">
-                    <span className="size-10 rounded-lg bg-blue-700 shadow-sm" />
+              <div className="grid gap-5 md:grid-cols-2">
+                <Field htmlFor="logo-url" label={translate('logoUrl')}>
+                  <Input
+                    id="logo-url"
+                    type="url"
+                    value={form.logoUrl ?? ''}
+                    disabled={!canWrite}
+                    placeholder="https://…"
+                    onChange={(event) => patch('logoUrl', event.target.value || null)}
+                  />
+                </Field>
+                <Field htmlFor="primary-color" label={translate('primaryColor')}>
+                  <div className="flex gap-3">
                     <Input
-                      aria-label={translate('primaryColor')}
+                      aria-label={translate('primaryColorPicker')}
+                      className="w-14 px-1"
+                      id="primary-color-picker"
+                      type="color"
+                      value={form.primaryColor}
+                      disabled={!canWrite}
+                      onChange={(event) => patch('primaryColor', event.target.value.toUpperCase())}
+                    />
+                    <Input
                       className="font-mono"
-                      defaultValue="#1D4ED8"
+                      id="primary-color"
+                      value={form.primaryColor}
+                      disabled={!canWrite}
+                      maxLength={7}
+                      onChange={(event) => patch('primaryColor', event.target.value)}
                     />
                   </div>
-                </div>
+                </Field>
               </div>
             </SettingsCard>
           </TabsContent>
@@ -200,66 +349,79 @@ export function SettingsPage() {
               title={translate('academic')}
             >
               <div className="grid gap-5 md:grid-cols-2">
-                <Field htmlFor="academic-year" label={common('year')}>
-                  <Select id="academic-year" defaultValue="2026-2027">
-                    <SelectItem value="2026-2027">2026–2027</SelectItem>
-                    <SelectItem value="2025-2026">2025–2026</SelectItem>
-                  </Select>
-                </Field>
+                <AcademicPicker
+                  disabled={!canWrite}
+                  label={translate('activeAcademicYear')}
+                  path="academic-years?status=ALL"
+                  value={form.activeAcademicYearId ?? ''}
+                  onChange={(value) => patch('activeAcademicYearId', value || null)}
+                />
                 <Field htmlFor="grading-system" label={translate('gradingSystem')}>
-                  <Select id="grading-system" defaultValue="20">
+                  <Select
+                    id="grading-system"
+                    value={form.gradingScale}
+                    disabled={!canWrite}
+                    onChange={(event) =>
+                      patch('gradingScale', event.target.value as '20' | '100')
+                    }
+                  >
                     <SelectItem value="20">{translate('scale20')}</SelectItem>
                     <SelectItem value="100">{translate('scale100')}</SelectItem>
                   </Select>
                 </Field>
-                <Field htmlFor="year-start" label={translate('yearStart')}>
-                  <Input defaultValue="2026-09-01" id="year-start" type="date" />
+                <Field htmlFor="default-locale" label={translate('defaultLocale')}>
+                  <Select
+                    id="default-locale"
+                    value={form.defaultLocale}
+                    disabled={!canWrite}
+                    onChange={(event) =>
+                      patch('defaultLocale', event.target.value as 'fr' | 'en' | 'ar')
+                    }
+                  >
+                    <SelectItem value="fr">Français</SelectItem>
+                    <SelectItem value="en">English</SelectItem>
+                    <SelectItem value="ar">العربية</SelectItem>
+                  </Select>
                 </Field>
-                <Field htmlFor="year-end" label={translate('yearEnd')}>
-                  <Input defaultValue="2027-07-09" id="year-end" type="date" />
+                <Field htmlFor="default-currency" label={translate('defaultCurrency')}>
+                  <Input
+                    id="default-currency"
+                    value={form.defaultCurrency}
+                    disabled={!canWrite}
+                    maxLength={3}
+                    onChange={(event) =>
+                      patch('defaultCurrency', event.target.value.toUpperCase())
+                    }
+                  />
                 </Field>
+                <div className="md:col-span-2">
+                  <Field htmlFor="timezone" label={translate('timezone')}>
+                    <Input
+                      id="timezone"
+                      value={form.timezone}
+                      disabled={!canWrite}
+                      maxLength={80}
+                      onChange={(event) => patch('timezone', event.target.value)}
+                    />
+                  </Field>
+                </div>
               </div>
+
               <div className="mt-6 border-t border-border pt-2">
                 <ToggleSetting
+                  checked={form.automaticReports}
+                  disabled={!canWrite}
                   description={translate('automaticReportsDescription')}
                   label={translate('automaticReports')}
+                  onCheckedChange={(checked) => patch('automaticReports', checked)}
                 />
                 <ToggleSetting
+                  checked={form.parentPortal}
+                  disabled={!canWrite}
                   description={translate('parentPortalDescription')}
                   label={translate('parentPortal')}
+                  onCheckedChange={(checked) => patch('parentPortal', checked)}
                 />
-              </div>
-            </SettingsCard>
-          </TabsContent>
-
-          <TabsContent value="users">
-            <SettingsCard
-              description={translate('usersDescription')}
-              icon={ShieldCheck}
-              title={translate('users')}
-            >
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                {[
-                  [usersText('admin'), '2'],
-                  [usersText('director'), '3'],
-                  [usersText('teacher'), '28'],
-                  [usersText('registrar'), '4'],
-                ].map(([role, count]) => (
-                  <div className="rounded-lg border border-border p-4" key={role}>
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-sm font-semibold">{role}</p>
-                      <Badge variant="secondary">{count}</Badge>
-                    </div>
-                    <Button
-                      className="mt-4 w-full"
-                      onClick={() => mockAction(common('edit'))}
-                      type="button"
-                      variant="outline"
-                    >
-                      {common('edit')}
-                    </Button>
-                  </div>
-                ))}
               </div>
             </SettingsCard>
           </TabsContent>
@@ -271,53 +433,51 @@ export function SettingsPage() {
               title={translate('notifications')}
             >
               <ToggleSetting
+                checked={form.notifications.email}
+                disabled={!canWrite}
                 description={translate('emailNotificationsDescription')}
                 label={translate('emailNotifications')}
+                onCheckedChange={(checked) =>
+                  patch('notifications', { ...form.notifications, email: checked })
+                }
               />
               <ToggleSetting
+                checked={form.notifications.sms}
+                disabled={!canWrite}
                 description={translate('smsNotificationsDescription')}
                 label={translate('smsNotifications')}
+                onCheckedChange={(checked) =>
+                  patch('notifications', { ...form.notifications, sms: checked })
+                }
               />
               <ToggleSetting
+                checked={form.notifications.paymentReminders}
+                disabled={!canWrite}
                 description={translate('paymentReminderDescription')}
                 label={translate('paymentReminders')}
+                onCheckedChange={(checked) =>
+                  patch('notifications', {
+                    ...form.notifications,
+                    paymentReminders: checked,
+                  })
+                }
               />
               <ToggleSetting
+                checked={form.notifications.absenceAlerts}
+                disabled={!canWrite}
                 description={translate('absenceAlertDescription')}
                 label={translate('absenceAlerts')}
+                onCheckedChange={(checked) =>
+                  patch('notifications', {
+                    ...form.notifications,
+                    absenceAlerts: checked,
+                  })
+                }
               />
-            </SettingsCard>
-          </TabsContent>
-
-          <TabsContent value="billing">
-            <SettingsCard
-              description={translate('billingDescription')}
-              icon={CreditCard}
-              title={translate('billing')}
-            >
-              <div className="flex flex-col gap-5 rounded-xl border border-border bg-muted/35 p-5 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <Badge>{translate('professional')}</Badge>
-                  <p className="mt-3 text-2xl font-bold">
-                    75 000 XOF{' '}
-                    <span className="text-sm font-normal text-muted-foreground">
-                      / {translate('month')}
-                    </span>
-                  </p>
-                  <p className="mt-1 text-sm text-muted-foreground">{translate('nextBilling')}</p>
-                </div>
-                <Button
-                  onClick={() => mockAction(translate('manageSubscription'))}
-                  type="button"
-                  variant="outline"
-                >
-                  {translate('manageSubscription')}
-                </Button>
-              </div>
             </SettingsCard>
           </TabsContent>
         </Tabs>
-      </form>
+      ) : null}
     </div>
   );
 }
