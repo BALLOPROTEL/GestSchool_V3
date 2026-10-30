@@ -41,7 +41,7 @@ describe('safe IAM operational diagnostics', () => {
     ['P2024', 'LOT14_AUTH_DB_UNAVAILABLE', 'POOL_TIMEOUT'],
     ['P1002', 'LOT14_AUTH_DB_UNAVAILABLE', 'CONNECT_TIMEOUT'],
     ['P1008', 'LOT14_AUTH_DB_UNAVAILABLE', 'OPERATION_TIMEOUT'],
-    ['P2002', 'LOT14_AUTH_DB_UNAVAILABLE', 'DB_OPERATION_ERROR'],
+    ['P2002', 'LOT14_AUTH_DB_UNAVAILABLE', 'UNIQUE_CONSTRAINT'],
   ])(
     'classifies the typed Prisma %s error without inspecting message/meta',
     (code, diagnostic, reason) => {

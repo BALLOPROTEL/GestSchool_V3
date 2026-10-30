@@ -45,6 +45,13 @@ export interface IamDiagnostic {
     | 'POOL_TIMEOUT'
     | 'OPERATION_TIMEOUT'
     | 'TRANSACTION_API_ERROR'
+    | 'UNIQUE_CONSTRAINT'
+    | 'FOREIGN_KEY_CONSTRAINT'
+    | 'NULL_CONSTRAINT'
+    | 'VALUE_TOO_LONG'
+    | 'RELATION_CONSTRAINT'
+    | 'RECORD_NOT_FOUND'
+    | 'WRITE_CONFLICT'
     | 'DB_OPERATION_ERROR'
     | 'DB_VALIDATION_ERROR'
     | 'HTTP_EXCEPTION'
@@ -134,6 +141,13 @@ export function iamDiagnostic(error: unknown): IamDiagnostic {
           P2024: 'POOL_TIMEOUT',
           P1002: 'CONNECT_TIMEOUT',
           P1008: 'OPERATION_TIMEOUT',
+          P2000: 'VALUE_TOO_LONG',
+          P2002: 'UNIQUE_CONSTRAINT',
+          P2003: 'FOREIGN_KEY_CONSTRAINT',
+          P2011: 'NULL_CONSTRAINT',
+          P2014: 'RELATION_CONSTRAINT',
+          P2025: 'RECORD_NOT_FOUND',
+          P2034: 'WRITE_CONFLICT',
         } as Record<string, IamDiagnostic['reason']>
       )[error.code] ?? 'DB_OPERATION_ERROR';
     // P2028 includes several transaction API failures: it alone does NOT prove a timeout.
