@@ -39,7 +39,7 @@ export class AttendanceService {
   async export(context: RequestContext, input: unknown) {
     attendanceAccess(context, 'attendance.export', attendanceExportScopes);
     const query = attendanceSheetQuery.parse(input);
-    const sheet = await this.repository.sheet(context, query);
+    const sheet = await this.repository.sheet(context, query, 'attendance.export');
     const lines = [
       ['student', 'matricule', 'class', 'date', 'status', 'note'],
       ...sheet.students.map((student) => [
