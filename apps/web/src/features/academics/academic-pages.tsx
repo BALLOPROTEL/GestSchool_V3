@@ -192,29 +192,36 @@ export function AttendancePage() {
 
   async function save() {
     if (!result.data || !canWrite) return;
-    if (!result.data.students.length) {
+    const entries = result.data.students.flatMap((student) => {
+      const status = draft[student.studentId]?.status ?? '';
+      const note = status === '' ? null : draft[student.studentId]?.note.trim() || null;
+      const originalStatus = student.status ?? '';
+      const originalNote = student.status ? (student.note ?? null) : null;
+      if (status === originalStatus && note === originalNote) return [];
+      return [
+        {
+          studentId: student.studentId,
+          status: status === '' ? null : status,
+          note,
+        },
+      ];
+    });
+    if (!entries.length) {
       toast.error(translate('nothingToSave'));
       return;
     }
-    const entries = result.data.students.map((student) => {
-      const status = draft[student.studentId]?.status ?? '';
-      return {
-        studentId: student.studentId,
-        status: status === '' ? null : status,
-        note: status === '' ? null : draft[student.studentId]?.note.trim() || null,
-      };
-    });
     setSaving(true);
     try {
-      await peopleRequest<AttendanceSheetView>(
-        'attendance/sheet',
-        { classId, date, entries },
-        'PUT',
-      );
+      for (let index = 0; index < entries.length; index += 500)
+        await peopleRequest<AttendanceSheetView>(
+          'attendance/sheet',
+          { classId, date, entries: entries.slice(index, index + 500) },
+          'PUT',
+        );
       setRevision((value) => value + 1);
       toast.success(translate('saved'));
-    } catch (error: unknown) {
-      toast.error(error instanceof PeopleError ? translate('saveError') : translate('saveError'));
+    } catch {
+      toast.error(translate('saveError'));
     } finally {
       setSaving(false);
     }
@@ -377,11 +384,14 @@ function ScopedAttendanceHistory() {
   const common = useTranslations('Common');
   const translate = useTranslations('Attendance');
   const [studentId, setStudentId] = useState('');
+  const [page, setPage] = useState(1);
+  const pageSize = 25;
   const history = usePeopleData<AttendanceHistoryView>(
     studentId
-      ? `attendance/history?studentId=${encodeURIComponent(studentId)}&page=1&pageSize=100`
+      ? `attendance/history?studentId=${encodeURIComponent(studentId)}&page=${page}&pageSize=${pageSize}`
       : null,
   );
+  const pages = history.data ? Math.max(1, Math.ceil(history.data.total / pageSize)) : 1;
   const columns: readonly DataTableColumn<AttendanceRecordView>[] = [
     { id: 'date', header: common('date'), cell: (row) => row.date },
     { id: 'class', header: common('class'), cell: (row) => row.className },
@@ -404,7 +414,10 @@ function ScopedAttendanceHistory() {
             label={common('student')}
             path="students?status=ACTIVE"
             value={studentId}
-            onChange={setStudentId}
+            onChange={(value) => {
+              setStudentId(value);
+              setPage(1);
+            }}
             required
           />
         </CardContent>
@@ -468,6 +481,27 @@ function ScopedAttendanceHistory() {
                   </p>
                 }
               />
+              <div className="flex items-center justify-between gap-3 border-t px-4 py-3">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={page <= 1}
+                  onClick={() => setPage((value) => Math.max(1, value - 1))}
+                >
+                  {common('previous')}
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  {translate('historyPage', { page, pages })}
+                </span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={page >= pages}
+                  onClick={() => setPage((value) => Math.min(pages, value + 1))}
+                >
+                  {common('next')}
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </>
