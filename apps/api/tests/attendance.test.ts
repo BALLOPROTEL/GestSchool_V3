@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { loadInfrastructureConfig } from '@gestschool/config/environment';
 import { createPrismaClient } from '@gestschool/database';
-import { afterAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it } from 'vitest';
 import { AttendanceDatabase } from '../src/modules/attendance/infrastructure/database.js';
 import { PrismaAttendanceRepository } from '../src/modules/attendance/infrastructure/attendance.repository.js';
 import type { RequestContext } from '../src/modules/iam/domain/context.js';
@@ -10,44 +10,11 @@ const database = createPrismaClient(loadInfrastructureConfig().databaseUrl);
 const attendanceDatabase = new AttendanceDatabase();
 const repository = new PrismaAttendanceRepository(attendanceDatabase);
 
-const createdTenants: string[] = [];
-
-async function cleanup() {
-  for (const tenantId of createdTenants.splice(0)) {
-    await database.auditLog.deleteMany({ where: { tenantId } });
-    await database.attendanceRecord.deleteMany({ where: { tenantId } });
-    await database.enrollmentEvent.deleteMany({ where: { tenantId } });
-    await database.enrollment.deleteMany({ where: { tenantId } });
-    await database.teachingAssignment.deleteMany({ where: { tenantId } });
-    await database.classSubject.deleteMany({ where: { tenantId } });
-    await database.studentGuardian.deleteMany({ where: { tenantId } });
-    await database.student.deleteMany({ where: { tenantId } });
-    await database.teacher.deleteMany({ where: { tenantId } });
-    await database.guardian.deleteMany({ where: { tenantId } });
-    await database.subject.deleteMany({ where: { tenantId } });
-    await database.schoolClass.deleteMany({ where: { tenantId } });
-    await database.academicPeriod.deleteMany({ where: { tenantId } });
-    await database.level.deleteMany({ where: { tenantId } });
-    await database.academicYear.deleteMany({ where: { tenantId } });
-    const memberships = await database.membership.findMany({
-      where: { tenantId },
-      select: { userId: true },
-    });
-    await database.membershipRole.deleteMany({ where: { tenantId } });
-    await database.membership.deleteMany({ where: { tenantId } });
-    await database.tenant.delete({ where: { id: tenantId } });
-    await database.user.deleteMany({
-      where: { id: { in: memberships.map((row) => row.userId) } },
-    });
-  }
-}
-
 async function fixture() {
   const suffix = randomUUID().slice(0, 8);
   const tenant = await database.tenant.create({
     data: { slug: `attendance-${suffix}`, name: `Attendance ${suffix}` },
   });
-  createdTenants.push(tenant.id);
   const user = await database.user.create({
     data: {
       email: `attendance-${suffix}@example.invalid`,
@@ -145,10 +112,7 @@ async function fixture() {
   };
 }
 
-beforeEach(cleanup);
-
 afterAll(async () => {
-  await cleanup();
   await attendanceDatabase.onModuleDestroy();
   await database.$disconnect();
 });
@@ -281,6 +245,45 @@ describe('LOT17 attendance repository', () => {
     });
     expect(newAfter.students).toHaveLength(1);
     expect(newAfter.students[0]?.status).toBeNull();
+  });
+
+  it('preserves past attendance after a student is archived', async () => {
+    const data = await fixture();
+    await repository.write(data.context, {
+      classId: data.schoolClass.id,
+      date: '2026-10-30',
+      entries: [{ studentId: data.student.id, status: 'PRESENT', note: null }],
+    });
+    await database.student.update({
+      where: {
+        tenantId_id: { tenantId: data.tenant.id, id: data.student.id },
+      },
+      data: {
+        status: 'ARCHIVED',
+        archivedAt: new Date('2026-11-01T00:00:00.000Z'),
+      },
+    });
+
+    const past = await repository.sheet(data.context, {
+      classId: data.schoolClass.id,
+      date: '2026-10-30',
+    });
+    expect(past.students).toHaveLength(1);
+    expect(past.students[0]?.status).toBe('PRESENT');
+
+    const afterArchive = await repository.sheet(data.context, {
+      classId: data.schoolClass.id,
+      date: '2026-11-02',
+    });
+    expect(afterArchive.students).toHaveLength(0);
+
+    const history = await repository.history(data.context, {
+      studentId: data.student.id,
+      page: 1,
+      pageSize: 25,
+    });
+    expect(history.total).toBe(1);
+    expect(history.items[0]?.status).toBe('PRESENT');
   });
 
   it('revokes assigned attendance access when the academic assignment is no longer eligible', async () => {
