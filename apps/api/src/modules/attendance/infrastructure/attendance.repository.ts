@@ -8,6 +8,7 @@ import type {
   AttendanceStatus,
 } from '@gestschool/contracts';
 import type { Prisma } from '@gestschool/database';
+import { assignedWhere } from '../../academics/infrastructure/read-scopes.js';
 import type { RequestContext } from '../../iam/domain/context.js';
 import { ScopePolicy } from '../../iam/domain/scope-policy.js';
 import { AttendanceRepository } from '../domain/attendance.repository.js';
@@ -42,21 +43,16 @@ async function classResource(
   );
   if (!assigned) attendanceError('AUTH_FORBIDDEN', 403);
 
-  const teacher = await db.teacher.findFirst({
+  const assignment = await db.teachingAssignment.findFirst({
     where: {
-      tenantId: context.tenantId,
-      userId: context.userId,
-      status: 'ACTIVE',
-      assignments: {
-        some: {
-          status: 'ACTIVE',
-          classSubject: { schoolClassId: classId },
-        },
-      },
+      AND: [
+        assignedWhere(context),
+        { classSubject: { schoolClassId: classId } },
+      ],
     },
     select: { id: true },
   });
-  if (!teacher) attendanceError('AUTH_FORBIDDEN', 403);
+  if (!assignment) attendanceError('AUTH_FORBIDDEN', 403);
   return schoolClass;
 }
 
@@ -70,20 +66,7 @@ async function studentResource(db: Db, context: RequestContext, studentId: strin
         },
         enrollments: {
           where: { status: 'ACTIVE' },
-          include: {
-            schoolClass: {
-              include: {
-                subjects: {
-                  include: {
-                    assignments: {
-                      where: { status: 'ACTIVE' },
-                      include: { teacher: { select: { userId: true, status: true } } },
-                    },
-                  },
-                },
-              },
-            },
-          },
+          select: { schoolClassId: true },
         },
       },
     }),
@@ -91,28 +74,113 @@ async function studentResource(db: Db, context: RequestContext, studentId: strin
   const guardianUserIds = student.guardians
     .filter((link) => link.guardian.status === 'ACTIVE' && link.guardian.userId)
     .map((link) => link.guardian.userId as string);
-  const assignedUserIds = [
-    ...new Set(
-      student.enrollments.flatMap((enrollment) =>
-        enrollment.schoolClass.subjects.flatMap((subject) =>
-          subject.assignments
-            .filter((assignment) => assignment.teacher.status === 'ACTIVE')
-            .map((assignment) => assignment.teacher.userId)
-            .filter((userId): userId is string => Boolean(userId)),
-        ),
-      ),
-    ),
-  ];
+  const classIds = [...new Set(student.enrollments.map((enrollment) => enrollment.schoolClassId))];
+  const assigned =
+    classIds.length > 0 &&
+    Boolean(
+      await db.teachingAssignment.findFirst({
+        where: {
+          AND: [
+            assignedWhere(context),
+            { classSubject: { schoolClassId: { in: classIds } } },
+          ],
+        },
+        select: { id: true },
+      }),
+    );
   if (
     !new ScopePolicy().allows(context, 'attendance.read', {
       tenantId: context.tenantId,
       ...(student.userId ? { ownerUserId: student.userId } : {}),
       guardianUserIds,
-      assignedUserIds,
+      assignedUserIds: assigned ? [context.userId] : [],
     })
   )
     attendanceError('AUTH_FORBIDDEN', 403);
   return student;
+}
+
+async function historicalRoster(
+  db: Db,
+  context: RequestContext,
+  classId: string,
+  academicYearId: string,
+  targetDate: Date,
+) {
+  const [eventCandidates, currentCandidates] = await Promise.all([
+    db.enrollmentEvent.findMany({
+      where: {
+        tenantId: context.tenantId,
+        academicYearId,
+        effectiveDate: { lte: targetDate },
+        OR: [{ toClassId: classId }, { fromClassId: classId }],
+      },
+      select: { enrollmentId: true },
+    }),
+    db.enrollment.findMany({
+      where: {
+        tenantId: context.tenantId,
+        academicYearId,
+        schoolClassId: classId,
+        enrolledOn: { lte: targetDate },
+      },
+      select: { id: true },
+    }),
+  ]);
+  const enrollmentIds = [
+    ...new Set([
+      ...eventCandidates.map((row) => row.enrollmentId),
+      ...currentCandidates.map((row) => row.id),
+    ]),
+  ];
+  if (!enrollmentIds.length) return [];
+
+  const [events, enrollments] = await Promise.all([
+    db.enrollmentEvent.findMany({
+      where: {
+        tenantId: context.tenantId,
+        enrollmentId: { in: enrollmentIds },
+        effectiveDate: { lte: targetDate },
+      },
+      orderBy: [
+        { enrollmentId: 'asc' },
+        { effectiveDate: 'desc' },
+        { recordedAt: 'desc' },
+        { id: 'desc' },
+      ],
+    }),
+    db.enrollment.findMany({
+      where: {
+        tenantId: context.tenantId,
+        id: { in: enrollmentIds },
+        academicYearId,
+        enrolledOn: { lte: targetDate },
+        student: { status: 'ACTIVE' },
+      },
+      include: { student: true },
+    }),
+  ]);
+  const latest = new Map<string, (typeof events)[number]>();
+  for (const event of events)
+    if (!latest.has(event.enrollmentId)) latest.set(event.enrollmentId, event);
+
+  return enrollments
+    .filter((enrollment) => {
+      const event = latest.get(enrollment.id);
+      if (event)
+        return event.toClassId === classId && event.toStatus === 'ACTIVE';
+      return (
+        enrollment.schoolClassId === classId &&
+        enrollment.status === 'ACTIVE' &&
+        (!enrollment.endedOn || targetDate < enrollment.endedOn)
+      );
+    })
+    .toSorted(
+      (left, right) =>
+        left.student.lastName.localeCompare(right.student.lastName) ||
+        left.student.firstName.localeCompare(right.student.firstName) ||
+        left.id.localeCompare(right.id),
+    );
 }
 
 async function buildSheet(
@@ -128,17 +196,13 @@ async function buildSheet(
   if (query.date < startsOn || query.date > endsOn)
     attendanceError('ATTENDANCE_DATE_OUTSIDE_YEAR');
 
-  const enrollments = await db.enrollment.findMany({
-    where: {
-      tenantId: context.tenantId,
-      schoolClassId: query.classId,
-      academicYearId: schoolClass.academicYearId,
-      status: 'ACTIVE',
-      student: { status: 'ACTIVE' },
-    },
-    include: { student: true },
-    orderBy: [{ student: { lastName: 'asc' } }, { student: { firstName: 'asc' } }, { id: 'asc' }],
-  });
+  const enrollments = await historicalRoster(
+    db,
+    context,
+    query.classId,
+    schoolClass.academicYearId,
+    targetDate,
+  );
   const records = enrollments.length
     ? await db.attendanceRecord.findMany({
         where: {
@@ -163,7 +227,8 @@ async function buildSheet(
       updatedAt: record?.updatedAt.toISOString() ?? null,
     };
   });
-  const count = (status: AttendanceStatus) => students.filter((item) => item.status === status).length;
+  const count = (status: AttendanceStatus) =>
+    students.filter((item) => item.status === status).length;
   return {
     classId: schoolClass.id,
     className: schoolClass.name,
@@ -272,22 +337,18 @@ export class PrismaAttendanceRepository extends AttendanceRepository {
 
   override write(context: RequestContext, input: AttendanceBulkWrite) {
     return this.database.write(context, async (db) => {
-      await buildSheet(db, context, { classId: input.classId, date: input.date }, 'attendance.write');
+      const sheet = await buildSheet(
+        db,
+        context,
+        { classId: input.classId, date: input.date },
+        'attendance.write',
+      );
       const targetDate = day(input.date);
-      const studentIds = input.entries.map((entry) => entry.studentId);
-      const enrollments = await db.enrollment.findMany({
-        where: {
-          tenantId: context.tenantId,
-          schoolClassId: input.classId,
-          status: 'ACTIVE',
-          studentId: { in: studentIds },
-        },
-        select: { studentId: true },
-      });
-      const enrolled = new Set(enrollments.map((enrollment) => enrollment.studentId));
-      if (studentIds.some((studentId) => !enrolled.has(studentId)))
+      const roster = new Set(sheet.students.map((student) => student.studentId));
+      if (input.entries.some((entry) => !roster.has(entry.studentId)))
         attendanceError('ATTENDANCE_STUDENT_NOT_ENROLLED');
 
+      const studentIds = input.entries.map((entry) => entry.studentId);
       const existing = await db.attendanceRecord.findMany({
         where: {
           tenantId: context.tenantId,
@@ -300,6 +361,17 @@ export class PrismaAttendanceRepository extends AttendanceRepository {
         attendanceError('ATTENDANCE_CLASS_CONFLICT');
 
       for (const entry of input.entries) {
+        if (entry.status === null) {
+          await db.attendanceRecord.deleteMany({
+            where: {
+              tenantId: context.tenantId,
+              studentId: entry.studentId,
+              schoolClassId: input.classId,
+              date: targetDate,
+            },
+          });
+          continue;
+        }
         await db.attendanceRecord.upsert({
           where: {
             tenantId_studentId_date: {
@@ -343,12 +415,18 @@ export class PrismaAttendanceRepository extends AttendanceRepository {
             requestId: context.requestId,
             date: input.date,
             count: input.entries.length,
+            cleared: input.entries.filter((entry) => entry.status === null).length,
             statusCounts,
           },
         },
       });
 
-      return buildSheet(db, context, { classId: input.classId, date: input.date }, 'attendance.write');
+      return buildSheet(
+        db,
+        context,
+        { classId: input.classId, date: input.date },
+        'attendance.write',
+      );
     });
   }
 }
