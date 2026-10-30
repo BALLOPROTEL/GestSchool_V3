@@ -52,7 +52,7 @@ async function classResource(
 async function studentResource(db: Db, context: RequestContext, studentId: string) {
   const student = attendanceFound(
     await db.student.findFirst({
-      where: { tenantId: context.tenantId, id: studentId, status: 'ACTIVE' },
+      where: { tenantId: context.tenantId, id: studentId },
       include: {
         guardians: {
           include: { guardian: { select: { userId: true, status: true } } },
@@ -145,7 +145,6 @@ async function historicalRoster(
         id: { in: enrollmentIds },
         academicYearId,
         enrolledOn: { lte: targetDate },
-        student: { status: 'ACTIVE' },
       },
       include: { student: true },
     }),
@@ -156,6 +155,7 @@ async function historicalRoster(
 
   return enrollments
     .filter((enrollment) => {
+      if (enrollment.student.archivedAt && enrollment.student.archivedAt <= targetDate) return false;
       const event = latest.get(enrollment.id);
       if (event) return event.toClassId === classId && event.toStatus === 'ACTIVE';
       return (
