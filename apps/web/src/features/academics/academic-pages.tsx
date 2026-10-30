@@ -15,6 +15,8 @@ import {
   SelectItem,
 } from '@gestschool/ui';
 import type {
+  AttendanceHistoryView,
+  AttendanceRecordView,
   AttendanceSheetStudent,
   AttendanceSheetView,
   AttendanceStatus,
@@ -59,19 +61,34 @@ function canAttendance(session: SessionView | undefined, action: 'read' | 'write
   );
 }
 
+function canAttendanceSheet(session: SessionView | undefined) {
+  return Boolean(
+    session?.grants.some(
+      (grant) =>
+        grant.permission === 'attendance.read' &&
+        ['TENANT', 'ASSIGNED'].includes(grant.scope),
+    ) ||
+      (session?.roles.includes('SUPER_ADMIN') &&
+        session.grants.some(
+          (grant) => grant.permission === 'attendance.read' && grant.scope === 'PLATFORM',
+        )),
+  );
+}
+
 export function AttendancePage() {
   const common = useTranslations('Common');
   const nav = useTranslations('Nav');
   const translate = useTranslations('Attendance');
   const { session } = useAuth();
   const canRead = canAttendance(session?.session, 'read');
+  const canUseSheet = canAttendanceSheet(session?.session);
   const canWrite = canAttendance(session?.session, 'write');
   const [classId, setClassId] = useState('');
   const [date, setDate] = useState(localToday);
   const [revision, setRevision] = useState(0);
   const [saving, setSaving] = useState(false);
   const path =
-    canRead && classId
+    canUseSheet && classId
       ? `attendance/sheet?classId=${encodeURIComponent(classId)}&date=${encodeURIComponent(date)}`
       : null;
   const result = usePeopleData<AttendanceSheetView>(path, revision);
@@ -155,7 +172,9 @@ export function AttendancePage() {
         <Input
           aria-label={translate('noteFor', { student: student.studentName })}
           value={draft[student.studentId]?.note ?? ''}
-          disabled={!canWrite || saving}
+          disabled={
+            !canWrite || saving || (draft[student.studentId]?.status ?? '') === ''
+          }
           maxLength={500}
           placeholder={translate('notePlaceholder')}
           onChange={(event) =>
@@ -174,20 +193,18 @@ export function AttendancePage() {
 
   async function save() {
     if (!result.data || !canWrite) return;
-    const entries = result.data.students
-      .map((student) => ({
-        studentId: student.studentId,
-        status: draft[student.studentId]?.status ?? '',
-        note: draft[student.studentId]?.note.trim() || null,
-      }))
-      .filter(
-        (entry): entry is { studentId: string; status: AttendanceStatus; note: string | null } =>
-          entry.status !== '',
-      );
-    if (!entries.length) {
+    if (!result.data.students.length) {
       toast.error(translate('nothingToSave'));
       return;
     }
+    const entries = result.data.students.map((student) => {
+      const status = draft[student.studentId]?.status ?? '';
+      return {
+        studentId: student.studentId,
+        status: status === '' ? null : status,
+        note: status === '' ? null : draft[student.studentId]?.note.trim() || null,
+      };
+    });
     setSaving(true);
     try {
       await peopleRequest<AttendanceSheetView>(
@@ -257,9 +274,14 @@ export function AttendancePage() {
       />
 
       {!canRead ? (
-        <p role="alert" className="rounded-lg border border-destructive/30 p-4 text-sm text-destructive">
+        <p
+          role="alert"
+          className="rounded-lg border border-destructive/30 p-4 text-sm text-destructive"
+        >
           {translate('forbidden')}
         </p>
+      ) : !canUseSheet ? (
+        <ScopedAttendanceHistory />
       ) : (
         <>
           <Card>
@@ -337,6 +359,110 @@ export function AttendancePage() {
           ) : null}
         </>
       )}
+    </div>
+  );
+}
+
+
+function ScopedAttendanceHistory() {
+  const common = useTranslations('Common');
+  const translate = useTranslations('Attendance');
+  const [studentId, setStudentId] = useState('');
+  const history = usePeopleData<AttendanceHistoryView>(
+    studentId
+      ? `attendance/history?studentId=${encodeURIComponent(studentId)}&page=1&pageSize=100`
+      : null,
+  );
+  const columns: readonly DataTableColumn<AttendanceRecordView>[] = [
+    { id: 'date', header: common('date'), cell: (row) => row.date },
+    { id: 'class', header: common('class'), cell: (row) => row.className },
+    {
+      id: 'status',
+      header: common('status'),
+      cell: (row) => translate(row.status),
+    },
+    {
+      id: 'note',
+      header: translate('note'),
+      cell: (row) => row.note || '—',
+    },
+  ];
+  return (
+    <div className="space-y-5">
+      <Card>
+        <CardContent className="p-4">
+          <AcademicPicker
+            label={common('student')}
+            path="students?status=ACTIVE"
+            value={studentId}
+            onChange={setStudentId}
+            required
+          />
+        </CardContent>
+      </Card>
+      {!studentId ? (
+        <p className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
+          {translate('chooseStudent')}
+        </p>
+      ) : null}
+      {history.loading ? (
+        <p role="status" className="text-sm text-muted-foreground">
+          {common('loading')}
+        </p>
+      ) : null}
+      {history.error ? (
+        <p
+          role="alert"
+          className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive"
+        >
+          {translate('historyError')}
+        </p>
+      ) : null}
+      {history.data ? (
+        <>
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <KpiCard
+              icon={CheckCircle2}
+              label={translate('presentToday')}
+              value={String(history.data.summary.present)}
+            />
+            <KpiCard
+              icon={CircleAlert}
+              label={translate('absentToday')}
+              value={String(history.data.summary.absent)}
+            />
+            <KpiCard
+              icon={Clock3}
+              label={translate('lateToday')}
+              value={String(history.data.summary.late)}
+            />
+            <KpiCard
+              icon={CalendarCheck}
+              label={translate('excused')}
+              value={String(history.data.summary.excused)}
+            />
+          </div>
+          <Card className="overflow-hidden">
+            <CardHeader>
+              <CardTitle>{translate('history')}</CardTitle>
+            </CardHeader>
+            <CardContent className="px-0 pb-0">
+              <DataTable
+                caption={translate('history')}
+                columns={columns}
+                getRowId={(row) => row.id}
+                minWidth={720}
+                rows={history.data.items}
+                emptyState={
+                  <p className="p-8 text-center text-muted-foreground">
+                    {translate('historyEmpty')}
+                  </p>
+                }
+              />
+            </CardContent>
+          </Card>
+        </>
+      ) : null}
     </div>
   );
 }
