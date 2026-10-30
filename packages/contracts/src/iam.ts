@@ -1,5 +1,6 @@
 import { academicPermissionCodes, academicReadPermissions } from './academics.js';
 import { enrollmentPermissionCodes } from './enrollments.js';
+import { attendancePermissionCodes } from './attendance.js';
 import {
   documentPermissionCodes,
   documentReadPermissions,
@@ -36,6 +37,7 @@ export const privilegedRoles: readonly string[] = [
 export const permissionCodes = [
   ...academicPermissionCodes,
   ...enrollmentPermissionCodes,
+  ...attendancePermissionCodes,
   ...financePermissionCodes,
   ...resultPermissionCodes,
   ...documentPermissionCodes,
@@ -85,6 +87,7 @@ export const roleGrants: Readonly<Record<SystemRole, readonly Grant[]>> = {
     ...grants(resultPermissionCodes, 'TENANT'),
     ...grants(financePermissionCodes, 'TENANT'),
     ...grants(enrollmentPermissionCodes, 'TENANT'),
+    ...grants(attendancePermissionCodes, 'TENANT'),
     ...grants(academicPermissionCodes, 'TENANT'),
     ...grants(self, 'OWN'),
     ...grants(
@@ -116,6 +119,7 @@ export const roleGrants: Readonly<Record<SystemRole, readonly Grant[]>> = {
     ...grants(resultPermissionCodes, 'TENANT'),
     ...grants([...financeReadPermissions, 'cash-sessions.read', 'payments.validate'], 'TENANT'),
     ...grants(enrollmentPermissionCodes, 'TENANT'),
+    ...grants(attendancePermissionCodes, 'TENANT'),
     ...grants(academicPermissionCodes, 'TENANT'),
     ...grants(self, 'OWN'),
     ...grants(['guardians.read', 'teachers.read'], 'TENANT'),
@@ -136,6 +140,7 @@ export const roleGrants: Readonly<Record<SystemRole, readonly Grant[]>> = {
       'TENANT',
     ),
     ...grants(enrollmentPermissionCodes, 'TENANT'),
+    ...grants(attendancePermissionCodes, 'TENANT'),
     ...grants(academicPermissionCodes, 'TENANT'),
     ...grants(['teachers.read'], 'TENANT'),
     ...grants(self, 'OWN'),
@@ -154,6 +159,7 @@ export const roleGrants: Readonly<Record<SystemRole, readonly Grant[]>> = {
     ...grants(reportPermissionCodes, 'ASSIGNED'),
     ...grants(['communications.read', 'communications.send'], 'ASSIGNED'),
     ...grants(resultTeacherPermissions, 'ASSIGNED'),
+    ...grants(attendancePermissionCodes, 'ASSIGNED'),
     ...grants(academicReadPermissions, 'ASSIGNED'),
     ...grants(self, 'OWN'),
     ...grants(['teachers.read'], 'OWN'),
@@ -164,7 +170,7 @@ export const roleGrants: Readonly<Record<SystemRole, readonly Grant[]>> = {
     ...grants(documentReadPermissions, 'CHILDREN'),
     ...grants(resultPublishedPermissions, 'CHILDREN'),
     ...grants(financeReadPermissions, 'CHILDREN'),
-    ...grants(['enrollments.read'], 'CHILDREN'),
+    ...grants(['enrollments.read', 'attendance.read'], 'CHILDREN'),
     ...grants(self, 'OWN'),
     ...grants(['guardians.read'], 'OWN'),
     ...grants(['students.read'], 'CHILDREN'),
@@ -174,7 +180,7 @@ export const roleGrants: Readonly<Record<SystemRole, readonly Grant[]>> = {
     ...grants(documentReadPermissions, 'OWN'),
     ...grants(resultPublishedPermissions, 'OWN'),
     ...grants(financeReadPermissions, 'OWN'),
-    ...grants(['enrollments.read'], 'OWN'),
+    ...grants(['enrollments.read', 'attendance.read'], 'OWN'),
     ...grants(self, 'OWN'),
     ...grants(['students.read'], 'OWN'),
   ],
