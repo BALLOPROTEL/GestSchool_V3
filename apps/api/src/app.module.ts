@@ -16,6 +16,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { MessagingModule } from './modules/messaging/messaging.module.js';
 import { ReportsModule } from './modules/reports/reports.module.js';
 import { DashboardModule } from './modules/dashboard/dashboard.module.js';
+import { AttendanceModule } from './modules/attendance/attendance.module.js';
 
 @Module({
   controllers: [AppController],
@@ -35,6 +36,7 @@ import { DashboardModule } from './modules/dashboard/dashboard.module.js';
     MessagingModule,
     ReportsModule,
     DashboardModule,
+    AttendanceModule,
   ],
 })
 export class AppModule {}
