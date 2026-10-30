@@ -816,7 +816,12 @@
     "forbidden": "You do not have access to attendance.",
     "empty": "No active students in this class.",
     "export": "Export sheet",
-    "exportError": "Unable to export the attendance sheet."
+    "exportError": "Unable to export the attendance sheet.",
+    "chooseStudent": "Select a student to view their attendance history.",
+    "history": "Attendance history",
+    "historyError": "Unable to load attendance history.",
+    "historyEmpty": "No attendance records for this student.",
+    "excused": "Excused"
   },
   "Finance": {
     "caption": "Recent invoices",
