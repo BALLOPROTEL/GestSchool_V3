@@ -955,14 +955,14 @@
     "absenceAlertDescription": "إبلاغ أولياء الأمور عند وجود غياب غير مبرر.",
     "absenceAlerts": "تنبيهات الغياب",
     "academic": "الإعداد الأكاديمي",
-    "academicDescription": "حدد السنة والفترات ونظام التنقيط.",
+    "academicDescription": "راجع السنة الدراسية النشطة واضبط التفضيلات الإقليمية.",
     "address": "العنوان",
     "automaticReports": "إنشاء بيانات النقط تلقائياً",
     "automaticReportsDescription": "إعداد بيانات النقط عند نهاية كل دورة.",
     "billing": "الفوترة",
     "billingDescription": "راجع باقة المنصة المستخدمة من طرف المؤسسة.",
-    "branding": "الشعار والهوية البصرية",
-    "brandingDescription": "خصص الشعار واللون الرئيسي.",
+    "branding": "الهوية البصرية للمستندات",
+    "brandingDescription": "حدد اللون الرئيسي المستخدم في المستندات الرسمية الجديدة.",
     "code": "رمز المؤسسة",
     "description": "اضبط معلومات المؤسسة وتفضيلات المنصة.",
     "emailNotifications": "إشعارات البريد الإلكتروني",
@@ -1003,7 +1003,9 @@
     "activeAcademicYear": "السنة الدراسية النشطة",
     "defaultLocale": "اللغة الافتراضية",
     "defaultCurrency": "العملة الافتراضية",
-    "timezone": "المنطقة الزمنية"
+    "timezone": "المنطقة الزمنية",
+    "activeAcademicYearHint": "تتم إدارة السنة النشطة من وحدة الشؤون الأكاديمية للحفاظ على دورة حياتها.",
+    "noActiveAcademicYear": "لا توجد سنة دراسية نشطة"
   },
   "Profile": {
     "activity": "النشاط",
