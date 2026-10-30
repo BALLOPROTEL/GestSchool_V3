@@ -252,6 +252,15 @@ enum ReportExportStatus {
   @@map("report_export_status")
 }
 
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  EXCUSED
+
+  @@map("attendance_status")
+}
+
 model Tenant {
   id                String             @id @default(dbgenerated("uuidv7()")) @db.Uuid
   slug              String             @unique @db.VarChar(80)
@@ -280,6 +289,7 @@ model Tenant {
   providerWebhookEvents ProviderWebhookEvent[]
   communicationRequests CommunicationRequest[]
   reportExports ReportExport[]
+  attendanceRecords AttendanceRecord[]
 
   @@map("tenants")
 }
@@ -352,6 +362,7 @@ model Membership {
   documentsRequested Document[] @relation("DocumentRequester")
   documentsRevoked Document[] @relation("DocumentRevoker")
   reportExports ReportExport[]
+  attendanceRecorded AttendanceRecord[] @relation("AttendanceRecorder")
 
   @@unique([tenantId, userId])
   @@unique([tenantId, legacyUsername])
@@ -539,6 +550,7 @@ model Student {
   invoices    Invoice[]
   payments    Payment[]
   documents   Document[]
+  attendanceRecords AttendanceRecord[]
 
   @@unique([tenantId, matricule])
   @@unique([tenantId, id])
@@ -699,6 +711,7 @@ model SchoolClass {
   enrollmentEventsTo   EnrollmentEvent[]    @relation("EnrollmentEventTo")
   reportCards          ReportCard[]
   feeSchedules         FeeSchedule[]
+  attendanceRecords     AttendanceRecord[]
 
   @@unique([tenantId, academicYearId, code])
   @@unique([tenantId, id])
@@ -792,6 +805,30 @@ model Enrollment {
   @@index([tenantId, schoolClassId])
   @@index([tenantId, status])
   @@map("enrollments")
+}
+
+model AttendanceRecord {
+  id                     String           @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  tenantId               String           @map("tenant_id") @db.Uuid
+  studentId              String           @map("student_id") @db.Uuid
+  schoolClassId          String           @map("school_class_id") @db.Uuid
+  date                    DateTime         @db.Date
+  status                  AttendanceStatus
+  note                    String?          @db.VarChar(500)
+  recordedByMembershipId String           @map("recorded_by_membership_id") @db.Uuid
+  createdAt               DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt               DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+  tenant                  Tenant           @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  student                 Student          @relation(fields: [tenantId, studentId], references: [tenantId, id], onDelete: Restrict)
+  schoolClass             SchoolClass      @relation(fields: [tenantId, schoolClassId], references: [tenantId, id], onDelete: Restrict)
+  recordedBy              Membership       @relation("AttendanceRecorder", fields: [tenantId, recordedByMembershipId], references: [tenantId, id], onDelete: Restrict)
+
+  @@unique([tenantId, id])
+  @@unique([tenantId, studentId, date])
+  @@index([tenantId, schoolClassId, date])
+  @@index([tenantId, studentId, date(sort: Desc)])
+  @@index([tenantId, recordedByMembershipId])
+  @@map("attendance_records")
 }
 
 model EnrollmentEvent {
