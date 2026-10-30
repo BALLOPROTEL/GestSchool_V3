@@ -155,7 +155,8 @@ async function historicalRoster(
 
   return enrollments
     .filter((enrollment) => {
-      if (enrollment.student.archivedAt && enrollment.student.archivedAt <= targetDate) return false;
+      if (enrollment.student.archivedAt && enrollment.student.archivedAt <= targetDate)
+        return false;
       const event = latest.get(enrollment.id);
       if (event) return event.toClassId === classId && event.toStatus === 'ACTIVE';
       return (
