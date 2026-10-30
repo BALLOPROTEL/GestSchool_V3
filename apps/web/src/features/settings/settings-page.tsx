@@ -9,8 +9,6 @@ import {
   CardTitle,
   Input,
   Label,
-  Select,
-  SelectItem,
   Tabs,
   TabsContent,
   TabsList,
