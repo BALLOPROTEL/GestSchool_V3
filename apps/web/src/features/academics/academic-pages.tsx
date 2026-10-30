@@ -26,6 +26,7 @@ import {
   CheckCircle2,
   CircleAlert,
   Clock3,
+  Download,
   Save,
   UsersRound,
 } from 'lucide-react';
@@ -35,6 +36,7 @@ import { toast } from 'sonner';
 import { useAuth } from '../auth/auth-provider';
 import { AcademicPicker } from './academic-components';
 import { peopleRequest, PeopleError } from '../directory/people-client';
+import { downloadAttendance } from '../attendance/attendance-client';
 import { usePeopleData } from '../directory/people-hooks';
 import { getInitials } from '../shared/format';
 import { PageHeader } from '../shared/page-header';
@@ -228,6 +230,19 @@ export function AttendancePage() {
               >
                 <CheckCircle2 />
                 {translate('markAllPresent')}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={saving || !classId}
+                onClick={() =>
+                  void downloadAttendance(classId, date).catch(() =>
+                    toast.error(translate('exportError')),
+                  )
+                }
+              >
+                <Download />
+                {translate('export')}
               </Button>
               <Button size="sm" disabled={saving} onClick={() => void save()}>
                 <Save />
