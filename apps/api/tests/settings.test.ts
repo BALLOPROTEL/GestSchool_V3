@@ -91,6 +91,7 @@ describe('LOT17 tenant settings repository', () => {
       schoolName: 'École GestSchool Test',
       schoolCode: 'GS-CI-001',
       primaryColor: '#123ABC',
+      timezone: 'Africa/Abidjan',
       activeAcademicYear: { id: data.year.id },
     });
 
