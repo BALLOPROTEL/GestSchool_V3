@@ -11,7 +11,6 @@ import {
   Label,
   Select,
   SelectItem,
-  Switch,
   Tabs,
   TabsContent,
   TabsList,
@@ -19,14 +18,13 @@ import {
   Textarea,
 } from '@gestschool/ui';
 import type { SessionView, TenantSettingsUpdate, TenantSettingsView } from '@gestschool/contracts';
-import { Bell, Building2, CalendarDays, Save } from 'lucide-react';
+import { Building2, CalendarDays, Save } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState, type ReactNode } from 'react';
 import { toast } from 'sonner';
 
 import { useAuth } from '../auth/auth-provider';
-import { AcademicPicker } from '../academics/academic-components';
 import { PeopleError, peopleRequest } from '../directory/people-client';
 import { usePeopleData } from '../directory/people-hooks';
 import { PageHeader } from '../shared/page-header';
@@ -77,37 +75,6 @@ function SettingsCard({
   );
 }
 
-function ToggleSetting({
-  checked,
-  description,
-  disabled,
-  label,
-  onCheckedChange,
-}: {
-  checked: boolean;
-  description: string;
-  disabled: boolean;
-  label: string;
-  onCheckedChange: (checked: boolean) => void;
-}) {
-  return (
-    <div className="flex items-start justify-between gap-4 border-b border-border py-4 last:border-0">
-      <div>
-        <p className="text-sm font-semibold">{label}</p>
-        <p className="mt-1 max-w-2xl text-xs leading-relaxed text-muted-foreground">
-          {description}
-        </p>
-      </div>
-      <Switch
-        aria-label={label}
-        checked={checked}
-        disabled={disabled}
-        onCheckedChange={onCheckedChange}
-      />
-    </div>
-  );
-}
-
 function canSettings(
   session: SessionView | undefined,
   permission: 'settings.read' | 'settings.write',
@@ -129,16 +96,10 @@ function editableFromView(value: TenantSettingsView): TenantSettingsUpdate {
     email: value.email,
     phone: value.phone,
     address: value.address,
-    logoUrl: value.logoUrl,
     primaryColor: value.primaryColor,
     defaultCurrency: value.defaultCurrency,
     defaultLocale: value.defaultLocale,
     timezone: value.timezone,
-    activeAcademicYearId: value.activeAcademicYearId,
-    gradingScale: value.gradingScale,
-    automaticReports: value.automaticReports,
-    parentPortal: value.parentPortal,
-    notifications: value.notifications,
   };
 }
 
@@ -168,7 +129,6 @@ export function SettingsPage() {
       const updated = await peopleRequest<TenantSettingsView>('settings', form, 'PATCH');
       setForm(editableFromView(updated));
       toast.success(translate('saved'));
-      window.dispatchEvent(new Event('gestschool:session'));
     } catch {
       toast.error(translate('saveError'));
     } finally {
@@ -193,6 +153,8 @@ export function SettingsPage() {
       </div>
     );
   }
+
+  const activeYear = result.data?.activeAcademicYear ?? null;
 
   return (
     <div className="page-shell" data-settings-ready={!result.loading}>
@@ -236,7 +198,6 @@ export function SettingsPage() {
             <TabsList>
               <TabsTrigger value="school">{translate('school')}</TabsTrigger>
               <TabsTrigger value="academic">{translate('academic')}</TabsTrigger>
-              <TabsTrigger value="notifications">{translate('notifications')}</TabsTrigger>
             </TabsList>
           </div>
 
@@ -302,39 +263,27 @@ export function SettingsPage() {
               icon={Building2}
               title={translate('branding')}
             >
-              <div className="grid gap-5 md:grid-cols-2">
-                <Field htmlFor="logo-url" label={translate('logoUrl')}>
+              <Field htmlFor="primary-color" label={translate('primaryColor')}>
+                <div className="flex max-w-md gap-3">
                   <Input
-                    id="logo-url"
-                    type="url"
-                    value={form.logoUrl ?? ''}
+                    aria-label={translate('primaryColorPicker')}
+                    className="w-14 px-1"
+                    id="primary-color-picker"
+                    type="color"
+                    value={form.primaryColor}
                     disabled={!canWrite}
-                    placeholder="https://…"
-                    onChange={(event) => patch('logoUrl', event.target.value || null)}
+                    onChange={(event) => patch('primaryColor', event.target.value.toUpperCase())}
                   />
-                </Field>
-                <Field htmlFor="primary-color" label={translate('primaryColor')}>
-                  <div className="flex gap-3">
-                    <Input
-                      aria-label={translate('primaryColorPicker')}
-                      className="w-14 px-1"
-                      id="primary-color-picker"
-                      type="color"
-                      value={form.primaryColor}
-                      disabled={!canWrite}
-                      onChange={(event) => patch('primaryColor', event.target.value.toUpperCase())}
-                    />
-                    <Input
-                      className="font-mono"
-                      id="primary-color"
-                      value={form.primaryColor}
-                      disabled={!canWrite}
-                      maxLength={7}
-                      onChange={(event) => patch('primaryColor', event.target.value)}
-                    />
-                  </div>
-                </Field>
-              </div>
+                  <Input
+                    className="font-mono"
+                    id="primary-color"
+                    value={form.primaryColor}
+                    disabled={!canWrite}
+                    maxLength={7}
+                    onChange={(event) => patch('primaryColor', event.target.value)}
+                  />
+                </div>
+              </Field>
             </SettingsCard>
           </TabsContent>
 
@@ -345,23 +294,19 @@ export function SettingsPage() {
               title={translate('academic')}
             >
               <div className="grid gap-5 md:grid-cols-2">
-                <AcademicPicker
-                  disabled={!canWrite}
-                  label={translate('activeAcademicYear')}
-                  path="academic-years?status=ALL"
-                  value={form.activeAcademicYearId ?? ''}
-                  onChange={(value) => patch('activeAcademicYearId', value || null)}
-                />
-                <Field htmlFor="grading-system" label={translate('gradingSystem')}>
-                  <Select
-                    id="grading-system"
-                    value={form.gradingScale}
-                    disabled={!canWrite}
-                    onChange={(event) => patch('gradingScale', event.target.value as '20' | '100')}
-                  >
-                    <SelectItem value="20">{translate('scale20')}</SelectItem>
-                    <SelectItem value="100">{translate('scale100')}</SelectItem>
-                  </Select>
+                <Field htmlFor="active-academic-year" label={translate('activeAcademicYear')}>
+                  <Input
+                    id="active-academic-year"
+                    value={
+                      activeYear
+                        ? `${activeYear.name} · ${activeYear.startsOn} → ${activeYear.endsOn}`
+                        : translate('noActiveAcademicYear')
+                    }
+                    disabled
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {translate('activeAcademicYearHint')}
+                  </p>
                 </Field>
                 <Field htmlFor="default-locale" label={translate('defaultLocale')}>
                   <Select
@@ -386,86 +331,16 @@ export function SettingsPage() {
                     onChange={(event) => patch('defaultCurrency', event.target.value.toUpperCase())}
                   />
                 </Field>
-                <div className="md:col-span-2">
-                  <Field htmlFor="timezone" label={translate('timezone')}>
-                    <Input
-                      id="timezone"
-                      value={form.timezone}
-                      disabled={!canWrite}
-                      maxLength={80}
-                      onChange={(event) => patch('timezone', event.target.value)}
-                    />
-                  </Field>
-                </div>
+                <Field htmlFor="timezone" label={translate('timezone')}>
+                  <Input
+                    id="timezone"
+                    value={form.timezone}
+                    disabled={!canWrite}
+                    maxLength={80}
+                    onChange={(event) => patch('timezone', event.target.value)}
+                  />
+                </Field>
               </div>
-
-              <div className="mt-6 border-t border-border pt-2">
-                <ToggleSetting
-                  checked={form.automaticReports}
-                  disabled={!canWrite}
-                  description={translate('automaticReportsDescription')}
-                  label={translate('automaticReports')}
-                  onCheckedChange={(checked) => patch('automaticReports', checked)}
-                />
-                <ToggleSetting
-                  checked={form.parentPortal}
-                  disabled={!canWrite}
-                  description={translate('parentPortalDescription')}
-                  label={translate('parentPortal')}
-                  onCheckedChange={(checked) => patch('parentPortal', checked)}
-                />
-              </div>
-            </SettingsCard>
-          </TabsContent>
-
-          <TabsContent value="notifications">
-            <SettingsCard
-              description={translate('notificationDescription')}
-              icon={Bell}
-              title={translate('notifications')}
-            >
-              <ToggleSetting
-                checked={form.notifications.email}
-                disabled={!canWrite}
-                description={translate('emailNotificationsDescription')}
-                label={translate('emailNotifications')}
-                onCheckedChange={(checked) =>
-                  patch('notifications', { ...form.notifications, email: checked })
-                }
-              />
-              <ToggleSetting
-                checked={form.notifications.sms}
-                disabled={!canWrite}
-                description={translate('smsNotificationsDescription')}
-                label={translate('smsNotifications')}
-                onCheckedChange={(checked) =>
-                  patch('notifications', { ...form.notifications, sms: checked })
-                }
-              />
-              <ToggleSetting
-                checked={form.notifications.paymentReminders}
-                disabled={!canWrite}
-                description={translate('paymentReminderDescription')}
-                label={translate('paymentReminders')}
-                onCheckedChange={(checked) =>
-                  patch('notifications', {
-                    ...form.notifications,
-                    paymentReminders: checked,
-                  })
-                }
-              />
-              <ToggleSetting
-                checked={form.notifications.absenceAlerts}
-                disabled={!canWrite}
-                description={translate('absenceAlertDescription')}
-                label={translate('absenceAlerts')}
-                onCheckedChange={(checked) =>
-                  patch('notifications', {
-                    ...form.notifications,
-                    absenceAlerts: checked,
-                  })
-                }
-              />
             </SettingsCard>
           </TabsContent>
         </Tabs>
