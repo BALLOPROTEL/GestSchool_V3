@@ -821,7 +821,8 @@
     "history": "Attendance history",
     "historyError": "Unable to load attendance history.",
     "historyEmpty": "No attendance records for this student.",
-    "excused": "Excused"
+    "excused": "Excused",
+    "historyPage": "Page {page} of {pages}"
   },
   "Finance": {
     "caption": "Recent invoices",
