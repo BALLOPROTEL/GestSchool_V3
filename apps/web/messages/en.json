@@ -814,7 +814,9 @@
     "saveError": "Unable to save attendance.",
     "loadError": "Unable to load the attendance sheet.",
     "forbidden": "You do not have access to attendance.",
-    "empty": "No active students in this class."
+    "empty": "No active students in this class.",
+    "export": "Export sheet",
+    "exportError": "Unable to export the attendance sheet."
   },
   "Finance": {
     "caption": "Recent invoices",
