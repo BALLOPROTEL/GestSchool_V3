@@ -26,7 +26,15 @@ export type IamDatabaseOperation =
   | 'LOGIN_FAILURE_AUDIT'
   | 'PASSWORD_HASH_UPGRADE'
   | 'AUDIT'
-  | 'TRANSACTION';
+  | 'TRANSACTION'
+  | 'LEGACY_MIGRATION_TRANSACTION'
+  | 'LEGACY_MIGRATION_LOCK'
+  | 'LEGACY_MIGRATION_GUARD'
+  | 'LEGACY_MIGRATION_COLLISION'
+  | 'LEGACY_MIGRATION_BOOTSTRAP'
+  | 'LEGACY_MIGRATION_GRANTS'
+  | 'LEGACY_MIGRATION_IDENTITY'
+  | 'LEGACY_MIGRATION_AUDIT';
 export interface IamDiagnostic {
   diagnostic:
     | 'LOT14_AUTH_REDIS_UNAVAILABLE'
@@ -78,9 +86,13 @@ export async function observeIamDatabase<T>(
       const previous = observations.get(error);
       observations.set(
         error,
-        operation === 'TRANSACTION'
+        operation === 'TRANSACTION' || operation === 'LEGACY_MIGRATION_TRANSACTION'
           ? { ...previous, transactionDurationMs: elapsed(start) }
-          : { ...previous, databaseOperation: operation, databaseDurationMs: elapsed(start) },
+          : {
+              ...previous,
+              databaseOperation: previous?.databaseOperation ?? operation,
+              databaseDurationMs: previous?.databaseDurationMs ?? elapsed(start),
+            },
       );
     }
     throw error;
