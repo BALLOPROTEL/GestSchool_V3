@@ -373,6 +373,26 @@ describe('LOT17 attendance repository', () => {
     ).rejects.toMatchObject({ code: 'AUTH_FORBIDDEN', status: 403 });
   });
 
+  it('does not let a broad read grant bypass an assigned export scope', async () => {
+    const data = await fixture();
+    const scopedContext: RequestContext = {
+      ...data.context,
+      roles: ['TEACHER'],
+      grants: [
+        { permission: 'attendance.read', scope: 'TENANT' },
+        { permission: 'attendance.export', scope: 'ASSIGNED' },
+      ],
+    };
+
+    await expect(
+      repository.sheet(
+        scopedContext,
+        { classId: data.schoolClass.id, date: '2026-10-30' },
+        'attendance.export',
+      ),
+    ).rejects.toMatchObject({ code: 'AUTH_FORBIDDEN', status: 403 });
+  });
+
   it('does not expose a class from another tenant', async () => {
     const first = await fixture();
     const second = await fixture();
