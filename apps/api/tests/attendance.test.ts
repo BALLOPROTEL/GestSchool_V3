@@ -147,6 +147,8 @@ describe('LOT17 attendance repository', () => {
       pageSize: 25,
     });
     expect(history.total).toBe(1);
+    expect(history.page).toBe(1);
+    expect(history.pageSize).toBe(25);
     expect(history.items[0]).toMatchObject({
       studentId: data.student.id,
       classId: data.schoolClass.id,
