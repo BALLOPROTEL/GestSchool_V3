@@ -1,7 +1,10 @@
 import type { RequestContext } from '../../iam/domain/context.js';
 import { IamError } from '../../iam/domain/context.js';
 
-export function settingsAccess(context: RequestContext, permission: 'settings.read' | 'settings.write') {
+export function settingsAccess(
+  context: RequestContext,
+  permission: 'settings.read' | 'settings.write',
+) {
   const allowed = context.grants.some(
     (grant) =>
       grant.permission === permission &&

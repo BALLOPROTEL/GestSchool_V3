@@ -18,11 +18,7 @@ import {
   TabsTrigger,
   Textarea,
 } from '@gestschool/ui';
-import type {
-  SessionView,
-  TenantSettingsUpdate,
-  TenantSettingsView,
-} from '@gestschool/contracts';
+import type { SessionView, TenantSettingsUpdate, TenantSettingsView } from '@gestschool/contracts';
 import { Bell, Building2, CalendarDays, Save } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -112,7 +108,10 @@ function ToggleSetting({
   );
 }
 
-function canSettings(session: SessionView | undefined, permission: 'settings.read' | 'settings.write') {
+function canSettings(
+  session: SessionView | undefined,
+  permission: 'settings.read' | 'settings.write',
+) {
   return Boolean(
     session?.grants.some(
       (grant) =>
@@ -158,10 +157,7 @@ export function SettingsPage() {
     if (result.data) setForm(editableFromView(result.data));
   }, [result.data]);
 
-  function patch<K extends keyof TenantSettingsUpdate>(
-    key: K,
-    value: TenantSettingsUpdate[K],
-  ) {
+  function patch<K extends keyof TenantSettingsUpdate>(key: K, value: TenantSettingsUpdate[K]) {
     setForm((current) => (current ? { ...current, [key]: value } : current));
   }
 
@@ -361,9 +357,7 @@ export function SettingsPage() {
                     id="grading-system"
                     value={form.gradingScale}
                     disabled={!canWrite}
-                    onChange={(event) =>
-                      patch('gradingScale', event.target.value as '20' | '100')
-                    }
+                    onChange={(event) => patch('gradingScale', event.target.value as '20' | '100')}
                   >
                     <SelectItem value="20">{translate('scale20')}</SelectItem>
                     <SelectItem value="100">{translate('scale100')}</SelectItem>
@@ -389,9 +383,7 @@ export function SettingsPage() {
                     value={form.defaultCurrency}
                     disabled={!canWrite}
                     maxLength={3}
-                    onChange={(event) =>
-                      patch('defaultCurrency', event.target.value.toUpperCase())
-                    }
+                    onChange={(event) => patch('defaultCurrency', event.target.value.toUpperCase())}
                   />
                 </Field>
                 <div className="md:col-span-2">

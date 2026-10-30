@@ -10,9 +10,7 @@ export class SettingsDatabase implements OnModuleDestroy {
     await this.client.$disconnect();
   }
 
-  transaction<T>(
-    run: (db: Prisma.TransactionClient) => Promise<T>,
-  ): Promise<T> {
+  transaction<T>(run: (db: Prisma.TransactionClient) => Promise<T>): Promise<T> {
     return this.client.$transaction(run, { maxWait: 10_000, timeout: 20_000 });
   }
 }

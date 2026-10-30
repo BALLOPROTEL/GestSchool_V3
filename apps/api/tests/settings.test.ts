@@ -52,10 +52,7 @@ async function fixture() {
   return { tenant, user, membership, year, context };
 }
 
-function payload(
-  schoolName: string,
-  activeAcademicYearId: string | null,
-): TenantSettingsUpdate {
+function payload(schoolName: string, activeAcademicYearId: string | null): TenantSettingsUpdate {
   return {
     schoolName,
     schoolCode: 'GS-CI-001',
@@ -131,10 +128,7 @@ describe('LOT17 tenant settings repository', () => {
     const first = await fixture();
     const second = await fixture();
     await expect(
-      repository.update(
-        first.context,
-        payload('École A', second.year.id),
-      ),
+      repository.update(first.context, payload('École A', second.year.id)),
     ).rejects.toMatchObject({
       message: 'SETTINGS_ACADEMIC_YEAR_INVALID',
       status: 409,
