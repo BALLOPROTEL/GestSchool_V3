@@ -816,7 +816,12 @@
     "forbidden": "Vous n’avez pas accès aux présences.",
     "empty": "Aucun élève actif dans cette classe.",
     "export": "Exporter la feuille",
-    "exportError": "Impossible d’exporter la feuille de présence."
+    "exportError": "Impossible d’exporter la feuille de présence.",
+    "chooseStudent": "Sélectionnez un élève pour consulter son historique de présence.",
+    "history": "Historique des présences",
+    "historyError": "Impossible de charger l’historique des présences.",
+    "historyEmpty": "Aucune présence enregistrée pour cet élève.",
+    "excused": "Justifiées"
   },
   "Finance": {
     "caption": "Factures récentes",
