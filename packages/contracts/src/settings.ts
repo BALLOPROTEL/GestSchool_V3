@@ -22,9 +22,19 @@ export const tenantSettingsUpdate = z.strictObject({
   phone: optionalText(30),
   address: optionalText(500),
   primaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
-  defaultCurrency: z.string().regex(/^[A-Z]{3}$/),
-  defaultLocale: z.enum(['fr', 'en', 'ar']),
-  timezone: z.string().trim().min(1).max(80),
+  timezone: z
+    .string()
+    .trim()
+    .min(1)
+    .max(80)
+    .refine((value) => {
+      try {
+        new Intl.DateTimeFormat('en-US', { timeZone: value }).format();
+        return true;
+      } catch {
+        return false;
+      }
+    }, 'SETTINGS_TIMEZONE_INVALID'),
 });
 
 export type TenantSettingsUpdate = z.infer<typeof tenantSettingsUpdate>;
