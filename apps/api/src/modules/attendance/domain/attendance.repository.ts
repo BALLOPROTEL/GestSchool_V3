@@ -11,6 +11,7 @@ export abstract class AttendanceRepository {
   abstract sheet(
     context: RequestContext,
     query: AttendanceSheetQuery,
+    permission?: 'attendance.read' | 'attendance.write' | 'attendance.export',
   ): Promise<AttendanceSheetView>;
   abstract history(
     context: RequestContext,
