@@ -12,6 +12,11 @@ import {
   attendanceWriteScopes,
 } from '../domain/policy.js';
 
+function csvCell(value: string) {
+  const protectedValue = /^[=+\-@]/.test(value) ? `'${value}` : value;
+  return `"${protectedValue.replaceAll('"', '""')}"`;
+}
+
 @Injectable()
 export class AttendanceService {
   constructor(@Inject(AttendanceRepository) private readonly repository: AttendanceRepository) {}
@@ -35,10 +40,6 @@ export class AttendanceService {
     attendanceAccess(context, 'attendance.export', attendanceExportScopes);
     const query = attendanceSheetQuery.parse(input);
     const sheet = await this.repository.sheet(context, query);
-    const cell = (value: string) => {
-      const protectedValue = /^[=+\-@]/.test(value) ? `'${value}` : value;
-      return `"${protectedValue.replaceAll('"', '""')}"`;
-    };
     const lines = [
       ['student', 'matricule', 'class', 'date', 'status', 'note'],
       ...sheet.students.map((student) => [
@@ -50,7 +51,7 @@ export class AttendanceService {
         student.note ?? '',
       ]),
     ];
-    const csv = `\uFEFF${lines.map((row) => row.map((value) => cell(value)).join(',')).join('\r\n')}\r\n`;
+    const csv = `\uFEFF${lines.map((row) => row.map((value) => csvCell(value)).join(',')).join('\r\n')}\r\n`;
     return {
       bytes: new TextEncoder().encode(csv),
       fileName: `gestschool-attendance-${sheet.date}.csv`,
