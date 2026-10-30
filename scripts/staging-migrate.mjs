@@ -6,7 +6,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const databaseDirectory = new URL('../packages/database/', import.meta.url);
 const migrationsDirectory = new URL('prisma/migrations/', databaseDirectory);
-const manifestHash = 'aa8f5f64b81c15b874546ede1bc6f0f1e85790bb112a2022d0091f0a690cae76';
+const manifestHash = 'b5a4d6f900febe89c739b5aee4dcdbba2561c802ad2d9be3599ab63361de1f39';
 const expectedHost = 'dpg-dbei7tqvcj2c73d1qukg-a.frankfurt-postgres.render.com';
 const expectedDatabase = 'gestschool_v3_postgres_staging';
 
