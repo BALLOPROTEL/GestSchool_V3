@@ -6,7 +6,11 @@ import {
 } from '@gestschool/contracts';
 import type { RequestContext } from '../../iam/domain/context.js';
 import { AttendanceRepository } from '../domain/attendance.repository.js';
-import { attendanceAccess, attendanceWriteScopes } from '../domain/policy.js';
+import {
+  attendanceAccess,
+  attendanceExportScopes,
+  attendanceWriteScopes,
+} from '../domain/policy.js';
 
 @Injectable()
 export class AttendanceService {
@@ -25,5 +29,31 @@ export class AttendanceService {
   write(context: RequestContext, input: unknown) {
     attendanceAccess(context, 'attendance.write', attendanceWriteScopes);
     return this.repository.write(context, attendanceBulkWrite.parse(input));
+  }
+
+  async export(context: RequestContext, input: unknown) {
+    attendanceAccess(context, 'attendance.export', attendanceExportScopes);
+    const query = attendanceSheetQuery.parse(input);
+    const sheet = await this.repository.sheet(context, query);
+    const cell = (value: string) => {
+      const protectedValue = /^[=+\-@]/.test(value) ? `'${value}` : value;
+      return `"${protectedValue.replaceAll('"', '""')}"`;
+    };
+    const lines = [
+      ['student', 'matricule', 'class', 'date', 'status', 'note'],
+      ...sheet.students.map((student) => [
+        student.studentName,
+        student.matricule,
+        sheet.className,
+        sheet.date,
+        student.status ?? 'UNMARKED',
+        student.note ?? '',
+      ]),
+    ];
+    const csv = `\uFEFF${lines.map((row) => row.map((value) => cell(value)).join(',')).join('\r\n')}\r\n`;
+    return {
+      bytes: new TextEncoder().encode(csv),
+      fileName: `gestschool-attendance-${sheet.date}.csv`,
+    };
   }
 }
