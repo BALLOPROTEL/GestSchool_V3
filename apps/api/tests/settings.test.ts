@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { loadInfrastructureConfig } from '@gestschool/config/environment';
 import { createPrismaClient } from '@gestschool/database';
 import { afterAll, describe, expect, it } from 'vitest';
-import type { TenantSettingsUpdate } from '@gestschool/contracts';
+import { tenantSettingsUpdate, type TenantSettingsUpdate } from '@gestschool/contracts';
 import type { RequestContext } from '../src/modules/iam/domain/context.js';
 import { SettingsDatabase } from '../src/modules/settings/infrastructure/database.js';
 import { PrismaSettingsRepository } from '../src/modules/settings/infrastructure/settings.repository.js';
@@ -60,8 +60,6 @@ function payload(schoolName: string): TenantSettingsUpdate {
     phone: '+225 01020304',
     address: 'Cocody, Abidjan',
     primaryColor: '#123ABC',
-    defaultCurrency: 'XOF',
-    defaultLocale: 'fr',
     timezone: 'Africa/Abidjan',
   };
 }
@@ -78,8 +76,6 @@ describe('LOT17 tenant settings repository', () => {
     expect(initial).toMatchObject({
       tenantId: data.tenant.id,
       schoolName: data.tenant.name,
-      defaultCurrency: 'XOF',
-      defaultLocale: 'fr',
       timezone: 'Africa/Abidjan',
       activeAcademicYear: {
         id: data.year.id,
@@ -133,8 +129,21 @@ describe('LOT17 tenant settings repository', () => {
       customExistingKey: 'preserve-me',
       primaryColor: '#123ABC',
     });
-    expect(persisted.defaultLocale).toBe('fr');
-    expect(persisted.defaultCurrency).toBe('XOF');
+  });
+
+  it('rejects an invalid IANA time zone before persistence', () => {
+    expect(
+      tenantSettingsUpdate.safeParse({
+        ...payload('École Fuseau'),
+        timezone: 'Europe/Pariss',
+      }).success,
+    ).toBe(false);
+    expect(
+      tenantSettingsUpdate.safeParse({
+        ...payload('École Fuseau'),
+        timezone: 'Europe/Paris',
+      }).success,
+    ).toBe(true);
   });
 
   it('ignores draft years when reporting the active academic year', async () => {
