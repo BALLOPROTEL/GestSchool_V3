@@ -955,14 +955,14 @@
     "absenceAlertDescription": "Avertir les responsables lors d’une absence non justifiée.",
     "absenceAlerts": "Alertes d’absence",
     "academic": "Configuration académique",
-    "academicDescription": "Définissez l’année, les périodes et le système de notation.",
+    "academicDescription": "Consultez l’année scolaire active et configurez les préférences régionales.",
     "address": "Adresse",
     "automaticReports": "Génération automatique des bulletins",
     "automaticReportsDescription": "Préparer les bulletins à la clôture de chaque trimestre.",
     "billing": "Facturation",
     "billingDescription": "Consultez le forfait SaaS utilisé par cet établissement.",
-    "branding": "Logo & identité visuelle",
-    "brandingDescription": "Personnalisez le logo et la couleur principale.",
+    "branding": "Identité visuelle des documents",
+    "brandingDescription": "Définissez la couleur principale utilisée sur les nouveaux documents officiels.",
     "code": "Code établissement",
     "description": "Configurez l’établissement et les préférences de la plateforme.",
     "emailNotifications": "Notifications par e-mail",
@@ -1003,7 +1003,9 @@
     "activeAcademicYear": "Année scolaire active",
     "defaultLocale": "Langue par défaut",
     "defaultCurrency": "Devise par défaut",
-    "timezone": "Fuseau horaire"
+    "timezone": "Fuseau horaire",
+    "activeAcademicYearHint": "L’année active se gère dans le module Académique afin de respecter son cycle de vie.",
+    "noActiveAcademicYear": "Aucune année scolaire active"
   },
   "Profile": {
     "activity": "Activité",
