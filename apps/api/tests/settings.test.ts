@@ -133,6 +133,8 @@ describe('LOT17 tenant settings repository', () => {
       customExistingKey: 'preserve-me',
       primaryColor: '#123ABC',
     });
+    expect(persisted.defaultLocale).toBe('fr');
+    expect(persisted.defaultCurrency).toBe('XOF');
   });
 
   it('ignores draft years when reporting the active academic year', async () => {
