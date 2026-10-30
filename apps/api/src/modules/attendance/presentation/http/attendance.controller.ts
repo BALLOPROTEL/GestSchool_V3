@@ -2,6 +2,7 @@ import { Body, Controller, Get, Inject, Put, Query, Req, Res, StreamableFile } f
 import type { Response } from 'express';
 import { AttendanceService } from '../../application/attendance.service.js';
 import {
+  attendanceExportScopes,
   attendanceReadScopes,
   attendanceWriteScopes,
 } from '../../domain/policy.js';
@@ -34,7 +35,7 @@ export class AttendanceController {
   }
 
   @Get('export')
-  @RequirePermission('attendance.export', attendanceWriteScopes)
+  @RequirePermission('attendance.export', attendanceExportScopes)
   async export(
     @Req() req: IamRequest,
     @Query() query: unknown,
