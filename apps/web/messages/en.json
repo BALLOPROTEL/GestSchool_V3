@@ -955,14 +955,14 @@
     "absenceAlertDescription": "Notify guardians when an absence is not justified.",
     "absenceAlerts": "Absence alerts",
     "academic": "Academic setup",
-    "academicDescription": "Define the year, terms and grading system.",
+    "academicDescription": "Review the active academic year and configure regional preferences.",
     "address": "Address",
     "automaticReports": "Automatic report card generation",
     "automaticReportsDescription": "Prepare report cards at the end of each term.",
     "billing": "Billing",
     "billingDescription": "Review the SaaS plan used by this school.",
-    "branding": "Logo & branding",
-    "brandingDescription": "Customise the logo and primary colour.",
+    "branding": "Document visual identity",
+    "brandingDescription": "Set the primary colour used on newly generated official documents.",
     "code": "School code",
     "description": "Configure your school and platform preferences.",
     "emailNotifications": "Email notifications",
@@ -1003,7 +1003,9 @@
     "activeAcademicYear": "Active academic year",
     "defaultLocale": "Default language",
     "defaultCurrency": "Default currency",
-    "timezone": "Time zone"
+    "timezone": "Time zone",
+    "activeAcademicYearHint": "The active year is managed from the Academics module to preserve its lifecycle.",
+    "noActiveAcademicYear": "No active academic year"
   },
   "Profile": {
     "activity": "Activity",
