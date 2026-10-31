@@ -120,18 +120,20 @@ export function UsersPage() {
   }
 
   async function action(key: string, run: () => Promise<unknown>, success: string) {
-    if (busy) return;
+    if (busy) return false;
     setBusy(key);
     try {
       await run();
       toast.success(success);
       refresh();
+      return true;
     } catch (error) {
       toast.error(
         error instanceof PeopleError
           ? translate('actionErrorWithCode', { code: error.code })
           : translate('actionError'),
       );
+      return false;
     } finally {
       setBusy(null);
     }
@@ -140,7 +142,7 @@ export function UsersPage() {
   async function submitInvite(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!invite.displayName.trim() || !invite.email.trim() || !invite.roleId) return;
-    await action(
+    const succeeded = await action(
       'invite',
       () =>
         peopleRequest(
@@ -154,8 +156,10 @@ export function UsersPage() {
         ),
       translate('inviteSent'),
     );
-    setInvite({ displayName: '', email: '', roleId: '' });
-    setInviteOpen(false);
+    if (succeeded) {
+      setInvite({ displayName: '', email: '', roleId: '' });
+      setInviteOpen(false);
+    }
   }
 
   const columns: readonly DataTableColumn<UserAdminRecord>[] = [
