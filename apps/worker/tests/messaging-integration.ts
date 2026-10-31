@@ -126,6 +126,62 @@ try {
   )
     throw new Error('IAM reset token was exposed as an in-app notification');
 
+  const activationFixture = randomBytes(6).toString('hex');
+  const activationRawToken = randomBytes(32).toString('base64url');
+  const activationIssued = await db.$transaction(async (transaction) => {
+    const invitedUser = await transaction.user.create({
+      data: {
+        email: `activation-${activationFixture}@example.invalid`,
+        displayName: 'Activation Invitée',
+        identity: { create: {} },
+      },
+    });
+    const invitedMembership = await transaction.membership.create({
+      data: {
+        tenantId: tenant.id,
+        userId: invitedUser.id,
+        status: 'INVITED',
+      },
+    });
+    const token = await transaction.authToken.create({
+      data: {
+        userId: invitedUser.id,
+        membershipId: invitedMembership.id,
+        purpose: 'ACTIVATION',
+        tokenHash: createHash('sha256').update(activationRawToken).digest('hex'),
+        encryptedSecret: encryptMessagingToken(
+          activationRawToken,
+          invitedUser.id,
+          'ACTIVATION',
+          config.tokenKey,
+        ),
+        expiresAt: new Date(Date.now() + 15 * 60_000),
+      },
+    });
+    return transaction.outboxEvent.create({
+      data: {
+        tenantId: tenant.id,
+        aggregateType: 'auth_token',
+        aggregateId: token.id,
+        eventType: 'iam.account.activation.requested.v1',
+        payload: { schemaVersion: 1 },
+        status: 'PROCESSED',
+        processedAt: new Date(),
+      },
+    });
+  });
+  await delivery.process(tenant.id, activationIssued.id);
+  const activationMessage = await db.message.findFirst({
+    where: { tenantId: tenant.id, eventId: activationIssued.id },
+  });
+  if (
+    !activationMessage ||
+    activationMessage.status !== 'SENT' ||
+    activationMessage.membershipId === null ||
+    !(await readFile(capture, 'utf8')).includes(activationRawToken)
+  )
+    throw new Error('INVITED activation delivery did not reach the exact membership');
+
   const foreignTenant = await db.tenant.create({
     data: { slug: `messaging-isolation-${randomBytes(6).toString('hex')}`, name: 'Isolation' },
   });
@@ -281,6 +337,7 @@ try {
   process.stdout.write('outbox → BullMQ → worker → private local email = PASS\n');
   process.stdout.write('10 concurrent replays → 1 captured delivery = PASS\n');
   process.stdout.write('IAM token absent from messages and notifications = PASS\n');
+  process.stdout.write('INVITED activation delivery = PASS\n');
   process.stdout.write('cross-tenant IAM delivery = BLOCKED\n');
   process.stdout.write('Arabic enrollment → 1 in-app notification + 1 local email = PASS\n');
   process.stdout.write(
