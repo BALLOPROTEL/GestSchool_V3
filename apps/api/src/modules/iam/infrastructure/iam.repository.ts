@@ -312,12 +312,7 @@ export class IamRepository {
     });
   }
 
-  async listTenantUsers(
-    tenantId: string,
-    query: string,
-    page: number,
-    pageSize: number,
-  ) {
+  async listTenantUsers(tenantId: string, query: string, page: number, pageSize: number) {
     const where: Prisma.MembershipWhereInput = {
       tenantId,
       ...(query
@@ -381,11 +376,7 @@ export class IamRepository {
     });
   }
 
-  invalidateMembershipTokens(
-    userId: string,
-    membershipId: string,
-    purpose?: AuthTokenPurpose,
-  ) {
+  invalidateMembershipTokens(userId: string, membershipId: string, purpose?: AuthTokenPurpose) {
     return this.db.authToken.updateMany({
       where: {
         userId,

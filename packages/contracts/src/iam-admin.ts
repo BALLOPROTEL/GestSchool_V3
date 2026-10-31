@@ -44,7 +44,10 @@ export interface UserAdminListView {
 }
 
 export const userAdminInvite = z.strictObject({
-  email: z.email().max(254).transform((value) => value.trim().toLowerCase()),
+  email: z
+    .email()
+    .max(254)
+    .transform((value) => value.trim().toLowerCase()),
   displayName: z.string().trim().min(1).max(160),
   roleId: z.uuid(),
 });

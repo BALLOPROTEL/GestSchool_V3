@@ -20,11 +20,7 @@ import {
   StatusBadge,
 } from '@gestschool/ui';
 import type { DataTableColumn, StatusTone } from '@gestschool/ui';
-import type {
-  UserAdminListView,
-  UserAdminRecord,
-  UserAdminRoleView,
-} from '@gestschool/contracts';
+import type { UserAdminListView, UserAdminRecord, UserAdminRoleView } from '@gestschool/contracts';
 import {
   Download,
   KeyRound,
@@ -81,9 +77,7 @@ function hasGrant(
   permission: string,
 ): boolean {
   return grants.some(
-    (grant) =>
-      grant.permission === permission &&
-      ['TENANT', 'PLATFORM'].includes(grant.scope),
+    (grant) => grant.permission === permission && ['TENANT', 'PLATFORM'].includes(grant.scope),
   );
 }
 
@@ -127,11 +121,7 @@ export function UsersPage() {
     setRevision((value) => value + 1);
   }
 
-  async function action(
-    key: string,
-    run: () => Promise<unknown>,
-    success: string,
-  ) {
+  async function action(key: string, run: () => Promise<unknown>, success: string) {
     if (busy) return;
     setBusy(key);
     try {
@@ -316,10 +306,7 @@ export function UsersPage() {
                       peopleRequest(
                         `iam/memberships/${user.membershipId}/status`,
                         {
-                          status:
-                            user.membershipStatus === 'SUSPENDED'
-                              ? 'ACTIVE'
-                              : 'SUSPENDED',
+                          status: user.membershipStatus === 'SUSPENDED' ? 'ACTIVE' : 'SUSPENDED',
                         },
                         'PUT',
                       ),
@@ -402,9 +389,7 @@ export function UsersPage() {
           />
         )}
         <div className="flex items-center justify-between border-t border-border px-5 py-3">
-          <p className="text-xs text-muted-foreground">
-            {translate('page', { page, pages })}
-          </p>
+          <p className="text-xs text-muted-foreground">{translate('page', { page, pages })}</p>
           <div className="flex gap-2">
             <Button
               disabled={page <= 1 || result.loading}
@@ -484,11 +469,7 @@ export function UsersPage() {
               </div>
             </div>
             <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setInviteOpen(false)}
-              >
+              <Button type="button" variant="outline" onClick={() => setInviteOpen(false)}>
                 {common('cancel')}
               </Button>
               <Button disabled={busy !== null} type="submit">

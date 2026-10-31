@@ -20,7 +20,9 @@ function fixtures(): Fixtures {
   ) as Fixtures;
 }
 
-test('LOT17.3 invites and renders a real tenant user without mock actions', async ({ page }, info) => {
+test('LOT17.3 invites and renders a real tenant user without mock actions', async ({
+  page,
+}, info) => {
   test.skip(info.project.name !== '1440x900', 'User administration flow certified once.');
   const account = fixtures().people[info.project.name];
   if (!account) throw new Error('Missing user administration fixture');

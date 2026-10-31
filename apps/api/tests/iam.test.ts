@@ -737,10 +737,9 @@ describe('RBAC tests', () => {
         roles: { create: { tenantId: actor.tenant.id, roleId: active.role.id } },
       },
     });
-    const reset = await admin.send(
-      `/api/v1/iam/memberships/${activeMembership.id}/credentials`,
-      { purpose: 'PASSWORD_RESET' },
-    );
+    const reset = await admin.send(`/api/v1/iam/memberships/${activeMembership.id}/credentials`, {
+      purpose: 'PASSWORD_RESET',
+    });
     expect(reset.status).toBe(201);
     expect(
       await database.authToken.count({

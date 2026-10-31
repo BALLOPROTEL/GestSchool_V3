@@ -64,10 +64,7 @@ export class UsersService {
   }
 
   private async target(membershipId: string, context: RequestContext) {
-    const membership = await this.repository.membershipAdminTarget(
-      membershipId,
-      context.tenantId,
-    );
+    const membership = await this.repository.membershipAdminTarget(membershipId, context.tenantId);
     if (!membership) deny();
     if (
       membership.roles.some((binding) => binding.role.code === 'SUPER_ADMIN') &&
@@ -172,12 +169,7 @@ export class UsersService {
     purpose: 'ACTIVATION' | 'PASSWORD_RESET',
   ): Promise<void> {
     await this.target(membershipId, context);
-    await this.credentials.issueForMembership(
-      membershipId,
-      context.tenantId,
-      purpose,
-      context,
-    );
+    await this.credentials.issueForMembership(membershipId, context.tenantId, purpose, context);
   }
 
   async permission(
