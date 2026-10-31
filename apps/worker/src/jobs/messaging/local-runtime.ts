@@ -42,15 +42,23 @@ export class LocalMessagingRuntime implements OnModuleDestroy {
       ({ tenantId, eventId }, job) => delivery.process(tenantId, eventId, job),
     );
     worker.on('error', () => this.logger.error('MESSAGING_WORKER_UNAVAILABLE'));
-    worker.on('failed', (job) =>
+    worker.on('failed', (job, error) => {
+      const message = error instanceof Error ? error.message : '';
+      const providerErrorCode =
+        /^(BREVO_HTTP_\d{3}|BREVO_CONNECTION_UNCERTAIN|BREVO_RESPONSE_UNCERTAIN|STAGING_RECIPIENT_NOT_AUTHORIZED|STAGING_CHANNEL_NOT_AUTHORIZED|WHATSAPP_NOT_AUTHORIZED|BREVO_WHATSAPP_SENDER_MISSING|BREVO_WHATSAPP_TEMPLATE_MISSING)$/.test(
+          message,
+        )
+          ? message
+          : 'MESSAGING_DELIVERY_FAILED';
       this.logger.warn(
         JSON.stringify({
           event: 'messaging.job.failed',
           eventId: job?.id,
           attempt: job?.attemptsMade,
+          providerErrorCode,
         }),
-      ),
-    );
+      );
+    });
     await worker.waitUntilReady();
     this.queue = queue;
     this.worker = worker;
