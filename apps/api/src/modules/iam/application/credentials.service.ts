@@ -57,6 +57,56 @@ export class CredentialsService {
       return token;
     });
   }
+  async issueForMembership(
+    membershipId: string,
+    tenantId: string,
+    purpose: 'ACTIVATION' | 'PASSWORD_RESET',
+    metadata: RequestMetadata,
+  ): Promise<void> {
+    const target = await this.repository.membershipAdminTarget(membershipId, tenantId);
+    if (!target) deny();
+    const eligible =
+      purpose === 'ACTIVATION'
+        ? target.status === 'INVITED' && !target.user.identity?.activatedAt
+        : target.status === 'ACTIVE' && Boolean(target.user.identity?.activatedAt);
+    if (!eligible) deny('AUTH_INVALID_REQUEST', 409);
+
+    await this.repository.atomic(target.userId, async (repository) => {
+      const current = await repository.membershipAdminTarget(membershipId, tenantId);
+      if (!current) deny();
+      const stillEligible =
+        purpose === 'ACTIVATION'
+          ? current.status === 'INVITED' && !current.user.identity?.activatedAt
+          : current.status === 'ACTIVE' && Boolean(current.user.identity?.activatedAt);
+      if (!stillEligible) deny('AUTH_INVALID_REQUEST', 409);
+
+      await repository.invalidateMembershipTokens(current.userId, membershipId, purpose);
+      const token = opaqueToken();
+      const encrypted = encryptMessagingToken(
+        token,
+        current.userId,
+        purpose,
+        loadMessagingConfig().tokenKey,
+      );
+      const record = await repository.createToken(
+        current.userId,
+        tokenHash(token),
+        purpose,
+        new Date(Date.now() + (purpose === 'ACTIVATION' ? 86400000 : 900000)),
+        membershipId,
+        encrypted,
+      );
+      await repository.requestDelivery(tenantId, record.id, purpose);
+      await repository.audit(
+        purpose === 'ACTIVATION' ? 'activation.requested' : 'password.reset_requested',
+        metadata,
+        current.userId,
+        tenantId,
+        membershipId,
+      );
+    });
+  }
+
   async complete(
     token: string,
     password: string,
@@ -79,6 +129,11 @@ export class CredentialsService {
         deny('AUTH_TOKEN_INVALID', 400);
       await repository.useToken(current.id);
       await repository.password(user.id, hash);
+      if (purpose === 'ACTIVATION') {
+        if (!current.membershipId) deny('AUTH_TOKEN_INVALID', 400);
+        const activated = await repository.activateMembership(current.membershipId, user.id);
+        if (activated.count !== 1) deny('AUTH_TOKEN_INVALID', 400);
+      }
       await repository.invalidateTokens(user.id);
       await repository.revoke(user.id);
       await repository.audit(
