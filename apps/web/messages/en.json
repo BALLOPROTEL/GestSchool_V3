@@ -968,7 +968,10 @@
     "loadError": "Unable to load users.",
     "actionError": "Unable to perform this action.",
     "actionErrorWithCode": "Action failed ({code}).",
-    "forbidden": "You do not have access to user administration."
+    "forbidden": "You do not have access to user administration.",
+    "activateAccess": "Activate access",
+    "activateAccessFor": "Activate access for {name}",
+    "accessActivated": "Access activated."
   },
   "Audit": {
     "action": "Action",
