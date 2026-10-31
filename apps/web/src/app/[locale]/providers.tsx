@@ -13,7 +13,18 @@ export function AppProviders({ children }: { children: ReactNode }) {
     <ThemeProvider attribute="class" defaultTheme="light" disableTransitionOnChange enableSystem>
       <TooltipProvider delayDuration={300}>
         <AuthProvider anonymous={/^\/(fr|en|ar)\/verify\//.test(pathname)}>{children}</AuthProvider>
-        <Toaster closeButton position="bottom-right" />
+        <Toaster
+          closeButton
+          position="bottom-right"
+          toastOptions={{
+            style: {
+              background: 'var(--card)',
+              borderColor: 'var(--border)',
+              color: 'var(--card-foreground)',
+              opacity: 1,
+            },
+          }}
+        />
       </TooltipProvider>
     </ThemeProvider>
   );
