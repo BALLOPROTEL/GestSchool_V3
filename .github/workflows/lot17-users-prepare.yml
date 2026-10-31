@@ -1,0 +1,89 @@
+name: LOT17.3 prepare users
+
+on:
+  push:
+    branches:
+      - feat/lot17-users
+    paths:
+      - .github/workflows/lot17-users-prepare.yml
+
+permissions:
+  contents: write
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: feat/lot17-users
+          fetch-depth: 0
+
+      - name: Refresh staging migration manifest
+        run: |
+          node --input-type=module <<'NODE'
+          import { createHash } from 'node:crypto';
+          import { readdir, readFile, writeFile } from 'node:fs/promises';
+          import { join } from 'node:path';
+
+          const root = 'packages/database/prisma/migrations';
+          const names = (await readdir(root, { withFileTypes: true }))
+            .filter((entry) => entry.isDirectory())
+            .map((entry) => entry.name)
+            .sort((a, b) => a.localeCompare(b));
+          const entries = [];
+          for (const name of names) {
+            const bytes = await readFile(join(root, name, 'migration.sql'));
+            entries.push({
+              name,
+              checksum: createHash('sha256').update(bytes).digest('hex'),
+            });
+          }
+          const manifestHash = createHash('sha256')
+            .update(JSON.stringify(entries))
+            .digest('hex');
+
+          const scriptPath = 'scripts/staging-migrate.mjs';
+          let script = await readFile(scriptPath, 'utf8');
+          script = script
+            .replace(/const manifestHash = '[0-9a-f]+';/, `const manifestHash = '${manifestHash}';`)
+            .replace(/expected\.length !== \d+/, `expected.length !== ${entries.length}`);
+          await writeFile(scriptPath, script);
+
+          const testPath = 'scripts/staging-migrate.test.mjs';
+          let test = await readFile(testPath, 'utf8');
+          test = test
+            .replace(/pinned \d+ migrations/g, `pinned ${entries.length} migrations`)
+            .replace(/applied: \d+/g, `applied: ${entries.length}`);
+          await writeFile(testPath, test);
+
+          console.log(JSON.stringify({
+            count: entries.length,
+            manifestHash,
+            latest: entries.at(-1)?.name,
+          }));
+          NODE
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.24.0
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24.15.0
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Format LOT17.3 files
+        run: |
+          pnpm exec prettier --write             packages/contracts/src/iam-admin.ts             packages/contracts/src/iam.ts             packages/contracts/src/index.ts             apps/api/src/modules/iam/application/credentials.service.ts             apps/api/src/modules/iam/application/users.service.ts             apps/api/src/modules/iam/infrastructure/iam.repository.ts             apps/api/src/modules/iam/presentation/http/auth.controller.ts             apps/api/tests/iam.test.ts             apps/web/src/features/directory/directory-pages.tsx             apps/web/e2e/lot1.spec.ts             apps/web/e2e/users.spec.ts             apps/web/messages/fr.json             apps/web/messages/en.json             apps/web/messages/ar.json             scripts/staging-migrate.mjs             scripts/staging-migrate.test.mjs
+
+      - name: Remove workflow and commit
+        run: |
+          git rm .github/workflows/lot17-users-prepare.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "chore(lot17): prepare user administration branch"
+          git push origin HEAD:feat/lot17-users
