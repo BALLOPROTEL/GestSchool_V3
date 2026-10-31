@@ -28,7 +28,6 @@ import type {
 import {
   Download,
   KeyRound,
-  MoreHorizontal,
   Plus,
   RefreshCcw,
   SearchX,
@@ -363,7 +362,7 @@ export function UsersPage() {
   }
 
   return (
-    <>
+    <div className="contents" data-users-ready={!result.loading}>
       <DirectoryLayout
         actions={
           canInvite ? (
@@ -500,7 +499,7 @@ export function UsersPage() {
           </form>
         </DialogContent>
       </Dialog>
-    </>
+    </div>
   );
 }
 
