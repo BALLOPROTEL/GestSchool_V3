@@ -968,7 +968,10 @@
     "loadError": "تعذر تحميل المستخدمين.",
     "actionError": "تعذر تنفيذ الإجراء.",
     "actionErrorWithCode": "تعذر تنفيذ الإجراء ({code}).",
-    "forbidden": "ليس لديك صلاحية إدارة المستخدمين."
+    "forbidden": "ليس لديك صلاحية إدارة المستخدمين.",
+    "activateAccess": "تفعيل الوصول",
+    "activateAccessFor": "تفعيل وصول {name}",
+    "accessActivated": "تم تفعيل الوصول."
   },
   "Audit": {
     "action": "الإجراء",
