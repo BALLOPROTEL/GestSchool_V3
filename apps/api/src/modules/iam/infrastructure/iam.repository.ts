@@ -302,6 +302,108 @@ export class IamRepository {
     return this.db.membership.findFirst({ where: { id, tenantId } });
   }
 
+  membershipAdminTarget(id: string, tenantId: string) {
+    return this.db.membership.findFirst({
+      where: { id, tenantId },
+      include: {
+        user: { include: { identity: true } },
+        roles: { include: { role: true } },
+      },
+    });
+  }
+
+  async listTenantUsers(
+    tenantId: string,
+    query: string,
+    page: number,
+    pageSize: number,
+  ) {
+    const where: Prisma.MembershipWhereInput = {
+      tenantId,
+      ...(query
+        ? {
+            OR: [
+              { user: { is: { displayName: { contains: query, mode: 'insensitive' } } } },
+              { user: { is: { email: { contains: query, mode: 'insensitive' } } } },
+            ],
+          }
+        : {}),
+    };
+    const [total, items] = await Promise.all([
+      this.db.membership.count({ where }),
+      this.db.membership.findMany({
+        where,
+        include: {
+          user: { include: { identity: true } },
+          roles: { include: { role: true } },
+          authSessions: {
+            orderBy: { lastUsedAt: 'desc' },
+            take: 1,
+            select: { lastUsedAt: true },
+          },
+        },
+        orderBy: [{ user: { displayName: 'asc' } }, { id: 'asc' }],
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+    ]);
+    return { total, items };
+  }
+
+  assignableRoles(tenantId: string, includePlatform: boolean) {
+    return this.db.role.findMany({
+      where: {
+        OR: [
+          { tenantId },
+          {
+            tenantId: null,
+            isSystem: true,
+            ...(includePlatform ? {} : { code: { not: 'SUPER_ADMIN' } }),
+          },
+        ],
+      },
+      orderBy: [{ isSystem: 'desc' }, { name: 'asc' }],
+    });
+  }
+
+  async setMembershipStatus(id: string, tenantId: string, status: 'ACTIVE' | 'SUSPENDED') {
+    const result = await this.db.membership.updateMany({
+      where: { id, tenantId },
+      data: { status },
+    });
+    if (result.count !== 1) throw new IamError('AUTH_FORBIDDEN', 403);
+  }
+
+  revokeMembershipSessions(userId: string, membershipId: string) {
+    return this.db.session.updateMany({
+      where: { userId, membershipId, status: 'ACTIVE' },
+      data: { status: 'REVOKED', revokedAt: new Date() },
+    });
+  }
+
+  invalidateMembershipTokens(
+    userId: string,
+    membershipId: string,
+    purpose?: AuthTokenPurpose,
+  ) {
+    return this.db.authToken.updateMany({
+      where: {
+        userId,
+        membershipId,
+        usedAt: null,
+        ...(purpose ? { purpose } : {}),
+      },
+      data: { usedAt: new Date() },
+    });
+  }
+
+  activateMembership(membershipId: string, userId: string) {
+    return this.db.membership.updateMany({
+      where: { id: membershipId, userId, status: 'INVITED' },
+      data: { status: 'ACTIVE' },
+    });
+  }
+
   private ownerMigrationTransaction<T>(
     run: (transaction: Prisma.TransactionClient) => Promise<T>,
   ): Promise<T> {
@@ -430,7 +532,7 @@ export class IamRepository {
     const membership = await this.db.membership.upsert({
       where: { tenantId_userId: { tenantId, userId: user.id } },
       update: {},
-      create: { tenantId, userId: user.id },
+      create: { tenantId, userId: user.id, status: 'INVITED' },
     });
     await this.assignRole(membership.id, tenantId, roleId);
     return user;
