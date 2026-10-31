@@ -27,15 +27,7 @@ import type {
   UserAdminRecord,
   UserAdminRoleView,
 } from '@gestschool/contracts';
-import {
-  KeyRound,
-  Plus,
-  RefreshCcw,
-  SearchX,
-  ShieldCheck,
-  UserCheck,
-  UserX,
-} from 'lucide-react';
+import { KeyRound, Plus, RefreshCcw, SearchX, ShieldCheck, UserCheck, UserX } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { FormEvent, ReactNode } from 'react';
 import { useState } from 'react';
