@@ -26,7 +26,7 @@
     "@gestschool/database": "workspace:*",
     "@gestschool/config": "workspace:*",
     "bullmq": "6.3.4",
-    "playwright": "1.62.1",
+    "playwright": "1.64.1",
     "qrcode": "1.5.4",
     "pg": "8.23.0",
     "redis": "6.2.1"
