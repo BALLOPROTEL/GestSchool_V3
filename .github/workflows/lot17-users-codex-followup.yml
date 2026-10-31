@@ -73,7 +73,7 @@ jobs:
 
       - name: Format LOT17.3 follow-up
         run: |
-          pnpm exec prettier --write             apps/api/src/modules/iam/application/credentials.service.ts             apps/api/src/modules/iam/application/users.service.ts             apps/api/tests/iam.test.ts             apps/web/src/features/directory/directory-pages.tsx             apps/worker/src/jobs/messaging/recipients.ts             apps/worker/src/jobs/messaging/event-resolution.ts             apps/worker/tests/messaging-integration.ts             packages/database/prisma/migrations/20261031103000_iam_user_admin_permissions/migration.sql             scripts/staging-migrate.mjs             scripts/staging-migrate.test.mjs
+          pnpm exec prettier --write             apps/api/src/modules/iam/application/credentials.service.ts             apps/api/src/modules/iam/application/users.service.ts             apps/api/tests/iam.test.ts             apps/web/src/features/directory/directory-pages.tsx             apps/worker/src/jobs/messaging/recipients.ts             apps/worker/src/jobs/messaging/event-resolution.ts             apps/worker/tests/messaging-integration.ts             scripts/staging-migrate.mjs             scripts/staging-migrate.test.mjs
 
       - name: Remove workflow and commit
         run: |
