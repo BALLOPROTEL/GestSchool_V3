@@ -547,14 +547,22 @@ describe('multi-tenant tests', () => {
   });
 });
 describe('RBAC tests', () => {
-  it('audits tenant-local role changes and revokes affected sessions without granting SUPER_ADMIN', async () => {
+  it('audits tenant-local role changes and revokes only affected membership sessions without granting SUPER_ADMIN', async () => {
     const actor = await fixture('SCHOOL_ADMIN');
     const admin = await signIn(actor);
     const target = await fixture();
     const membership = await database.membership.create({
       data: { tenantId: actor.tenant.id, userId: target.user.id },
     });
-    const student = await signIn(target);
+    const unaffectedSession = await signIn(target);
+    const affectedSession = await signIn(target);
+    expect(
+      (
+        await affectedSession.send('/api/v1/auth/switch-tenant', {
+          membershipId: membership.id,
+        })
+      ).status,
+    ).toBe(201);
     const role = await database.role.findFirstOrThrow({
       where: { code: 'TEACHER', tenantId: null },
     });
@@ -567,7 +575,8 @@ describe('RBAC tests', () => {
         )
       ).status,
     ).toBe(200);
-    expect((await student.send('/api/v1/auth/me', undefined, 'GET')).status).toBe(401);
+    expect((await affectedSession.send('/api/v1/auth/me', undefined, 'GET')).status).toBe(401);
+    expect((await unaffectedSession.send('/api/v1/auth/me', undefined, 'GET')).status).toBe(200);
     expect(
       await database.iamAuditLog.count({
         where: { action: 'role.changed', subjectId: membership.id },
@@ -640,7 +649,7 @@ describe('RBAC tests', () => {
       data: {
         tenantId: actor.tenant.id,
         userId: target.user.id,
-        roles: { create: { tenantId: actor.tenant.id, roleId: target.role.id } },
+        roles: { create: { roleId: target.role.id } },
       },
     });
     const outsider = await fixture('TEACHER');
@@ -715,7 +724,7 @@ describe('RBAC tests', () => {
         tenantId: actor.tenant.id,
         userId: invited.user.id,
         status: 'INVITED',
-        roles: { create: { tenantId: actor.tenant.id, roleId: invited.role.id } },
+        roles: { create: { roleId: invited.role.id } },
       },
     });
 
@@ -757,7 +766,7 @@ describe('RBAC tests', () => {
       data: {
         tenantId: actor.tenant.id,
         userId: active.user.id,
-        roles: { create: { tenantId: actor.tenant.id, roleId: active.role.id } },
+        roles: { create: { roleId: active.role.id } },
       },
     });
     const reset = await admin.send(`/api/v1/iam/memberships/${activeMembership.id}/credentials`, {
