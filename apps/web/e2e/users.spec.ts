@@ -68,7 +68,7 @@ test('LOT17.3 invites and renders a real tenant user without mock actions', asyn
       response.request().method() === 'POST',
   );
   await dialog.getByRole('button', { name: 'Envoyer l’invitation', exact: true }).click();
-  await expect(await rejectedInvite).toHaveProperty('status', 409);
+  expect((await rejectedInvite).status()).toBe(409);
   await expect(dialog).toBeVisible();
   await expect(dialog.getByLabel('Nom affiché', { exact: true })).toHaveValue('Invitation à corriger');
   await expect(dialog.getByLabel('Adresse e-mail', { exact: true })).toHaveValue(account.crud.email);
