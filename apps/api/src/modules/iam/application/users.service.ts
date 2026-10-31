@@ -94,12 +94,25 @@ export class UsersService {
     roleId: string,
   ): Promise<void> {
     await this.assignable(roleId, context);
-    const user = await this.repository.atomic(context.userId, async (repository) => {
-      const invited = await repository.invite(email, displayName, context.tenantId, roleId);
-      await repository.audit('role.changed', context, context.userId, context.tenantId, invited.id);
-      return invited;
+    const invited = await this.repository.atomic(context.userId, async (repository) => {
+      const result = await repository.invite(email, displayName, context.tenantId, roleId);
+      await repository.audit(
+        'user.invited',
+        context,
+        context.userId,
+        context.tenantId,
+        result.membership.id,
+      );
+      return result;
     });
-    await this.credentials.issue(user.email, 'ACTIVATION', context);
+    if (invited.activationRequired) {
+      await this.credentials.issueForMembership(
+        invited.membership.id,
+        context.tenantId,
+        'ACTIVATION',
+        context,
+      );
+    }
   }
   async assign(context: RequestContext, membershipId: string, roleId: string): Promise<void> {
     await this.assignable(roleId, context);
@@ -130,7 +143,11 @@ export class UsersService {
   ): Promise<void> {
     const membership = await this.target(membershipId, context);
     if (membership.id === context.membershipId && status === 'SUSPENDED') deny();
-    if (membership.status === 'INVITED' && status === 'ACTIVE')
+    if (
+      membership.status === 'INVITED' &&
+      status === 'ACTIVE' &&
+      !membership.user.identity?.activatedAt
+    )
       deny('AUTH_INVALID_REQUEST', 409);
 
     await this.repository.atomic(membership.userId, async (repository) => {
