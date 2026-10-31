@@ -83,7 +83,7 @@ function hasGrant(
 
 function UserStatus({ record }: { record: UserAdminRecord }) {
   const translate = useTranslations('Users');
-  if (!record.activated)
+  if (record.membershipStatus === 'INVITED')
     return <StatusBadge tone="warning">{translate('statusInvited')}</StatusBadge>;
   if (record.membershipStatus === 'SUSPENDED')
     return <StatusBadge tone="danger">{translate('statusSuspended')}</StatusBadge>;
@@ -287,6 +287,29 @@ export function UsersPage() {
               >
                 <KeyRound />
                 {translate('reset')}
+              </Button>
+            ) : null}
+            {canStatus && user.membershipStatus === 'INVITED' && user.activated ? (
+              <Button
+                aria-label={translate('activateAccessFor', { name: user.displayName })}
+                disabled={busy !== null}
+                size="sm"
+                variant="outline"
+                onClick={() =>
+                  void action(
+                    `status-${user.membershipId}`,
+                    () =>
+                      peopleRequest(
+                        `iam/memberships/${user.membershipId}/status`,
+                        { status: 'ACTIVE' },
+                        'PUT',
+                      ),
+                    translate('accessActivated'),
+                  )
+                }
+              >
+                <UserCheck />
+                {translate('activateAccess')}
               </Button>
             ) : null}
             {canStatus && user.membershipStatus !== 'INVITED' ? (
