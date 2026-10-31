@@ -29,7 +29,9 @@ export class CredentialsService {
       return null;
     return this.repository.atomic(user.id, async (repository) => {
       const membership = (await repository.memberships(user.id)).find(
-        (entry) => entry.status === 'ACTIVE' && entry.tenant.status === 'ACTIVE',
+        (entry) =>
+          entry.status === (purpose === 'ACTIVATION' ? 'INVITED' : 'ACTIVE') &&
+          entry.tenant.status === 'ACTIVE',
       );
       if (!membership) return null;
       await repository.invalidateTokens(user.id, purpose);
