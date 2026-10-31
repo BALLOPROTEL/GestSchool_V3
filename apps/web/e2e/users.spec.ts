@@ -64,8 +64,7 @@ test('LOT17.3 invites and renders a real tenant user without mock actions', asyn
   await role.selectOption({ index: 1 });
   const rejectedInvite = page.waitForResponse(
     (response) =>
-      response.url().includes('/api/v1/iam/invitations') &&
-      response.request().method() === 'POST',
+      response.url().includes('/api/v1/iam/invitations') && response.request().method() === 'POST',
   );
   await dialog.getByRole('button', { name: 'Envoyer l’invitation', exact: true }).click();
   expect((await rejectedInvite).status()).toBe(409);
