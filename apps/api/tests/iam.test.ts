@@ -730,6 +730,24 @@ describe('RBAC tests', () => {
         },
       }),
     ).toBe(1);
+    expect(
+      (
+        await admin.send(
+          `/api/v1/iam/memberships/${invitedMembership.id}/status`,
+          { status: 'SUSPENDED' },
+          'PUT',
+        )
+      ).status,
+    ).toBe(409);
+    expect(
+      (
+        await admin.send(
+          `/api/v1/iam/memberships/${invitedMembership.id}/status`,
+          { status: 'ACTIVE' },
+          'PUT',
+        )
+      ).status,
+    ).toBe(409);
 
     const active = await fixture('TEACHER');
     const activeMembership = await database.membership.create({
