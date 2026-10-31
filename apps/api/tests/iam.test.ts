@@ -617,12 +617,14 @@ describe('RBAC tests', () => {
       },
     });
     expect(invited.identity?.activatedAt).toBeNull();
-    expect(invited.memberships[0]?.status).toBe('INVITED');
+    const invitedMembership = invited.memberships[0];
+    expect(invitedMembership).toBeDefined();
+    expect(invitedMembership?.status).toBe('INVITED');
     expect(
       await database.authToken.count({
         where: {
           userId: invited.id,
-          membershipId: invited.memberships[0]?.id,
+          membershipId: invitedMembership!.id,
           purpose: 'ACTIVATION',
           usedAt: null,
         },
