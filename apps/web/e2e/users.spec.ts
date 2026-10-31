@@ -46,7 +46,7 @@ test('LOT17.3 invites and renders a real tenant user without mock actions', asyn
   await dialog.getByLabel('Nom affiché', { exact: true }).fill(displayName);
   await dialog.getByLabel('Adresse e-mail', { exact: true }).fill(email);
   const role = dialog.getByLabel('Rôle', { exact: true });
-  await expect(role.locator('option')).toHaveCount(8);
+  await expect(role.locator('option:not([value=""])')).toHaveCount(8);
   await role.selectOption({ index: 1 });
   await dialog.getByRole('button', { name: 'Envoyer l’invitation', exact: true }).click();
   await expect(dialog).toBeHidden();
