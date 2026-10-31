@@ -158,8 +158,7 @@ export class UsersService {
         deny();
       if (current.id === context.membershipId && status === 'SUSPENDED') deny();
       if (!current.user.identity?.activatedAt) deny('AUTH_INVALID_REQUEST', 409);
-      if (current.status === 'INVITED' && status === 'SUSPENDED')
-        deny('AUTH_INVALID_REQUEST', 409);
+      if (current.status === 'INVITED' && status === 'SUSPENDED') deny('AUTH_INVALID_REQUEST', 409);
 
       await repository.setMembershipStatus(current.id, context.tenantId, status);
       if (status === 'SUSPENDED') {

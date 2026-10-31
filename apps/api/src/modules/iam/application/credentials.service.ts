@@ -70,10 +70,7 @@ export class CredentialsService {
   ): Promise<void> {
     const target = await this.repository.membershipAdminTarget(membershipId, tenantId);
     if (!target) deny();
-    if (
-      target.roles.some((binding) => binding.role.code === 'SUPER_ADMIN') &&
-      !canManageSuperAdmin
-    )
+    if (target.roles.some((binding) => binding.role.code === 'SUPER_ADMIN') && !canManageSuperAdmin)
       deny();
     const eligible =
       purpose === 'ACTIVATION'
