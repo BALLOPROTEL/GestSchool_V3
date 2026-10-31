@@ -968,7 +968,10 @@
     "loadError": "Impossible de charger les utilisateurs.",
     "actionError": "Impossible d’effectuer cette action.",
     "actionErrorWithCode": "Action impossible ({code}).",
-    "forbidden": "Vous n’avez pas accès à l’administration des utilisateurs."
+    "forbidden": "Vous n’avez pas accès à l’administration des utilisateurs.",
+    "activateAccess": "Activer l’accès",
+    "activateAccessFor": "Activer l’accès de {name}",
+    "accessActivated": "Accès activé."
   },
   "Audit": {
     "action": "Action",
