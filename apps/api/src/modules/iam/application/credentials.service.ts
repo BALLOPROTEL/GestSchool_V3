@@ -65,10 +65,16 @@ export class CredentialsService {
     membershipId: string,
     tenantId: string,
     purpose: 'ACTIVATION' | 'PASSWORD_RESET',
+    canManageSuperAdmin: boolean,
     metadata: RequestMetadata,
   ): Promise<void> {
     const target = await this.repository.membershipAdminTarget(membershipId, tenantId);
     if (!target) deny();
+    if (
+      target.roles.some((binding) => binding.role.code === 'SUPER_ADMIN') &&
+      !canManageSuperAdmin
+    )
+      deny();
     const eligible =
       purpose === 'ACTIVATION'
         ? target.status === 'INVITED' && !target.user.identity?.activatedAt
@@ -78,6 +84,11 @@ export class CredentialsService {
     await this.repository.atomic(target.userId, async (repository) => {
       const current = await repository.membershipAdminTarget(membershipId, tenantId);
       if (!current) deny();
+      if (
+        current.roles.some((binding) => binding.role.code === 'SUPER_ADMIN') &&
+        !canManageSuperAdmin
+      )
+        deny();
       const stillEligible =
         purpose === 'ACTIVATION'
           ? current.status === 'INVITED' && !current.user.identity?.activatedAt
