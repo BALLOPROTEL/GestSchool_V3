@@ -152,7 +152,11 @@ async function fixture(role: SystemRole = 'STUDENT', active = true) {
     },
   });
   const membership = await database.membership.create({
-    data: { userId: user.id, tenantId: tenant.id },
+    data: {
+      userId: user.id,
+      tenantId: tenant.id,
+      status: active ? 'ACTIVE' : 'INVITED',
+    },
   });
   const systemRole = await database.role.findFirstOrThrow({
     where: { code: role, tenantId: null },
@@ -543,14 +547,22 @@ describe('multi-tenant tests', () => {
   });
 });
 describe('RBAC tests', () => {
-  it('audits tenant-local role changes and revokes affected sessions without granting SUPER_ADMIN', async () => {
+  it('audits tenant-local role changes and revokes only affected membership sessions without granting SUPER_ADMIN', async () => {
     const actor = await fixture('SCHOOL_ADMIN');
     const admin = await signIn(actor);
     const target = await fixture();
     const membership = await database.membership.create({
       data: { tenantId: actor.tenant.id, userId: target.user.id },
     });
-    const student = await signIn(target);
+    const unaffectedSession = await signIn(target);
+    const affectedSession = await signIn(target);
+    expect(
+      (
+        await affectedSession.send('/api/v1/auth/switch-tenant', {
+          membershipId: membership.id,
+        })
+      ).status,
+    ).toBe(201);
     const role = await database.role.findFirstOrThrow({
       where: { code: 'TEACHER', tenantId: null },
     });
@@ -563,7 +575,8 @@ describe('RBAC tests', () => {
         )
       ).status,
     ).toBe(200);
-    expect((await student.send('/api/v1/auth/me', undefined, 'GET')).status).toBe(401);
+    expect((await affectedSession.send('/api/v1/auth/me', undefined, 'GET')).status).toBe(401);
+    expect((await unaffectedSession.send('/api/v1/auth/me', undefined, 'GET')).status).toBe(200);
     expect(
       await database.iamAuditLog.count({
         where: { action: 'role.changed', subjectId: membership.id },
@@ -607,12 +620,166 @@ describe('RBAC tests', () => {
     expect(result.body).toEqual({ ok: true });
     const invited = await database.user.findUniqueOrThrow({
       where: { email },
-      include: { identity: true },
+      include: {
+        identity: true,
+        memberships: { where: { tenantId: actor.tenant.id } },
+      },
     });
     expect(invited.identity?.activatedAt).toBeNull();
+    const invitedMembership = invited.memberships[0];
+    expect(invitedMembership).toBeDefined();
+    expect(invitedMembership?.status).toBe('INVITED');
     expect(
       await database.authToken.count({
-        where: { userId: invited.id, purpose: 'ACTIVATION', usedAt: null },
+        where: {
+          userId: invited.id,
+          membershipId: invitedMembership!.id,
+          purpose: 'ACTIVATION',
+          usedAt: null,
+        },
+      }),
+    ).toBe(1);
+  });
+
+  it('lists only tenant users and lets a school admin suspend then reactivate a membership', async () => {
+    const actor = await fixture('SCHOOL_ADMIN');
+    const admin = await signIn(actor);
+    const target = await fixture('TEACHER');
+    const membership = await database.membership.create({
+      data: {
+        tenantId: actor.tenant.id,
+        userId: target.user.id,
+        roles: { create: { roleId: target.role.id } },
+      },
+    });
+    const outsider = await fixture('TEACHER');
+
+    const list = await admin.send('/api/v1/iam/users?page=1&pageSize=25', undefined, 'GET');
+    expect(list.status).toBe(200);
+    expect(list.body['page']).toBe(1);
+    expect(list.body['pageSize']).toBe(25);
+    expect(list.body['total']).toBeGreaterThanOrEqual(2);
+    expect(JSON.stringify(list.body).includes(target.user.email)).toBe(true);
+    expect(JSON.stringify(list.body).includes(outsider.user.email)).toBe(false);
+
+    expect(
+      (
+        await admin.send(
+          `/api/v1/iam/memberships/${membership.id}/status`,
+          { status: 'SUSPENDED' },
+          'PUT',
+        )
+      ).status,
+    ).toBe(200);
+    expect(
+      (await database.membership.findUniqueOrThrow({ where: { id: membership.id } })).status,
+    ).toBe('SUSPENDED');
+    expect(
+      await database.iamAuditLog.count({
+        where: { action: 'membership.suspended', subjectId: membership.id },
+      }),
+    ).toBe(1);
+
+    expect(
+      (
+        await admin.send(
+          `/api/v1/iam/memberships/${membership.id}/status`,
+          { status: 'ACTIVE' },
+          'PUT',
+        )
+      ).status,
+    ).toBe(200);
+    expect(
+      (await database.membership.findUniqueOrThrow({ where: { id: membership.id } })).status,
+    ).toBe('ACTIVE');
+
+    expect(
+      (
+        await admin.send(
+          `/api/v1/iam/memberships/${outsider.membership.id}/status`,
+          { status: 'SUSPENDED' },
+          'PUT',
+        )
+      ).status,
+    ).toBe(403);
+  });
+
+  it('does not let a school admin suspend their own membership', async () => {
+    const actor = await fixture('SCHOOL_ADMIN');
+    const admin = await signIn(actor);
+    const result = await admin.send(
+      `/api/v1/iam/memberships/${actor.membership.id}/status`,
+      { status: 'SUSPENDED' },
+      'PUT',
+    );
+    expect(result.status).toBe(403);
+  });
+
+  it('reissues activation only for invited users and reset only for active accounts', async () => {
+    const actor = await fixture('SCHOOL_ADMIN');
+    const admin = await signIn(actor);
+    const invited = await fixture('TEACHER', false);
+    const invitedMembership = await database.membership.create({
+      data: {
+        tenantId: actor.tenant.id,
+        userId: invited.user.id,
+        status: 'INVITED',
+        roles: { create: { roleId: invited.role.id } },
+      },
+    });
+
+    const activation = await admin.send(
+      `/api/v1/iam/memberships/${invitedMembership.id}/credentials`,
+      { purpose: 'ACTIVATION' },
+    );
+    expect(activation.status).toBe(201);
+    expect(
+      await database.authToken.count({
+        where: {
+          membershipId: invitedMembership.id,
+          purpose: 'ACTIVATION',
+          usedAt: null,
+        },
+      }),
+    ).toBe(1);
+    expect(
+      (
+        await admin.send(
+          `/api/v1/iam/memberships/${invitedMembership.id}/status`,
+          { status: 'SUSPENDED' },
+          'PUT',
+        )
+      ).status,
+    ).toBe(409);
+    expect(
+      (
+        await admin.send(
+          `/api/v1/iam/memberships/${invitedMembership.id}/status`,
+          { status: 'ACTIVE' },
+          'PUT',
+        )
+      ).status,
+    ).toBe(409);
+
+    const active = await fixture('TEACHER');
+    const activeMembership = await database.membership.create({
+      data: {
+        tenantId: actor.tenant.id,
+        userId: active.user.id,
+        roles: { create: { roleId: active.role.id } },
+      },
+    });
+    const reset = await admin.send(`/api/v1/iam/memberships/${activeMembership.id}/credentials`, {
+      purpose: 'PASSWORD_RESET',
+    });
+    expect(reset.status).toBe(201);
+    expect(
+      await database.authToken.count({
+        where: {
+          membershipId: activeMembership.id,
+          purpose: 'PASSWORD_RESET',
+          usedAt: null,
+        },
       }),
     ).toBe(1);
   });
@@ -642,6 +809,16 @@ describe('RBAC tests', () => {
         await browser.send(
           `/api/v1/iam/memberships/${randomUUID()}/role`,
           { roleId: randomUUID() },
+          'PUT',
+        )
+      ).status,
+    ).toBe(403);
+    expect((await browser.send('/api/v1/iam/users', undefined, 'GET')).status).toBe(403);
+    expect(
+      (
+        await browser.send(
+          `/api/v1/iam/memberships/${randomUUID()}/status`,
+          { status: 'SUSPENDED' },
           'PUT',
         )
       ).status,

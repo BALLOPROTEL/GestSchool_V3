@@ -13,7 +13,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
     <ThemeProvider attribute="class" defaultTheme="light" disableTransitionOnChange enableSystem>
       <TooltipProvider delayDuration={300}>
         <AuthProvider anonymous={/^\/(fr|en|ar)\/verify\//.test(pathname)}>{children}</AuthProvider>
-        <Toaster closeButton position="bottom-right" richColors />
+        <Toaster closeButton position="bottom-right" />
       </TooltipProvider>
     </ThemeProvider>
   );

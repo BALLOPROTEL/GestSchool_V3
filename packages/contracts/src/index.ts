@@ -9,3 +9,4 @@ export * from './messaging.js';
 export * from './reports.js';
 export * from './attendance.js';
 export * from './settings.js';
+export * from './iam-admin.js';

@@ -52,11 +52,28 @@ async function expectProviderFailure(operation: Promise<void>): Promise<void> {
 
 try {
   const tenant = await db.tenant.findUniqueOrThrow({ where: { slug: 'ecole-demo-locale' } });
+  const seededAdmin = await db.user.findUniqueOrThrow({
+    where: { email: 'school-admin@example.invalid' },
+  });
+  await db.$transaction([
+    db.authIdentity.update({
+      where: { userId: seededAdmin.id },
+      data: {
+        passwordHash:
+          '$argon2id$v=19$m=65536,t=3,p=4$iYCnKsL+HbPkyKRUbEbiVg$L3N++8GAJlUy5FhuTuhyRB+NmN7AV3US5+WSX/8sN6U',
+        activatedAt: new Date(),
+      },
+    }),
+    db.membership.update({
+      where: { tenantId_userId: { tenantId: tenant.id, userId: seededAdmin.id } },
+      data: { status: 'ACTIVE' },
+    }),
+  ]);
   const membership = await db.membership.findFirstOrThrow({
     where: {
       tenantId: tenant.id,
       status: 'ACTIVE',
-      user: { email: 'school-admin@example.invalid' },
+      userId: seededAdmin.id,
     },
   });
   const pending = await db.outboxEvent.count({
@@ -125,6 +142,62 @@ try {
     })
   )
     throw new Error('IAM reset token was exposed as an in-app notification');
+
+  const activationFixture = randomBytes(6).toString('hex');
+  const activationRawToken = randomBytes(32).toString('base64url');
+  const activationIssued = await db.$transaction(async (transaction) => {
+    const invitedUser = await transaction.user.create({
+      data: {
+        email: `activation-${activationFixture}@example.invalid`,
+        displayName: 'Activation Invitée',
+        identity: { create: {} },
+      },
+    });
+    const invitedMembership = await transaction.membership.create({
+      data: {
+        tenantId: tenant.id,
+        userId: invitedUser.id,
+        status: 'INVITED',
+      },
+    });
+    const token = await transaction.authToken.create({
+      data: {
+        userId: invitedUser.id,
+        membershipId: invitedMembership.id,
+        purpose: 'ACTIVATION',
+        tokenHash: createHash('sha256').update(activationRawToken).digest('hex'),
+        encryptedSecret: encryptMessagingToken(
+          activationRawToken,
+          invitedUser.id,
+          'ACTIVATION',
+          config.tokenKey,
+        ),
+        expiresAt: new Date(Date.now() + 15 * 60_000),
+      },
+    });
+    return transaction.outboxEvent.create({
+      data: {
+        tenantId: tenant.id,
+        aggregateType: 'auth_token',
+        aggregateId: token.id,
+        eventType: 'iam.account.activation.requested.v1',
+        payload: { schemaVersion: 1 },
+        status: 'PROCESSED',
+        processedAt: new Date(),
+      },
+    });
+  });
+  await delivery.process(tenant.id, activationIssued.id);
+  const activationMessage = await db.message.findFirst({
+    where: { tenantId: tenant.id, eventId: activationIssued.id },
+  });
+  if (
+    !activationMessage ||
+    activationMessage.status !== 'SENT' ||
+    activationMessage.recipientMembershipId === null ||
+    !(await readFile(capture, 'utf8')).includes(activationRawToken)
+  )
+    throw new Error('INVITED activation delivery did not reach the exact membership');
 
   const foreignTenant = await db.tenant.create({
     data: { slug: `messaging-isolation-${randomBytes(6).toString('hex')}`, name: 'Isolation' },
@@ -211,7 +284,7 @@ try {
     })) !== 1
   )
     throw new Error('In-app and Arabic email delivery must each be idempotent');
-  if ((await readFile(capture, 'utf8')).trim().split('\n').length !== 2)
+  if ((await readFile(capture, 'utf8')).trim().split('\n').length !== 3)
     throw new Error('Concurrent school event replay produced duplicate external captures');
 
   const failedToken = randomBytes(32).toString('base64url');
@@ -274,13 +347,14 @@ try {
     failedMessage.body.includes(failedToken) ||
     (await db.outboxEvent.findUniqueOrThrow({ where: { id: failedEvent.id } })).status !==
       'PROCESSED' ||
-    (await readFile(capture, 'utf8')).trim().split('\n').length !== 2
+    (await readFile(capture, 'utf8')).trim().split('\n').length !== 3
   )
     throw new Error('Provider failure must preserve the business event and protect IAM token');
 
   process.stdout.write('outbox → BullMQ → worker → private local email = PASS\n');
   process.stdout.write('10 concurrent replays → 1 captured delivery = PASS\n');
   process.stdout.write('IAM token absent from messages and notifications = PASS\n');
+  process.stdout.write('INVITED activation delivery = PASS\n');
   process.stdout.write('cross-tenant IAM delivery = BLOCKED\n');
   process.stdout.write('Arabic enrollment → 1 in-app notification + 1 local email = PASS\n');
   process.stdout.write(

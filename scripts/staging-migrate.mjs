@@ -6,7 +6,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const databaseDirectory = new URL('../packages/database/', import.meta.url);
 const migrationsDirectory = new URL('prisma/migrations/', databaseDirectory);
-const manifestHash = 'b5a4d6f900febe89c739b5aee4dcdbba2561c802ad2d9be3599ab63361de1f39';
+const manifestHash = '8c04cc7459470ea54a1e851e6ee2b976e309c883f0fe976ce3a957eb6b517259';
 const expectedHost = 'dpg-dbei7tqvcj2c73d1qukg-a.frankfurt-postgres.render.com';
 const expectedDatabase = 'gestschool_v3_postgres_staging';
 
@@ -104,7 +104,7 @@ export async function runStagingMigrations(
   try {
     expected = manifest();
     const actualHash = createHash('sha256').update(JSON.stringify(expected)).digest('hex');
-    if (expected.length !== 17 || actualHash !== manifestHash) throw new Error();
+    if (expected.length !== 18 || actualHash !== manifestHash) throw new Error();
   } catch {
     report('FAIL', { code: 'MIGRATION_MANIFEST_CHANGED' });
     return 64;

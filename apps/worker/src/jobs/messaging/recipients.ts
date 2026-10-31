@@ -96,6 +96,39 @@ export async function studentRecipients(
   return { studentName: student.firstName, recipients };
 }
 
+export async function authMemberRecipient(
+  db: GestSchoolPrismaClient,
+  tenantId: string,
+  membershipId: string,
+  userId: string,
+  status: 'INVITED' | 'ACTIVE',
+): Promise<MessageRecipient | null> {
+  const member = await db.membership.findFirst({
+    where: {
+      id: membershipId,
+      tenantId,
+      userId,
+      status,
+      user: { disabledAt: null },
+    },
+    include: { user: true, tenant: { include: { settings: true } } },
+  });
+  if (!member) return null;
+  return {
+    reference: `member:${member.id}`,
+    membershipId: member.id,
+    guardianId: null,
+    firstName: member.user.displayName.split(' ')[0] ?? member.user.displayName,
+    locale: resolveMessagingLocale(
+      member.user.preferredLocale,
+      member.preferredLocale,
+      member.tenant.settings?.defaultLocale,
+    ),
+    email: member.user.email,
+    phone: null,
+  };
+}
+
 export async function memberRecipient(
   db: GestSchoolPrismaClient,
   tenantId: string,

@@ -1,7 +1,26 @@
-import { Body, Controller, Delete, Get, Inject, Param, Post, Put, Req, Res } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Inject,
+  Param,
+  Post,
+  Put,
+  Query,
+  Req,
+  Res,
+} from '@nestjs/common';
 import type { Response } from 'express';
 import { z } from 'zod';
-import { scopes } from '@gestschool/contracts';
+import {
+  scopes,
+  userAdminCredentialAction,
+  userAdminInvite,
+  userAdminListQuery,
+  userAdminRoleUpdate,
+  userAdminStatusUpdate,
+} from '@gestschool/contracts';
 import { IamRuntime } from '../../infrastructure/iam-runtime.js';
 import type { SessionResult } from '../../application/sessions.service.js';
 import {
@@ -238,12 +257,22 @@ export class AuthController {
 @Controller('api/v1/iam')
 export class IamAdminController {
   constructor(@Inject(IamRuntime) private readonly iam: IamRuntime) {}
+  @RequirePermission('users.read', ['TENANT', 'PLATFORM'])
+  @Get('users')
+  users(@Query() query: unknown, @Req() request: IamRequest) {
+    return this.iam.users.list(requestContext(request), userAdminListQuery.parse(query));
+  }
+
+  @RequirePermission('users.read', ['TENANT', 'PLATFORM'])
+  @Get('roles')
+  roles(@Req() request: IamRequest) {
+    return this.iam.users.roles(requestContext(request));
+  }
+
   @RequirePermission('users.invite', ['TENANT', 'PLATFORM'])
   @Post('invitations')
   async invite(@Body() body: unknown, @Req() request: IamRequest) {
-    const input = z
-      .strictObject({ email, displayName: z.string().trim().min(1).max(160), roleId: id })
-      .parse(body);
+    const input = userAdminInvite.parse(body);
     await this.iam.users.invite(
       requestContext(request),
       input.email,
@@ -262,10 +291,40 @@ export class IamAdminController {
     await this.iam.users.assign(
       requestContext(request),
       id.parse(membershipId),
-      z.strictObject({ roleId: id }).parse(body).roleId,
+      userAdminRoleUpdate.parse(body).roleId,
     );
     return { ok: true };
   }
+  @RequirePermission('users.status', ['TENANT', 'PLATFORM'])
+  @Put('memberships/:id/status')
+  async status(
+    @Param('id') membershipId: string,
+    @Body() body: unknown,
+    @Req() request: IamRequest,
+  ) {
+    await this.iam.users.status(
+      requestContext(request),
+      id.parse(membershipId),
+      userAdminStatusUpdate.parse(body).status,
+    );
+    return { ok: true };
+  }
+
+  @RequirePermission('users.credentials', ['TENANT', 'PLATFORM'])
+  @Post('memberships/:id/credentials')
+  async credential(
+    @Param('id') membershipId: string,
+    @Body() body: unknown,
+    @Req() request: IamRequest,
+  ) {
+    await this.iam.users.credential(
+      requestContext(request),
+      id.parse(membershipId),
+      userAdminCredentialAction.parse(body).purpose,
+    );
+    return { ok: true };
+  }
+
   @RequirePermission('permissions.manage', ['PLATFORM'])
   @Put('roles/:id/permissions')
   async grant(@Param('id') roleId: string, @Body() body: unknown, @Req() request: IamRequest) {

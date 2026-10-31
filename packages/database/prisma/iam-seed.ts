@@ -52,15 +52,20 @@ export async function seedIam(prisma: GestSchoolPrismaClient): Promise<void> {
           update: {},
           create: { email, displayName: `Démo ${code}` },
         });
-        await db.authIdentity.upsert({
+        const identity = await db.authIdentity.upsert({
           where: { userId: user.id },
           update: {},
           create: { userId: user.id },
+          select: { activatedAt: true },
         });
         const membership = await db.membership.upsert({
           where: { tenantId_userId: { tenantId: tenant.id, userId: user.id } },
-          update: {},
-          create: { tenantId: tenant.id, userId: user.id },
+          update: identity.activatedAt ? {} : { status: 'INVITED' },
+          create: {
+            tenantId: tenant.id,
+            userId: user.id,
+            status: identity.activatedAt ? 'ACTIVE' : 'INVITED',
+          },
         });
         await db.membershipRole.upsert({
           where: { membershipId_roleId: { membershipId: membership.id, roleId: role.id } },

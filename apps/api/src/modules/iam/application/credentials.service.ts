@@ -29,10 +29,14 @@ export class CredentialsService {
       return null;
     return this.repository.atomic(user.id, async (repository) => {
       const membership = (await repository.memberships(user.id)).find(
-        (entry) => entry.status === 'ACTIVE' && entry.tenant.status === 'ACTIVE',
+        (entry) =>
+          entry.status === (purpose === 'ACTIVATION' ? 'INVITED' : 'ACTIVE') &&
+          entry.tenant.status === 'ACTIVE',
       );
       if (!membership) return null;
-      await repository.invalidateTokens(user.id, purpose);
+      if (purpose === 'ACTIVATION')
+        await repository.invalidateMembershipTokens(user.id, membership.id, purpose);
+      else await repository.invalidateTokens(user.id, purpose);
       const token = opaqueToken();
       const encrypted = encryptMessagingToken(
         token,
@@ -57,6 +61,64 @@ export class CredentialsService {
       return token;
     });
   }
+  async issueForMembership(
+    membershipId: string,
+    tenantId: string,
+    purpose: 'ACTIVATION' | 'PASSWORD_RESET',
+    canManageSuperAdmin: boolean,
+    metadata: RequestMetadata,
+  ): Promise<void> {
+    const target = await this.repository.membershipAdminTarget(membershipId, tenantId);
+    if (!target) deny();
+    if (target.roles.some((binding) => binding.role.code === 'SUPER_ADMIN') && !canManageSuperAdmin)
+      deny();
+    const eligible =
+      purpose === 'ACTIVATION'
+        ? target.status === 'INVITED' && !target.user.identity?.activatedAt
+        : target.status === 'ACTIVE' && Boolean(target.user.identity?.activatedAt);
+    if (!eligible) deny('AUTH_INVALID_REQUEST', 409);
+
+    await this.repository.atomic(target.userId, async (repository) => {
+      const current = await repository.membershipAdminTarget(membershipId, tenantId);
+      if (!current) deny();
+      if (
+        current.roles.some((binding) => binding.role.code === 'SUPER_ADMIN') &&
+        !canManageSuperAdmin
+      )
+        deny();
+      const stillEligible =
+        purpose === 'ACTIVATION'
+          ? current.status === 'INVITED' && !current.user.identity?.activatedAt
+          : current.status === 'ACTIVE' && Boolean(current.user.identity?.activatedAt);
+      if (!stillEligible) deny('AUTH_INVALID_REQUEST', 409);
+
+      await repository.invalidateMembershipTokens(current.userId, membershipId, purpose);
+      const token = opaqueToken();
+      const encrypted = encryptMessagingToken(
+        token,
+        current.userId,
+        purpose,
+        loadMessagingConfig().tokenKey,
+      );
+      const record = await repository.createToken(
+        current.userId,
+        tokenHash(token),
+        purpose,
+        new Date(Date.now() + (purpose === 'ACTIVATION' ? 86400000 : 900000)),
+        membershipId,
+        encrypted,
+      );
+      await repository.requestDelivery(tenantId, record.id, purpose);
+      await repository.audit(
+        purpose === 'ACTIVATION' ? 'activation.requested' : 'password.reset_requested',
+        metadata,
+        current.userId,
+        tenantId,
+        membershipId,
+      );
+    });
+  }
+
   async complete(
     token: string,
     password: string,
@@ -79,6 +141,11 @@ export class CredentialsService {
         deny('AUTH_TOKEN_INVALID', 400);
       await repository.useToken(current.id);
       await repository.password(user.id, hash);
+      if (purpose === 'ACTIVATION') {
+        if (!current.membershipId) deny('AUTH_TOKEN_INVALID', 400);
+        const activated = await repository.activateMembership(current.membershipId, user.id);
+        if (activated.count !== 1) deny('AUTH_TOKEN_INVALID', 400);
+      }
       await repository.invalidateTokens(user.id);
       await repository.revoke(user.id);
       await repository.audit(

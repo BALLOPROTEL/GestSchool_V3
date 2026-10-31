@@ -49,6 +49,7 @@ try {
       data: {
         tenantId: student.tenant.id,
         userId: user.id,
+        status: purpose === 'ACTIVATION' ? 'INVITED' : 'ACTIVE',
         roles: { create: { roleId: role.id } },
       },
     });
