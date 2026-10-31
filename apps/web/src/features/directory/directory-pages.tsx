@@ -520,9 +520,7 @@ export function AuditPage() {
   const [query, setQuery] = useState('');
   const debounced = useDebounced(query);
   const [page, setPage] = useState(1);
-  const path = canRead
-    ? `audit?q=${encodeURIComponent(debounced)}&page=${page}&pageSize=25`
-    : null;
+  const path = canRead ? `audit?q=${encodeURIComponent(debounced)}&page=${page}&pageSize=25` : null;
   const result = usePeopleData<AuditListView>(path);
   const pages = Math.max(1, Math.ceil((result.data?.total ?? 0) / 25));
 
