@@ -107,6 +107,7 @@ export class UsersService {
         invited.membership.id,
         context.tenantId,
         'ACTIVATION',
+        context.roles.includes('SUPER_ADMIN'),
         context,
       );
     }
@@ -148,17 +149,29 @@ export class UsersService {
       deny('AUTH_INVALID_REQUEST', 409);
 
     await this.repository.atomic(membership.userId, async (repository) => {
-      await repository.setMembershipStatus(membership.id, context.tenantId, status);
+      const current = await repository.membershipAdminTarget(membership.id, context.tenantId);
+      if (!current) deny();
+      if (
+        current.roles.some((binding) => binding.role.code === 'SUPER_ADMIN') &&
+        !context.roles.includes('SUPER_ADMIN')
+      )
+        deny();
+      if (current.id === context.membershipId && status === 'SUSPENDED') deny();
+      if (!current.user.identity?.activatedAt) deny('AUTH_INVALID_REQUEST', 409);
+      if (current.status === 'INVITED' && status === 'SUSPENDED')
+        deny('AUTH_INVALID_REQUEST', 409);
+
+      await repository.setMembershipStatus(current.id, context.tenantId, status);
       if (status === 'SUSPENDED') {
-        await repository.revokeMembershipSessions(membership.userId, membership.id);
-        await repository.invalidateMembershipTokens(membership.userId, membership.id);
+        await repository.revokeMembershipSessions(current.userId, current.id);
+        await repository.invalidateMembershipTokens(current.userId, current.id);
       }
       await repository.audit(
         status === 'ACTIVE' ? 'membership.reactivated' : 'membership.suspended',
         context,
         context.userId,
         context.tenantId,
-        membership.id,
+        current.id,
       );
     });
   }
@@ -169,7 +182,13 @@ export class UsersService {
     purpose: 'ACTIVATION' | 'PASSWORD_RESET',
   ): Promise<void> {
     await this.target(membershipId, context);
-    await this.credentials.issueForMembership(membershipId, context.tenantId, purpose, context);
+    await this.credentials.issueForMembership(
+      membershipId,
+      context.tenantId,
+      purpose,
+      context.roles.includes('SUPER_ADMIN'),
+      context,
+    );
   }
 
   async permission(
