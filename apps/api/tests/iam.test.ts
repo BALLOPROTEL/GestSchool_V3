@@ -647,6 +647,7 @@ describe('RBAC tests', () => {
     expect(list.status).toBe(200);
     expect(list.body['page']).toBe(1);
     expect(list.body['pageSize']).toBe(25);
+    expect(list.body['total']).toBeGreaterThanOrEqual(2);
     expect(JSON.stringify(list.body).includes(target.user.email)).toBe(true);
     expect(JSON.stringify(list.body).includes(outsider.user.email)).toBe(false);
 
