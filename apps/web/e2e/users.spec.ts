@@ -58,6 +58,17 @@ test('LOT17.3 invites and renders a real tenant user without mock actions', asyn
   await expect(row).toContainText('Invitation en attente');
   await expect(row.getByRole('button', { name: /Renvoyer l’activation/ })).toBeVisible();
 
+  await page.getByRole('button', { name: 'Inviter un utilisateur', exact: true }).click();
+  await dialog.getByLabel('Nom affiché', { exact: true }).fill('Invitation à corriger');
+  await dialog.getByLabel('Adresse e-mail', { exact: true }).fill(account.crud.email);
+  await role.selectOption({ index: 1 });
+  await dialog.getByRole('button', { name: 'Envoyer l’invitation', exact: true }).click();
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByLabel('Nom affiché', { exact: true })).toHaveValue('Invitation à corriger');
+  await expect(dialog.getByLabel('Adresse e-mail', { exact: true })).toHaveValue(account.crud.email);
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+
   expect(
     (await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze())
       .violations,
