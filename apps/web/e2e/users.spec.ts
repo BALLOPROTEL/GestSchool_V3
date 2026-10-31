@@ -62,7 +62,13 @@ test('LOT17.3 invites and renders a real tenant user without mock actions', asyn
   await dialog.getByLabel('Nom affiché', { exact: true }).fill('Invitation à corriger');
   await dialog.getByLabel('Adresse e-mail', { exact: true }).fill(account.crud.email);
   await role.selectOption({ index: 1 });
+  const rejectedInvite = page.waitForResponse(
+    (response) =>
+      response.url().includes('/api/v1/iam/invitations') &&
+      response.request().method() === 'POST',
+  );
   await dialog.getByRole('button', { name: 'Envoyer l’invitation', exact: true }).click();
+  await expect(await rejectedInvite).toHaveProperty('status', 409);
   await expect(dialog).toBeVisible();
   await expect(dialog.getByLabel('Nom affiché', { exact: true })).toHaveValue('Invitation à corriger');
   await expect(dialog.getByLabel('Adresse e-mail', { exact: true })).toHaveValue(account.crud.email);
@@ -73,7 +79,12 @@ test('LOT17.3 invites and renders a real tenant user without mock actions', asyn
     (await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze())
       .violations,
   ).toEqual([]);
-  expect(errors).toEqual([]);
+  const unexpectedErrors = errors.filter(
+    (message) =>
+      !message.includes('Failed to load resource') ||
+      !message.includes('409'),
+  );
+  expect(unexpectedErrors).toEqual([]);
 });
 
 test('LOT17.3 hides user administration from an unauthorized role', async ({ page }, info) => {
