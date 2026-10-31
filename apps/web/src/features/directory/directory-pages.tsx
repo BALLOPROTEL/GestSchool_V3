@@ -44,9 +44,7 @@ import { useAuth } from '../auth/auth-provider';
 import { PeopleError, peopleRequest } from './people-client';
 import { useDebounced, usePeopleData } from './people-hooks';
 import { PageHeader } from '../shared/page-header';
-import { RowActions } from '../shared/row-actions';
 import { SearchField } from '../shared/search-field';
-import { StatusPill } from '../shared/status-pill';
 
 function EmptySearch({ title }: { title: string }) {
   const common = useTranslations('Common');
