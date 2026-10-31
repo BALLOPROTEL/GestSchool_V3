@@ -6,7 +6,11 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const databaseDirectory = new URL('../packages/database/', import.meta.url);
 const migrationsDirectory = new URL('prisma/migrations/', databaseDirectory);
-const manifestHash = '8c04cc7459470ea54a1e851e6ee2b976e309c883f0fe976ce3a957eb6b517259';
+const legacyManifestHash = '8c04cc7459470ea54a1e851e6ee2b976e309c883f0fe976ce3a957eb6b517259';
+const lot174Migration = {
+  name: '20261031223000_audit_read_permission',
+  checksum: '02e804149290f4bfe7da5eaaacd132eac750ca89a83563eaf6fef157077bc853',
+};
 const expectedHost = 'dpg-dbei7tqvcj2c73d1qukg-a.frankfurt-postgres.render.com';
 const expectedDatabase = 'gestschool_v3_postgres_staging';
 
@@ -103,8 +107,17 @@ export async function runStagingMigrations(
   let expected;
   try {
     expected = manifest();
-    const actualHash = createHash('sha256').update(JSON.stringify(expected)).digest('hex');
-    if (expected.length !== 18 || actualHash !== manifestHash) throw new Error();
+    const legacyHash = createHash('sha256')
+      .update(JSON.stringify(expected.slice(0, 18)))
+      .digest('hex');
+    const latest = expected[18];
+    if (
+      expected.length !== 19 ||
+      legacyHash !== legacyManifestHash ||
+      latest?.name !== lot174Migration.name ||
+      latest.checksum !== lot174Migration.checksum
+    )
+      throw new Error();
   } catch {
     report('FAIL', { code: 'MIGRATION_MANIFEST_CHANGED' });
     return 64;
