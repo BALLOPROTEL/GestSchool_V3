@@ -15,6 +15,7 @@ import {
 import { communicationPermissionCodes } from './messaging.js';
 import { reportPermissionCodes } from './reports.js';
 import { settingsPermissionCodes } from './settings.js';
+import { userAdminPermissionCodes } from './iam-admin.js';
 
 export const scopes = ['PLATFORM', 'TENANT', 'ASSIGNED', 'CHILDREN', 'OWN', 'NONE'] as const;
 export type AccessScope = (typeof scopes)[number];
@@ -45,6 +46,7 @@ export const permissionCodes = [
   ...communicationPermissionCodes,
   ...reportPermissionCodes,
   ...settingsPermissionCodes,
+  ...userAdminPermissionCodes,
   'session.read',
   'session.revoke',
   'membership.read',
@@ -83,6 +85,7 @@ const grants = (permissions: readonly string[], scope: AccessScope): Grant[] =>
 export const roleGrants: Readonly<Record<SystemRole, readonly Grant[]>> = {
   SUPER_ADMIN: grants(permissionCodes, 'PLATFORM'),
   SCHOOL_ADMIN: [
+    ...grants(userAdminPermissionCodes, 'TENANT'),
     ...grants(settingsPermissionCodes, 'TENANT'),
     ...grants(reportPermissionCodes, 'TENANT'),
     ...grants(communicationPermissionCodes, 'TENANT'),
@@ -113,6 +116,7 @@ export const roleGrants: Readonly<Record<SystemRole, readonly Grant[]>> = {
     ),
   ],
   DIRECTOR: [
+    ...grants(['users.read'], 'TENANT'),
     ...grants(['settings.read'], 'TENANT'),
     ...grants(reportPermissionCodes, 'TENANT'),
     ...grants(
