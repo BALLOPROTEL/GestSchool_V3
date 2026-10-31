@@ -58,7 +58,11 @@ try {
   await db.$transaction([
     db.authIdentity.update({
       where: { userId: seededAdmin.id },
-      data: { activatedAt: new Date() },
+      data: {
+        passwordHash:
+          '$argon2id$v=19$m=65536,t=3,p=4$iYCnKsL+HbPkyKRUbEbiVg$L3N++8GAJlUy5FhuTuhyRB+NmN7AV3US5+WSX/8sN6U',
+        activatedAt: new Date(),
+      },
     }),
     db.membership.update({
       where: { tenantId_userId: { tenantId: tenant.id, userId: seededAdmin.id } },
