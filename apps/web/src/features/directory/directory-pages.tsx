@@ -20,9 +20,14 @@ import {
   StatusBadge,
 } from '@gestschool/ui';
 import type { DataTableColumn, StatusTone } from '@gestschool/ui';
-import type { UserAdminListView, UserAdminRecord, UserAdminRoleView } from '@gestschool/contracts';
+import type {
+  AuditListView,
+  AuditRecordView,
+  UserAdminListView,
+  UserAdminRecord,
+  UserAdminRoleView,
+} from '@gestschool/contracts';
 import {
-  Download,
   KeyRound,
   Plus,
   RefreshCcw,
@@ -36,10 +41,7 @@ import type { FormEvent, ReactNode } from 'react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
-import { auditRecords } from '../../mocks/data';
-import type { AuditRecord } from '../../mocks/data';
 import { getInitials } from '../shared/format';
-import { useMockAction } from '../shared/mock-action';
 import { useAuth } from '../auth/auth-provider';
 import { PeopleError, peopleRequest } from './people-client';
 import { useDebounced, usePeopleData } from './people-hooks';
@@ -513,73 +515,132 @@ export function AuditPage() {
   const common = useTranslations('Common');
   const nav = useTranslations('Nav');
   const translate = useTranslations('Audit');
-  const mockAction = useMockAction();
+  const { session } = useAuth();
+  const canRead = hasGrant(session?.session.grants ?? [], 'audit.read');
   const [query, setQuery] = useState('');
-  const filtered = auditRecords.filter((record) =>
-    `${record.user} ${record.action} ${record.details}`
-      .toLocaleLowerCase()
-      .includes(query.toLocaleLowerCase()),
-  );
-  const columns: readonly DataTableColumn<AuditRecord>[] = [
+  const debounced = useDebounced(query);
+  const [page, setPage] = useState(1);
+  const path = canRead
+    ? `audit?q=${encodeURIComponent(debounced)}&page=${page}&pageSize=25`
+    : null;
+  const result = usePeopleData<AuditListView>(path);
+  const pages = Math.max(1, Math.ceil((result.data?.total ?? 0) / 25));
+
+  const columns: readonly DataTableColumn<AuditRecordView>[] = [
     {
       cell: (record) => (
         <span className="whitespace-nowrap font-mono text-[11px] text-muted-foreground">
-          {record.timestamp}
+          {new Intl.DateTimeFormat(undefined, {
+            dateStyle: 'short',
+            timeStyle: 'medium',
+          }).format(new Date(record.occurredAt))}
         </span>
       ),
       header: translate('timestamp'),
       id: 'timestamp',
     },
     {
-      cell: (record) => <span className="whitespace-nowrap font-semibold">{record.user}</span>,
+      cell: (record) => (
+        <span className="whitespace-nowrap font-semibold">
+          {record.actor?.displayName ?? translate('system')}
+        </span>
+      ),
       header: translate('user'),
       id: 'user',
     },
     {
-      cell: (record) => <StatusBadge tone={record.severity}>{record.action}</StatusBadge>,
+      cell: (record) => <StatusBadge tone="neutral">{record.action}</StatusBadge>,
       header: translate('action'),
       id: 'action',
     },
     {
-      cell: (record) => <span className="text-xs text-muted-foreground">{record.entity}</span>,
+      cell: (record) => (
+        <div className="text-xs">
+          <p className="font-medium">{record.entityType}</p>
+          {record.entityId ? (
+            <p className="font-mono text-[11px] text-muted-foreground">{record.entityId}</p>
+          ) : null}
+        </div>
+      ),
       header: translate('entity'),
       id: 'entity',
     },
-    {
-      cell: (record) => <span className="text-xs">{record.details}</span>,
-      header: translate('details'),
-      id: 'details',
-    },
   ];
+
+  if (!canRead) {
+    return (
+      <div className="page-shell">
+        <PageHeader
+          description={translate('description')}
+          eyebrow={nav('system')}
+          title={translate('title')}
+        />
+        <p
+          role="alert"
+          className="rounded-lg border border-destructive/40 bg-destructive/5 p-4 text-sm font-medium text-foreground"
+        >
+          {translate('forbidden')}
+        </p>
+      </div>
+    );
+  }
+
   return (
-    <DirectoryLayout
-      actions={
-        <>
-          <Button onClick={() => mockAction(common('filters'))} size="sm" variant="outline">
-            {common('filters')}
-          </Button>
-          <Button onClick={() => mockAction(translate('export'))} size="sm" variant="outline">
-            <Download />
-            {translate('export')}
-          </Button>
-        </>
-      }
-      description={translate('description')}
-      eyebrow={nav('system')}
-      query={query}
-      searchPlaceholder={translate('search')}
-      setQuery={setQuery}
-      title={translate('title')}
-    >
-      <DataTable
-        caption={translate('caption')}
-        columns={columns}
-        emptyState={<EmptySearch title={common('noResults')} />}
-        getRowId={(record) => record.id}
-        minWidth={900}
-        rows={filtered}
-      />
-    </DirectoryLayout>
+    <div className="contents" data-audit-ready={!result.loading}>
+      <DirectoryLayout
+        actions={null}
+        description={translate('description')}
+        eyebrow={nav('system')}
+        query={query}
+        searchPlaceholder={translate('search')}
+        setQuery={(value) => {
+          setQuery(value);
+          setPage(1);
+        }}
+        title={translate('title')}
+      >
+        {result.error ? (
+          <p role="alert" className="p-5 text-sm text-destructive">
+            {translate('loadError')}
+          </p>
+        ) : null}
+        {result.loading ? (
+          <p role="status" className="p-5 text-sm text-muted-foreground">
+            {common('loading')}
+          </p>
+        ) : (
+          <DataTable
+            caption={translate('caption')}
+            columns={columns}
+            emptyState={<EmptySearch title={common('noResults')} />}
+            getRowId={(record) => record.id}
+            minWidth={760}
+            rows={result.data?.items ?? []}
+          />
+        )}
+        <div className="flex items-center justify-between border-t border-border px-5 py-3">
+          <p className="text-xs text-muted-foreground">{translate('page', { page, pages })}</p>
+          <div className="flex gap-2">
+            <Button
+              disabled={page <= 1 || result.loading}
+              size="sm"
+              variant="outline"
+              onClick={() => setPage((value) => Math.max(1, value - 1))}
+            >
+              {common('previous')}
+            </Button>
+            <Button
+              disabled={page >= pages || result.loading}
+              size="sm"
+              variant="outline"
+              onClick={() => setPage((value) => Math.min(pages, value + 1))}
+            >
+              {common('next')}
+            </Button>
+          </div>
+        </div>
+      </DirectoryLayout>
+    </div>
   );
 }
 
