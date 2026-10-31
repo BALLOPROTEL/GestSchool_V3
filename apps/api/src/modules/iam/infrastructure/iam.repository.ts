@@ -524,18 +524,33 @@ export class IamRepository {
       update: {},
       create: { email, displayName },
     });
-    await this.db.authIdentity.upsert({
+    if (user.disabledAt) throw new IamError('AUTH_INVALID_REQUEST', 409);
+
+    const identity = await this.db.authIdentity.upsert({
       where: { userId: user.id },
       update: {},
       create: { userId: user.id },
+      select: { activatedAt: true },
     });
-    const membership = await this.db.membership.upsert({
+    const existing = await this.db.membership.findUnique({
       where: { tenantId_userId: { tenantId, userId: user.id } },
-      update: {},
-      create: { tenantId, userId: user.id, status: 'INVITED' },
+      select: { id: true },
+    });
+    if (existing) throw new IamError('AUTH_INVALID_REQUEST', 409);
+
+    const membership = await this.db.membership.create({
+      data: {
+        tenantId,
+        userId: user.id,
+        status: identity.activatedAt ? 'ACTIVE' : 'INVITED',
+      },
     });
     await this.assignRole(membership.id, tenantId, roleId);
-    return user;
+    return {
+      user,
+      membership,
+      activationRequired: !identity.activatedAt,
+    };
   }
 }
 export type MembershipRecord = NonNullable<Awaited<ReturnType<IamRepository['membership']>>>;
