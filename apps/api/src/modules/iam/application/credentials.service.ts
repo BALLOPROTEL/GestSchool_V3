@@ -34,7 +34,9 @@ export class CredentialsService {
           entry.tenant.status === 'ACTIVE',
       );
       if (!membership) return null;
-      await repository.invalidateTokens(user.id, purpose);
+      if (purpose === 'ACTIVATION')
+        await repository.invalidateMembershipTokens(user.id, membership.id, purpose);
+      else await repository.invalidateTokens(user.id, purpose);
       const token = opaqueToken();
       const encrypted = encryptMessagingToken(
         token,
