@@ -2,7 +2,7 @@ import type { GestSchoolPrismaClient, OutboxEvent } from '@gestschool/database';
 import { financeCurrency } from '@gestschool/contracts';
 import type { MessagingTemplateKey, TemplateValues } from '@gestschool/infrastructure';
 import { formatMinorAmount } from './money.js';
-import { memberRecipient, studentRecipients, type MessageRecipient } from './recipients.js';
+import { authMemberRecipient, studentRecipients, type MessageRecipient } from './recipients.js';
 
 export interface ResolvedMessagingEvent {
   key: MessagingTemplateKey;
@@ -40,10 +40,15 @@ export async function resolveMessagingEvent(
       },
     });
     if (!token?.encryptedSecret || !token.membershipId) return null;
-    const recipient = await memberRecipient(db, tenantId, token.userId);
-    // Auth tokens are scoped to the membership selected when issued. A user can
-    // belong to several tenants, so matching only userId would risk misdelivery.
-    if (!recipient || recipient.membershipId !== token.membershipId) return null;
+    const recipient = await authMemberRecipient(
+      db,
+      tenantId,
+      token.membershipId,
+      token.userId,
+      token.purpose === 'ACTIVATION' ? 'INVITED' : 'ACTIVE',
+    );
+    // Auth tokens are scoped to the exact membership selected when issued.
+    if (!recipient) return null;
     return {
       key: token.purpose === 'ACTIVATION' ? 'account.activation' : 'password.reset',
       path: token.purpose === 'ACTIVATION' ? '/activation' : '/reset-password',
