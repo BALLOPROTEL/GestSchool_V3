@@ -52,11 +52,24 @@ async function expectProviderFailure(operation: Promise<void>): Promise<void> {
 
 try {
   const tenant = await db.tenant.findUniqueOrThrow({ where: { slug: 'ecole-demo-locale' } });
+  const seededAdmin = await db.user.findUniqueOrThrow({
+    where: { email: 'school-admin@example.invalid' },
+  });
+  await db.$transaction([
+    db.authIdentity.update({
+      where: { userId: seededAdmin.id },
+      data: { activatedAt: new Date() },
+    }),
+    db.membership.update({
+      where: { tenantId_userId: { tenantId: tenant.id, userId: seededAdmin.id } },
+      data: { status: 'ACTIVE' },
+    }),
+  ]);
   const membership = await db.membership.findFirstOrThrow({
     where: {
       tenantId: tenant.id,
       status: 'ACTIVE',
-      user: { email: 'school-admin@example.invalid' },
+      userId: seededAdmin.id,
     },
   });
   const pending = await db.outboxEvent.count({
