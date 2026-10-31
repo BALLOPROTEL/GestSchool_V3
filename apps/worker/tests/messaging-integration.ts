@@ -177,7 +177,7 @@ try {
   if (
     !activationMessage ||
     activationMessage.status !== 'SENT' ||
-    activationMessage.membershipId === null ||
+    activationMessage.recipientMembershipId === null ||
     !(await readFile(capture, 'utf8')).includes(activationRawToken)
   )
     throw new Error('INVITED activation delivery did not reach the exact membership');
@@ -267,7 +267,7 @@ try {
     })) !== 1
   )
     throw new Error('In-app and Arabic email delivery must each be idempotent');
-  if ((await readFile(capture, 'utf8')).trim().split('\n').length !== 2)
+  if ((await readFile(capture, 'utf8')).trim().split('\n').length !== 3)
     throw new Error('Concurrent school event replay produced duplicate external captures');
 
   const failedToken = randomBytes(32).toString('base64url');
@@ -330,7 +330,7 @@ try {
     failedMessage.body.includes(failedToken) ||
     (await db.outboxEvent.findUniqueOrThrow({ where: { id: failedEvent.id } })).status !==
       'PROCESSED' ||
-    (await readFile(capture, 'utf8')).trim().split('\n').length !== 2
+    (await readFile(capture, 'utf8')).trim().split('\n').length !== 3
   )
     throw new Error('Provider failure must preserve the business event and protect IAM token');
 
