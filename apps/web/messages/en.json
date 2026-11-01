@@ -1110,7 +1110,8 @@
     "revokeSession": "Revoke",
     "noSessions": "No active sessions.",
     "sessionRevoked": "Session revoked.",
-    "sessionError": "Unable to manage sessions."
+    "sessionError": "Unable to manage sessions.",
+    "inAppRequiredDescription": "Important GestSchool notifications always stay enabled so required information is never hidden."
   },
   "DesignSystem": {
     "alerts": "Alerts",
