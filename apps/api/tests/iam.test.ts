@@ -113,7 +113,7 @@ class Browser {
         'Content-Type': 'application/json',
         'X-CSRF-Token': this.csrf,
         Cookie: [...this.cookies].map(([key, value]) => `${key}=${value}`).join('; '),
-        ...(this.access ? { Authorization: `*** } : {}),
+        ...(this.access ? { Authorization: `Bearer ${this.access}` } : {}),
         ...headers,
       },
       ...(method !== 'GET' && method !== 'OPTIONS' ? { body: JSON.stringify(body ?? {}) } : {}),
