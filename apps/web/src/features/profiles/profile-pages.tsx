@@ -290,9 +290,7 @@ export function UserProfilePage() {
           /^\/(fr|en|ar)(?=\/|$)/,
           `/${preferredLocale}`,
         );
-        window.location.assign(
-          `${localizedPath}${window.location.search}${window.location.hash}`,
-        );
+        window.location.assign(`${localizedPath}${window.location.search}${window.location.hash}`);
         return;
       }
       await reloadProfile();
