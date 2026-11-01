@@ -717,7 +717,11 @@ function SessionRow({
 }) {
   const Icon = deviceIcon(row.userAgent);
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-border p-4 sm:flex-row sm:items-center">
+    <div
+      className="flex flex-col gap-3 rounded-lg border border-border p-4 sm:flex-row sm:items-center"
+      data-current={current}
+      data-profile-session
+    >
       <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted">
         <Icon aria-hidden="true" className="size-4 text-muted-foreground" />
       </span>
