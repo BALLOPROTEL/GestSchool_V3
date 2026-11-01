@@ -512,9 +512,34 @@ export function AuditPage() {
   const [query, setQuery] = useState('');
   const debounced = useDebounced(query);
   const [page, setPage] = useState(1);
-  const path = canRead ? `audit?q=${encodeURIComponent(debounced)}&page=${page}&pageSize=25` : null;
+  const [filters, setFilters] = useState({
+    action: '',
+    entityType: '',
+    from: '',
+    to: '',
+  });
+  const params = new URLSearchParams({
+    q: debounced,
+    page: String(page),
+    pageSize: '25',
+  });
+  if (filters.action) params.set('action', filters.action);
+  if (filters.entityType) params.set('entityType', filters.entityType);
+  if (filters.from) params.set('from', filters.from);
+  if (filters.to) params.set('to', filters.to);
+  const path = canRead ? `audit?${params.toString()}` : null;
   const result = usePeopleData<AuditListView>(path);
   const pages = Math.max(1, Math.ceil((result.data?.total ?? 0) / 25));
+
+  function setFilter(key: keyof typeof filters, value: string) {
+    setFilters((current) => ({ ...current, [key]: value }));
+    setPage(1);
+  }
+
+  function clearFilters() {
+    setFilters({ action: '', entityType: '', from: '', to: '' });
+    setPage(1);
+  }
 
   const columns: readonly DataTableColumn<AuditRecordView>[] = [
     {
@@ -589,6 +614,59 @@ export function AuditPage() {
         }}
         title={translate('title')}
       >
+        <div className="border-b border-border p-5">
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <div className="space-y-2">
+              <Label htmlFor="audit-action">{translate('action')}</Label>
+              <Input
+                id="audit-action"
+                maxLength={120}
+                value={filters.action}
+                onChange={(event) => setFilter('action', event.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="audit-entity">{translate('entity')}</Label>
+              <Input
+                id="audit-entity"
+                maxLength={120}
+                value={filters.entityType}
+                onChange={(event) => setFilter('entityType', event.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="audit-from">{translate('from')}</Label>
+              <Input
+                id="audit-from"
+                type="date"
+                max={filters.to || undefined}
+                value={filters.from}
+                onChange={(event) => setFilter('from', event.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="audit-to">{translate('to')}</Label>
+              <Input
+                id="audit-to"
+                type="date"
+                min={filters.from || undefined}
+                value={filters.to}
+                onChange={(event) => setFilter('to', event.target.value)}
+              />
+            </div>
+          </div>
+          <div className="mt-4 flex justify-end">
+            <Button
+              disabled={!filters.action && !filters.entityType && !filters.from && !filters.to}
+              size="sm"
+              variant="outline"
+              onClick={clearFilters}
+            >
+              {common('clear')}
+            </Button>
+          </div>
+        </div>
+
         {result.error ? (
           <p role="alert" className="p-5 text-sm text-destructive">
             {translate('loadError')}
