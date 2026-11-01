@@ -453,7 +453,7 @@ describe('profile self-service tests', () => {
     const browser = await signIn(record);
 
     for (let attempt = 0; attempt < 10; attempt += 1)
-      await iam.limiter.checkAuthenticatedCredential('/api/v1/auth/change-password', record.user.id);
+      await iam.limiter.checkAuthenticatedCredential('change-password', record.user.id);
 
     const blockedPassword = `Blocked password ${opaqueToken()}`;
     secretValues.add(blockedPassword);
@@ -465,6 +465,26 @@ describe('profile self-service tests', () => {
     expect(blocked.status).toBe(429);
     expect(blocked.body['code']).toBe('AUTH_RATE_LIMITED');
     expect((await browser.send('/api/v1/auth/me', undefined, 'GET')).status).toBe(200);
+  });
+
+  it('shares password-change rate limits across equivalent route casing', async () => {
+    const ip = `canonical-${randomUUID()}`;
+    const identifier = `identity-${randomUUID()}`;
+
+    for (let attempt = 0; attempt < 10; attempt += 1)
+      await iam.limiter.check('/api/v1/auth/change-password', ip, identifier);
+
+    await expect(
+      iam.limiter.check('/API/V1/AUTH/CHANGE-PASSWORD', ip, identifier),
+    ).rejects.toMatchObject({ code: 'AUTH_RATE_LIMITED', status: 429 });
+
+    const userId = randomUUID();
+    for (let attempt = 0; attempt < 10; attempt += 1)
+      await iam.limiter.checkAuthenticatedCredential('change-password', userId);
+
+    await expect(
+      iam.limiter.checkAuthenticatedCredential('CHANGE-PASSWORD', userId),
+    ).rejects.toMatchObject({ code: 'AUTH_RATE_LIMITED', status: 429 });
   });
 
   it('rejects a wrong current password without revoking the active session', async () => {
