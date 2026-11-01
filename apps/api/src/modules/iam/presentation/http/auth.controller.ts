@@ -15,6 +15,9 @@ import type { Response } from 'express';
 import { z } from 'zod';
 import {
   scopes,
+  profileNotificationPreferences,
+  profilePasswordChange,
+  profileUpdate,
   userAdminCredentialAction,
   userAdminInvite,
   userAdminListQuery,
@@ -117,6 +120,46 @@ export class AuthController {
   async me(@Req() request: IamRequest) {
     return this.iam.users.profile(requestContext(request));
   }
+  @RequirePermission('session.read')
+  @Get('profile')
+  profile(@Req() request: IamRequest) {
+    return this.iam.users.details(requestContext(request));
+  }
+
+  @RequirePermission('session.read')
+  @Put('profile')
+  async updateProfile(@Body() body: unknown, @Req() request: IamRequest) {
+    await this.iam.users.updateOwnProfile(requestContext(request), profileUpdate.parse(body));
+    return { ok: true };
+  }
+
+  @RequirePermission('session.read')
+  @Put('preferences')
+  async updatePreferences(@Body() body: unknown, @Req() request: IamRequest) {
+    await this.iam.users.updateNotificationPreferences(
+      requestContext(request),
+      profileNotificationPreferences.parse(body),
+    );
+    return { ok: true };
+  }
+
+  @RequirePermission('session.revoke')
+  @Post('change-password')
+  async changePassword(
+    @Body() body: unknown,
+    @Req() request: IamRequest,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const input = profilePasswordChange.parse(body);
+    await this.iam.credentials.change(
+      requestContext(request),
+      input.currentPassword,
+      input.newPassword,
+    );
+    this.clear(response);
+    return { ok: true };
+  }
+
   @RequirePermission('session.read')
   @Get('sessions')
   sessions(@Req() request: IamRequest) {
