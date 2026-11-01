@@ -472,7 +472,10 @@ export function UserProfilePage() {
                 </CardHeader>
                 <CardContent>
                   <form className="grid gap-4 sm:grid-cols-2" onSubmit={changePassword}>
-                    <FormField htmlFor="profile-current-password" label={translate('currentPassword')}>
+                    <FormField
+                      htmlFor="profile-current-password"
+                      label={translate('currentPassword')}
+                    >
                       <Input
                         autoComplete="current-password"
                         id="profile-current-password"
@@ -494,7 +497,10 @@ export function UserProfilePage() {
                         onChange={(event) => setNewPassword(event.target.value)}
                       />
                     </FormField>
-                    <FormField htmlFor="profile-confirm-password" label={translate('confirmPassword')}>
+                    <FormField
+                      htmlFor="profile-confirm-password"
+                      label={translate('confirmPassword')}
+                    >
                       <Input
                         autoComplete="new-password"
                         id="profile-confirm-password"
@@ -581,12 +587,17 @@ export function UserProfilePage() {
                   ) : null}
 
                   {profile.security.mfaEnabled && privilegedMfa ? (
-                    <p className="text-sm text-muted-foreground">{translate('mfaRequiredByRole')}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {translate('mfaRequiredByRole')}
+                    </p>
                   ) : null}
 
                   {profile.security.mfaEnabled && !privilegedMfa ? (
                     <form className="grid max-w-xl gap-4 sm:grid-cols-2" onSubmit={disableMfa}>
-                      <FormField htmlFor="mfa-disable-password" label={translate('currentPassword')}>
+                      <FormField
+                        htmlFor="mfa-disable-password"
+                        label={translate('currentPassword')}
+                      >
                         <Input
                           autoComplete="current-password"
                           id="mfa-disable-password"
@@ -735,13 +746,7 @@ function SessionRow({
         </p>
       </div>
       {current ? <Badge variant="secondary">{currentLabel}</Badge> : null}
-      <Button
-        aria-label={revokeLabel}
-        disabled={busy}
-        onClick={revoke}
-        size="sm"
-        variant="outline"
-      >
+      <Button aria-label={revokeLabel} disabled={busy} onClick={revoke} size="sm" variant="outline">
         <Trash2 />
         {revokeLabel}
       </Button>

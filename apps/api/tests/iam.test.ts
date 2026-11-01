@@ -113,7 +113,7 @@ class Browser {
         'Content-Type': 'application/json',
         'X-CSRF-Token': this.csrf,
         Cookie: [...this.cookies].map(([key, value]) => `${key}=${value}`).join('; '),
-        ...(this.access ? { Authorization: `Bearer ${this.access}` } : {}),
+        ...(this.access ? { Authorization: `*** } : {}),
         ...headers,
       },
       ...(method !== 'GET' && method !== 'OPTIONS' ? { body: JSON.stringify(body ?? {}) } : {}),
@@ -430,13 +430,17 @@ describe('profile self-service tests', () => {
     expect((await first.send('/api/v1/auth/me', undefined, 'GET')).status).toBe(401);
     expect((await second.send('/api/v1/auth/me', undefined, 'GET')).status).toBe(401);
 
-    const oldLogin = await (await new Browser().init()).send('/api/v1/auth/login', {
+    const oldLogin = await (
+      await new Browser().init()
+    ).send('/api/v1/auth/login', {
       email: record.user.email,
       password,
     });
     expect(oldLogin.status).toBe(401);
 
-    const newLogin = await (await new Browser().init()).send('/api/v1/auth/login', {
+    const newLogin = await (
+      await new Browser().init()
+    ).send('/api/v1/auth/login', {
       email: record.user.email,
       password: nextPassword,
     });
