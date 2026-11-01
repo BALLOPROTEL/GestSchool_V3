@@ -108,5 +108,6 @@ test('LOT17.4 denies the audit log to a student role', async ({ page }, info) =>
       hasText: 'Vous n’avez pas accès au journal d’audit.',
     }),
   ).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Audit', exact: true })).toHaveCount(0);
   await expect(page.locator('[data-audit-ready]')).toHaveCount(0);
 });
