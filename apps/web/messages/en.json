@@ -987,7 +987,9 @@
     "forbidden": "You do not have access to the audit log.",
     "loadError": "Unable to load the audit log.",
     "page": "Page {page} of {pages}",
-    "system": "System"
+    "system": "System",
+    "from": "From",
+    "to": "To"
   },
   "Settings": {
     "absenceAlertDescription": "Notify guardians when an absence is not justified.",
