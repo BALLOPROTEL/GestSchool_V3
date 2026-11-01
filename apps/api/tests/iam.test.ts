@@ -455,10 +455,12 @@ describe('profile self-service tests', () => {
     for (let attempt = 0; attempt < 10; attempt += 1)
       await iam.limiter.checkAuthenticatedCredential('/api/v1/auth/change-password', record.user.id);
 
+    const blockedPassword = `Blocked password ${opaqueToken()}`;
+    secretValues.add(blockedPassword);
     const blocked = await browser.send('/api/v1/auth/change-password', {
       currentPassword: 'wrong current password',
-      newPassword: `Blocked password ${opaqueToken()}`,
-      confirmPassword: `Blocked password ${opaqueToken()}`,
+      newPassword: blockedPassword,
+      confirmPassword: blockedPassword,
     });
     expect(blocked.status).toBe(429);
     expect(blocked.body['code']).toBe('AUTH_RATE_LIMITED');
