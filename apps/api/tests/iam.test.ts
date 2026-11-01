@@ -492,7 +492,10 @@ describe('session tests', () => {
     ).toBe(404);
     const sessions = await a.send('/api/v1/auth/sessions', undefined, 'GET');
     expect(JSON.stringify(sessions.body).includes(field(other.body, 'sessionId'))).toBe(false);
-    expect(JSON.stringify(sessions.body).includes('tokenHash')).toBe(false);
+    const serialized = JSON.stringify(sessions.body);
+    expect(serialized.includes('tokenHash')).toBe(false);
+    expect(serialized.includes('ipAddress')).toBe(false);
+    expect(serialized.includes('tenantId')).toBe(false);
   });
   it('rechecks account state after issuing a valid access token', async () => {
     const user = await fixture();
