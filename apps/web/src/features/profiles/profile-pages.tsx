@@ -40,7 +40,6 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
-import { useRouter } from 'next/navigation';
 import type { FormEvent, ReactNode } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
@@ -215,7 +214,6 @@ export function UserProfilePage() {
   const common = useTranslations('Common');
   const translate = useTranslations('Profile');
   const locale = useLocale();
-  const router = useRouter();
   const { session, accept } = useAuth();
   const [profile, setProfile] = useState<ProfileView | null>(null);
   const [sessions, setSessions] = useState<ProfileSessionView[]>([]);
@@ -296,7 +294,9 @@ export function UserProfilePage() {
           /^\/(fr|en|ar)(?=\/|$)/,
           `/${selectedLocale}`,
         );
-        router.replace(`${localizedPath}${window.location.search}${window.location.hash}`);
+        window.location.assign(
+          `${localizedPath}${window.location.search}${window.location.hash}`,
+        );
         return;
       }
       await reloadProfile();
