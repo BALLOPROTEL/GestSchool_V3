@@ -40,6 +40,7 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import type { FormEvent, ReactNode } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
@@ -214,6 +215,7 @@ export function UserProfilePage() {
   const common = useTranslations('Common');
   const translate = useTranslations('Profile');
   const locale = useLocale();
+  const router = useRouter();
   const { session, accept } = useAuth();
   const [profile, setProfile] = useState<ProfileView | null>(null);
   const [sessions, setSessions] = useState<ProfileSessionView[]>([]);
@@ -282,15 +284,19 @@ export function UserProfilePage() {
 
   async function saveProfile(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const requestedLocale = form.get('preferredLocale');
+    const selectedLocale =
+      requestedLocale === 'en' || requestedLocale === 'ar' ? requestedLocale : 'fr';
     setSaving(true);
     try {
-      await authRequest('profile', { displayName, preferredLocale }, 'PUT');
-      if (preferredLocale !== locale) {
+      await authRequest('profile', { displayName, preferredLocale: selectedLocale }, 'PUT');
+      if (selectedLocale !== locale) {
         const localizedPath = window.location.pathname.replace(
           /^\/(fr|en|ar)(?=\/|$)/,
-          `/${preferredLocale}`,
+          `/${selectedLocale}`,
         );
-        window.location.assign(`${localizedPath}${window.location.search}${window.location.hash}`);
+        router.replace(`${localizedPath}${window.location.search}${window.location.hash}`);
         return;
       }
       await reloadProfile();
@@ -515,6 +521,7 @@ export function UserProfilePage() {
                   <FormField htmlFor="profile-locale" label={translate('preferredLocale')}>
                     <Select
                       id="profile-locale"
+                      name="preferredLocale"
                       value={preferredLocale}
                       onChange={(event) =>
                         setPreferredLocale(event.target.value as 'fr' | 'en' | 'ar')
