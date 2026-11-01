@@ -1,4 +1,10 @@
-import type { AccessScope, UserAdminListQuery } from '@gestschool/contracts';
+import type {
+  AccessScope,
+  ProfileNotificationPreferences,
+  ProfileUpdate,
+  ProfileView,
+  UserAdminListQuery,
+} from '@gestschool/contracts';
 import { deny, type RequestContext } from '../domain/context.js';
 import type { IamRepository } from '../infrastructure/iam.repository.js';
 import { CredentialsService } from './credentials.service.js';
@@ -19,6 +25,84 @@ export class UsersService {
       grants: context.grants,
     };
   }
+  async details(context: RequestContext): Promise<ProfileView> {
+    const [user, membership, rows] = await Promise.all([
+      this.repository.user(context.userId),
+      this.repository.membership(context.membershipId, context.userId),
+      this.repository.profilePreferences(context.tenantId, context.membershipId),
+    ]);
+    if (!user || !membership || membership.tenantId !== context.tenantId) deny();
+    const preferredLocale = membership.preferredLocale ?? user.preferredLocale;
+    const locale =
+      preferredLocale === 'en' || preferredLocale === 'ar' || preferredLocale === 'fr'
+        ? preferredLocale
+        : 'fr';
+    const notifications: ProfileNotificationPreferences = {
+      EMAIL: true,
+      WHATSAPP: true,
+      IN_APP: true,
+    };
+    for (const row of rows) notifications[row.channel] = row.enabled;
+    return {
+      user: {
+        id: user.id,
+        displayName: user.displayName,
+        email: user.email,
+        preferredLocale: locale,
+      },
+      membership: {
+        id: membership.id,
+        tenantId: membership.tenantId,
+        tenantName: membership.tenant.name,
+        roles: context.roles,
+      },
+      security: {
+        passwordChangedAt: user.identity?.passwordChangedAt?.toISOString() ?? null,
+        mfaEnabled: Boolean(user.identity?.mfaEnabledAt),
+        mfaEnabledAt: user.identity?.mfaEnabledAt?.toISOString() ?? null,
+      },
+      notifications,
+    };
+  }
+
+  async updateOwnProfile(context: RequestContext, input: ProfileUpdate): Promise<void> {
+    await this.repository.atomic(context.userId, async (repository) => {
+      await repository.updateOwnProfile(
+        context.userId,
+        context.membershipId,
+        context.tenantId,
+        input.displayName,
+        input.preferredLocale,
+      );
+      await repository.audit(
+        'profile.updated',
+        context,
+        context.userId,
+        context.tenantId,
+        context.membershipId,
+      );
+    });
+  }
+
+  async updateNotificationPreferences(
+    context: RequestContext,
+    input: ProfileNotificationPreferences,
+  ): Promise<void> {
+    await this.repository.atomic(context.userId, async (repository) => {
+      const membership = await repository.membership(context.membershipId, context.userId);
+      if (!membership || membership.tenantId !== context.tenantId || membership.status !== 'ACTIVE')
+        deny();
+      await repository.updateProfilePreferences(context.tenantId, context.membershipId, input);
+      await repository.audit(
+        'notification.preferences_updated',
+        context,
+        context.userId,
+        context.tenantId,
+        context.membershipId,
+      );
+    });
+  }
+
   async list(context: RequestContext, query: UserAdminListQuery) {
     const result = await this.repository.listTenantUsers(
       context.tenantId,
