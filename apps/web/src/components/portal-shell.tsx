@@ -79,6 +79,7 @@ type NavItem = {
   href: string;
   icon: LucideIcon;
   key: string;
+  permission?: string;
 };
 
 type NavGroup = {
@@ -120,7 +121,7 @@ const navigation: readonly NavGroup[] = [
     items: [
       { href: '/users', icon: ShieldCheck, key: 'users' },
       { href: '/settings', icon: Settings, key: 'settings' },
-      { href: '/audit', icon: Activity, key: 'audit' },
+      { href: '/audit', icon: Activity, key: 'audit', permission: 'audit.read' },
     ],
   },
 ] as const;
@@ -139,6 +140,7 @@ function NavigationList({
   const locale = useLocale();
   const pathname = usePathname();
   const translate = useTranslations('Nav');
+  const { session } = useAuth();
 
   return (
     <nav aria-label={translate('dashboard')} className="flex-1 overflow-y-auto px-2 pb-4">
@@ -150,7 +152,17 @@ function NavigationList({
             </p>
           ) : null}
           <ul className="space-y-0.5">
-            {group.items.map((item) => {
+            {group.items
+              .filter(
+                (item) =>
+                  !item.permission ||
+                  session?.session.grants.some(
+                    (grant) =>
+                      grant.permission === item.permission &&
+                      ['TENANT', 'PLATFORM'].includes(grant.scope),
+                  ),
+              )
+              .map((item) => {
               const active = isCurrentPath(pathname, item.href);
               const Icon = item.icon;
               const link = (
@@ -196,7 +208,7 @@ function NavigationList({
                   )}
                 </li>
               );
-            })}
+              })}
           </ul>
         </div>
       ))}
