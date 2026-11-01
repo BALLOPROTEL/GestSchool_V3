@@ -79,6 +79,7 @@ type NavItem = {
   href: string;
   icon: LucideIcon;
   key: string;
+  permission?: string;
 };
 
 type NavGroup = {
@@ -120,7 +121,7 @@ const navigation: readonly NavGroup[] = [
     items: [
       { href: '/users', icon: ShieldCheck, key: 'users' },
       { href: '/settings', icon: Settings, key: 'settings' },
-      { href: '/audit', icon: Activity, key: 'audit' },
+      { href: '/audit', icon: Activity, key: 'audit', permission: 'audit.read' },
     ],
   },
 ] as const;
@@ -139,6 +140,7 @@ function NavigationList({
   const locale = useLocale();
   const pathname = usePathname();
   const translate = useTranslations('Nav');
+  const { session } = useAuth();
 
   return (
     <nav aria-label={translate('dashboard')} className="flex-1 overflow-y-auto px-2 pb-4">
@@ -150,53 +152,63 @@ function NavigationList({
             </p>
           ) : null}
           <ul className="space-y-0.5">
-            {group.items.map((item) => {
-              const active = isCurrentPath(pathname, item.href);
-              const Icon = item.icon;
-              const link = (
-                <Link
-                  aria-current={active ? 'page' : undefined}
-                  aria-label={translate(item.key)}
-                  className={cn(
-                    'group relative flex h-8 items-center gap-3 rounded-md px-2 text-[13px] font-medium text-sidebar-foreground outline-none transition-colors hover:bg-sidebar-accent hover:text-white focus-visible:ring-2 focus-visible:ring-sidebar-primary/60',
-                    collapsed && 'justify-center px-0',
-                    active && 'bg-sidebar-accent text-white',
-                  )}
-                  href={item.href}
-                  onClick={onNavigate}
-                >
-                  {active ? (
-                    <span className="absolute inset-y-1 start-0 w-0.5 rounded-full bg-blue-500" />
-                  ) : null}
-                  <Icon
-                    aria-hidden="true"
-                    className={cn('size-4 shrink-0 text-slate-500', active && 'text-blue-400')}
-                  />
-                  {collapsed ? null : (
-                    <span className="min-w-0 flex-1 truncate">{translate(item.key)}</span>
-                  )}
-                  {!collapsed && item.badge ? (
-                    <Badge className="border-0 bg-slate-800 px-1.5 text-[9px] text-slate-400">
-                      {item.badge}
-                    </Badge>
-                  ) : null}
-                </Link>
-              );
-              return (
-                <li key={item.href}>
-                  {collapsed ? (
-                    <Tooltip>
-                      <TooltipTrigger asChild>{link}</TooltipTrigger>
-                      <TooltipContent side={locale === 'ar' ? 'left' : 'right'}>
-                        {translate(item.key)}
-                      </TooltipContent>
-                    </Tooltip>
-                  ) : (
-                    link
-                  )}
-                </li>
-              );
-            })}
+            {group.items
+              .filter(
+                (item) =>
+                  !item.permission ||
+                  session?.session.grants.some(
+                    (grant) =>
+                      grant.permission === item.permission &&
+                      ['TENANT', 'PLATFORM'].includes(grant.scope),
+                  ),
+              )
+              .map((item) => {
+                const active = isCurrentPath(pathname, item.href);
+                const Icon = item.icon;
+                const link = (
+                  <Link
+                    aria-current={active ? 'page' : undefined}
+                    aria-label={translate(item.key)}
+                    className={cn(
+                      'group relative flex h-8 items-center gap-3 rounded-md px-2 text-[13px] font-medium text-sidebar-foreground outline-none transition-colors hover:bg-sidebar-accent hover:text-white focus-visible:ring-2 focus-visible:ring-sidebar-primary/60',
+                      collapsed && 'justify-center px-0',
+                      active && 'bg-sidebar-accent text-white',
+                    )}
+                    href={item.href}
+                    onClick={onNavigate}
+                  >
+                    {active ? (
+                      <span className="absolute inset-y-1 start-0 w-0.5 rounded-full bg-blue-500" />
+                    ) : null}
+                    <Icon
+                      aria-hidden="true"
+                      className={cn('size-4 shrink-0 text-slate-500', active && 'text-blue-400')}
+                    />
+                    {collapsed ? null : (
+                      <span className="min-w-0 flex-1 truncate">{translate(item.key)}</span>
+                    )}
+                    {!collapsed && item.badge ? (
+                      <Badge className="border-0 bg-slate-800 px-1.5 text-[9px] text-slate-400">
+                        {item.badge}
+                      </Badge>
+                    ) : null}
+                  </Link>
+                );
+                return (
+                  <li key={item.href}>
+                    {collapsed ? (
+                      <Tooltip>
+                        <TooltipTrigger asChild>{link}</TooltipTrigger>
+                        <TooltipContent side={locale === 'ar' ? 'left' : 'right'}>
+                          {translate(item.key)}
+                        </TooltipContent>
+                      </Tooltip>
+                    ) : (
+                      link
+                    )}
+                  </li>
+                );
+              })}
           </ul>
         </div>
       ))}
