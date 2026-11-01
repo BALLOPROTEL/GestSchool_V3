@@ -28,7 +28,6 @@ export type ProfilePasswordChange = z.infer<typeof profilePasswordChange>;
 export const profileNotificationPreferences = z.strictObject({
   EMAIL: z.boolean(),
   WHATSAPP: z.boolean(),
-  IN_APP: z.boolean(),
 });
 export type ProfileNotificationPreferences = z.infer<typeof profileNotificationPreferences>;
 
