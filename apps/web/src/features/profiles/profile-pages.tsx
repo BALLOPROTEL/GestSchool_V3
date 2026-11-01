@@ -146,8 +146,7 @@ export function UserProfilePage() {
   const [preferredLocale, setPreferredLocale] = useState<'fr' | 'en' | 'ar'>('fr');
   const [preferences, setPreferences] = useState<ProfileNotificationPreferences>({
     EMAIL: true,
-    WHATSAPP: true,
-    IN_APP: true,
+    WHATSAPP: false,
   });
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -644,14 +643,12 @@ export function UserProfilePage() {
                     setPreferences((current) => ({ ...current, WHATSAPP: checked }))
                   }
                 />
-                <PreferenceRow
-                  checked={preferences.IN_APP}
-                  description={translate('inAppDescription')}
-                  label={translate('inAppNotifications')}
-                  onCheckedChange={(checked) =>
-                    setPreferences((current) => ({ ...current, IN_APP: checked }))
-                  }
-                />
+                <div className="border-b border-border py-4">
+                  <p className="text-sm font-semibold">{translate('inAppNotifications')}</p>
+                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                    {translate('inAppRequiredDescription')}
+                  </p>
+                </div>
                 <div className="pt-4">
                   <Button disabled={saving} onClick={savePreferences}>
                     <Save />
