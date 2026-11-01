@@ -987,7 +987,9 @@
     "forbidden": "Vous n’avez pas accès au journal d’audit.",
     "loadError": "Impossible de charger le journal d’audit.",
     "page": "Page {page} sur {pages}",
-    "system": "Système"
+    "system": "Système",
+    "from": "Du",
+    "to": "Au"
   },
   "Settings": {
     "absenceAlertDescription": "Avertir les responsables lors d’une absence non justifiée.",
