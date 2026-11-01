@@ -151,11 +151,9 @@ export class AuthController {
     @Res({ passthrough: true }) response: Response,
   ) {
     const input = profilePasswordChange.parse(body);
-    await this.iam.credentials.change(
-      requestContext(request),
-      input.currentPassword,
-      input.newPassword,
-    );
+    const context = requestContext(request);
+    await this.iam.limiter.checkAuthenticatedCredential(request.path, context.userId);
+    await this.iam.credentials.change(context, input.currentPassword, input.newPassword);
     this.clear(response);
     return { ok: true };
   }
