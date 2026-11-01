@@ -36,19 +36,20 @@ export class RateLimiter {
     }
   }
   async check(endpoint: string, ip: string, identifier?: string): Promise<void> {
+    const operation = endpoint.toLowerCase();
     const sensitive =
       /login|migrate-v2|forgot-password|reset-password|change-password|refresh|activation|mfa|webhooks\/brevo/.test(
-        endpoint,
+        operation,
       );
     if (!sensitive) return;
-    const refresh = endpoint.endsWith('/refresh');
+    const refresh = operation.endsWith('/refresh');
     const limits: [string, number][] = [[`ip:${tokenHash(ip)}`, refresh ? 120 : 40]];
     if (identifier) limits.push([`identity:${tokenHash(identifier)}`, refresh ? 60 : 10]);
     try {
       for (const [key, limit] of limits) {
         const count = Number(
           await this.client.eval(countScript, {
-            keys: [`${this.prefix}:${endpoint}:${key}`],
+            keys: [`${this.prefix}:${operation}:${key}`],
             arguments: ['60000'],
           }),
         );
