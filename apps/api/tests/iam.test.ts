@@ -448,6 +448,23 @@ describe('profile self-service tests', () => {
     expect(newLogin.body['kind']).toBe('session');
   });
 
+  it('rate-limits authenticated password changes per user before password verification', async () => {
+    const record = await fixture('STUDENT');
+    const browser = await signIn(record);
+
+    for (let attempt = 0; attempt < 10; attempt += 1)
+      await iam.limiter.checkAuthenticatedCredential('/api/v1/auth/change-password', record.user.id);
+
+    const blocked = await browser.send('/api/v1/auth/change-password', {
+      currentPassword: 'wrong current password',
+      newPassword: `Blocked password ${opaqueToken()}`,
+      confirmPassword: `Blocked password ${opaqueToken()}`,
+    });
+    expect(blocked.status).toBe(429);
+    expect(blocked.body['code']).toBe('AUTH_RATE_LIMITED');
+    expect((await browser.send('/api/v1/auth/me', undefined, 'GET')).status).toBe(200);
+  });
+
   it('rejects a wrong current password without revoking the active session', async () => {
     const record = await fixture('STUDENT');
     const browser = await signIn(record);
