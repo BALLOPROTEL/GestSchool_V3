@@ -1111,7 +1111,9 @@
     "noSessions": "لا توجد جلسات نشطة.",
     "sessionRevoked": "تم إلغاء الجلسة.",
     "sessionError": "تعذر إدارة الجلسات.",
-    "inAppRequiredDescription": "تبقى إشعارات GestSchool المهمة مفعّلة دائماً حتى لا يتم إخفاء المعلومات الإلزامية."
+    "inAppRequiredDescription": "تبقى إشعارات GestSchool المهمة مفعّلة دائماً حتى لا يتم إخفاء المعلومات الإلزامية.",
+    "showPassword": "إظهار كلمة المرور",
+    "hidePassword": "إخفاء كلمة المرور"
   },
   "DesignSystem": {
     "alerts": "التنبيهات",

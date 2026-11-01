@@ -1111,7 +1111,9 @@
     "noSessions": "Aucune session active.",
     "sessionRevoked": "Session révoquée.",
     "sessionError": "Impossible de gérer les sessions.",
-    "inAppRequiredDescription": "Les notifications importantes dans GestSchool restent toujours actives pour ne pas masquer les informations obligatoires."
+    "inAppRequiredDescription": "Les notifications importantes dans GestSchool restent toujours actives pour ne pas masquer les informations obligatoires.",
+    "showPassword": "Afficher le mot de passe",
+    "hidePassword": "Masquer le mot de passe"
   },
   "DesignSystem": {
     "alerts": "Alertes",

@@ -28,6 +28,8 @@ import {
 } from '@gestschool/ui';
 import {
   Building2,
+  Eye,
+  EyeOff,
   KeyRound,
   Laptop,
   Mail,
@@ -46,6 +48,7 @@ import { authRequest, AuthClientError } from '../auth/auth-client';
 import { useAuth } from '../auth/auth-provider';
 import { getInitials } from '../shared/format';
 import { PageHeader } from '../shared/page-header';
+import { usePathname, useRouter } from '../../i18n/navigation';
 
 type Authenticated = Extract<LoginResult, { kind: 'session' }>;
 
@@ -96,6 +99,47 @@ function FormField({
   );
 }
 
+function PasswordInput({
+  autoComplete,
+  id,
+  minLength,
+  onChange,
+  value,
+}: {
+  autoComplete: string;
+  id: string;
+  minLength?: number;
+  onChange: (value: string) => void;
+  value: string;
+}) {
+  const translate = useTranslations('Profile');
+  const [visible, setVisible] = useState(false);
+  return (
+    <div className="relative">
+      <Input
+        autoComplete={autoComplete}
+        className="pe-10"
+        id={id}
+        minLength={minLength}
+        required
+        type={visible ? 'text' : 'password'}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      />
+      <Button
+        aria-label={visible ? translate('hidePassword') : translate('showPassword')}
+        className="absolute end-1 top-1/2 -translate-y-1/2"
+        onClick={() => setVisible((current) => !current)}
+        size="icon-sm"
+        type="button"
+        variant="ghost"
+      >
+        {visible ? <EyeOff /> : <Eye />}
+      </Button>
+    </div>
+  );
+}
+
 function PreferenceRow({
   checked,
   description,
@@ -132,10 +176,47 @@ function deviceIcon(userAgent: string | null): LucideIcon {
   return userAgent && /iphone|android|mobile/i.test(userAgent) ? Smartphone : Laptop;
 }
 
+function sessionClientLabel(userAgent: string | null): string {
+  if (!userAgent) return '—';
+
+  const edge = /Edg\/(\d+)/.exec(userAgent);
+  const opera = /OPR\/(\d+)/.exec(userAgent);
+  const chrome = /(?:Chrome|CriOS)\/(\d+)/.exec(userAgent);
+  const firefox = /(?:Firefox|FxiOS)\/(\d+)/.exec(userAgent);
+  const safari = /Version\/(\d+).+Safari\//.exec(userAgent);
+  const browser = edge
+    ? `Microsoft Edge ${edge[1]}`
+    : opera
+      ? `Opera ${opera[1]}`
+      : chrome
+        ? `Google Chrome ${chrome[1]}`
+        : firefox
+          ? `Firefox ${firefox[1]}`
+          : safari
+            ? `Safari ${safari[1]}`
+            : 'Navigateur';
+
+  const os = /Windows NT/.test(userAgent)
+    ? 'Windows'
+    : /Android/.test(userAgent)
+      ? 'Android'
+      : /iPhone|iPad|iPod/.test(userAgent)
+        ? 'iOS'
+        : /Mac OS X/.test(userAgent)
+          ? 'macOS'
+          : /Linux/.test(userAgent)
+            ? 'Linux'
+            : null;
+
+  return os ? `${browser} · ${os}` : browser;
+}
+
 export function UserProfilePage() {
   const common = useTranslations('Common');
   const translate = useTranslations('Profile');
   const locale = useLocale();
+  const pathname = usePathname();
+  const router = useRouter();
   const { session, accept } = useAuth();
   const [profile, setProfile] = useState<ProfileView | null>(null);
   const [sessions, setSessions] = useState<ProfileSessionView[]>([]);
@@ -209,6 +290,7 @@ export function UserProfilePage() {
       await authRequest('profile', { displayName, preferredLocale }, 'PUT');
       await reloadProfile();
       toast.success(translate('saved'));
+      if (preferredLocale !== locale) router.replace(pathname, { locale: preferredLocale });
     } catch {
       toast.error(translate('saveError'));
     } finally {
@@ -467,39 +549,33 @@ export function UserProfilePage() {
                       htmlFor="profile-current-password"
                       label={translate('currentPassword')}
                     >
-                      <Input
+                      <PasswordInput
                         autoComplete="current-password"
                         id="profile-current-password"
-                        required
-                        type="password"
                         value={currentPassword}
-                        onChange={(event) => setCurrentPassword(event.target.value)}
+                        onChange={setCurrentPassword}
                       />
                     </FormField>
                     <div />
                     <FormField htmlFor="profile-new-password" label={translate('newPassword')}>
-                      <Input
+                      <PasswordInput
                         autoComplete="new-password"
                         id="profile-new-password"
                         minLength={12}
-                        required
-                        type="password"
                         value={newPassword}
-                        onChange={(event) => setNewPassword(event.target.value)}
+                        onChange={setNewPassword}
                       />
                     </FormField>
                     <FormField
                       htmlFor="profile-confirm-password"
                       label={translate('confirmPassword')}
                     >
-                      <Input
+                      <PasswordInput
                         autoComplete="new-password"
                         id="profile-confirm-password"
                         minLength={12}
-                        required
-                        type="password"
                         value={confirmPassword}
-                        onChange={(event) => setConfirmPassword(event.target.value)}
+                        onChange={setConfirmPassword}
                       />
                     </FormField>
                     <div className="sm:col-span-2">
@@ -535,13 +611,11 @@ export function UserProfilePage() {
                   {!profile.security.mfaEnabled && !enrollment ? (
                     <form className="max-w-md space-y-4" onSubmit={beginMfa}>
                       <FormField htmlFor="mfa-password" label={translate('currentPassword')}>
-                        <Input
+                        <PasswordInput
                           autoComplete="current-password"
                           id="mfa-password"
-                          required
-                          type="password"
                           value={mfaPassword}
-                          onChange={(event) => setMfaPassword(event.target.value)}
+                          onChange={setMfaPassword}
                         />
                       </FormField>
                       <Button disabled={securityBusy} type="submit" variant="outline">
@@ -589,13 +663,11 @@ export function UserProfilePage() {
                         htmlFor="mfa-disable-password"
                         label={translate('currentPassword')}
                       >
-                        <Input
+                        <PasswordInput
                           autoComplete="current-password"
                           id="mfa-disable-password"
-                          required
-                          type="password"
                           value={mfaPassword}
-                          onChange={(event) => setMfaPassword(event.target.value)}
+                          onChange={setMfaPassword}
                         />
                       </FormField>
                       <FormField htmlFor="mfa-disable-code" label={translate('mfaCode')}>
@@ -728,7 +800,7 @@ function SessionRow({
         <Icon aria-hidden="true" className="size-4 text-muted-foreground" />
       </span>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold">{row.userAgent ?? '—'}</p>
+        <p className="truncate text-sm font-semibold">{sessionClientLabel(row.userAgent)}</p>
         <p className="text-xs text-muted-foreground">
           {new Intl.DateTimeFormat(locale, {
             dateStyle: 'medium',

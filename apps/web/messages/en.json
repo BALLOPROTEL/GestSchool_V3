@@ -1111,7 +1111,9 @@
     "noSessions": "No active sessions.",
     "sessionRevoked": "Session revoked.",
     "sessionError": "Unable to manage sessions.",
-    "inAppRequiredDescription": "Important GestSchool notifications always stay enabled so required information is never hidden."
+    "inAppRequiredDescription": "Important GestSchool notifications always stay enabled so required information is never hidden.",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password"
   },
   "DesignSystem": {
     "alerts": "Alerts",
