@@ -62,10 +62,11 @@ export class RateLimiter {
     }
   }
   async checkAuthenticatedCredential(endpoint: string, userId: string): Promise<void> {
+    const operation = endpoint.toLowerCase();
     try {
       const count = Number(
         await this.client.eval(countScript, {
-          keys: [`${this.prefix}:credential:${tokenHash(endpoint)}:${userId}`],
+          keys: [`${this.prefix}:credential:${tokenHash(operation)}:${userId}`],
           arguments: ['60000'],
         }),
       );
