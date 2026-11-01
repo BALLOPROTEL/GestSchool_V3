@@ -19,7 +19,9 @@ function fixtures(): Fixtures {
   ) as Fixtures;
 }
 
-test('LOT17.4 renders a real tenant audit event with bounded filters', async ({ page }, info) => {
+test(
+  'LOT17.4 renders a real tenant audit event with bounded filters',
+  async ({ page }, info) => {
   test.skip(info.project.name !== '1440x900', 'Audit journey certified once.');
   const account = fixtures().people[info.project.name];
   if (!account) throw new Error('Missing audit fixture');
@@ -71,7 +73,8 @@ test('LOT17.4 renders a real tenant audit event with bounded filters', async ({ 
   await page.getByLabel('Au', { exact: true }).fill('2099-12-31');
   await expect(page.locator('[data-audit-ready]')).toHaveAttribute('data-audit-ready', 'true');
 
-  const row = page.getByRole('row').filter({ hasText: 'settings.tenant.updated' }).first();
+  const auditRows = page.getByRole('row');
+  const row = auditRows.filter({ hasText: 'settings.tenant.updated' }).first();
   await expect(row).toBeVisible();
   await expect(row).toContainText('Utilisateur E2E');
   await expect(row).toContainText('tenant');
@@ -94,9 +97,12 @@ test('LOT17.4 renders a real tenant audit event with bounded filters', async ({ 
   await page.getByRole('button', { name: 'Enregistrer les modifications' }).click();
   expect((await restoreResponse).status()).toBe(200);
   verifyNoErrors();
-});
+  },
+);
 
-test('LOT17.4 denies the audit log to a student role', async ({ page }, info) => {
+test(
+  'LOT17.4 denies the audit log to a student role',
+  async ({ page }, info) => {
   test.skip(info.project.name !== '1440x900', 'Audit denial certified once.');
   const account = fixtures().people[info.project.name];
   if (!account) throw new Error('Missing audit fixture');
@@ -108,6 +114,8 @@ test('LOT17.4 denies the audit log to a student role', async ({ page }, info) =>
       hasText: 'Vous n’avez pas accès au journal d’audit.',
     }),
   ).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Audit', exact: true })).toHaveCount(0);
+  const auditLink = page.getByRole('link', { name: 'Audit', exact: true });
+  await expect(auditLink).toHaveCount(0);
   await expect(page.locator('[data-audit-ready]')).toHaveCount(0);
-});
+  },
+);
