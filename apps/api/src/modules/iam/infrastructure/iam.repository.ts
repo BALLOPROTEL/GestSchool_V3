@@ -89,9 +89,9 @@ export class IamRepository {
   async updateProfilePreferences(
     tenantId: string,
     membershipId: string,
-    values: { EMAIL: boolean; WHATSAPP: boolean; IN_APP: boolean },
+    values: { EMAIL: boolean; WHATSAPP: boolean },
   ): Promise<void> {
-    for (const channel of ['EMAIL', 'WHATSAPP', 'IN_APP'] as const)
+    for (const channel of ['EMAIL', 'WHATSAPP'] as const)
       await this.db.notificationPreference.upsert({
         where: {
           tenantId_membershipId_channel: {
