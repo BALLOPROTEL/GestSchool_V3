@@ -286,9 +286,28 @@ export function UserProfilePage() {
     const requestedLocale = form.get('preferredLocale');
     const selectedLocale =
       requestedLocale === 'en' || requestedLocale === 'ar' ? requestedLocale : 'fr';
+    const submittedDisplayName = displayName.trim();
     setSaving(true);
     try {
-      await authRequest('profile', { displayName, preferredLocale: selectedLocale }, 'PUT');
+      await authRequest(
+        'profile',
+        { displayName: submittedDisplayName, preferredLocale: selectedLocale },
+        'PUT',
+      );
+      setDisplayName(submittedDisplayName);
+      setPreferredLocale(selectedLocale);
+      setProfile((current) =>
+        current
+          ? {
+              ...current,
+              user: {
+                ...current.user,
+                displayName: submittedDisplayName,
+                preferredLocale: selectedLocale,
+              },
+            }
+          : current,
+      );
       if (selectedLocale !== locale) {
         const localizedPath = window.location.pathname.replace(
           /^\/(fr|en|ar)(?=\/|$)/,
@@ -297,7 +316,6 @@ export function UserProfilePage() {
         window.location.assign(`${localizedPath}${window.location.search}${window.location.hash}`);
         return;
       }
-      await reloadProfile();
       toast.success(translate('saved'));
     } catch {
       toast.error(translate('saveError'));
@@ -506,6 +524,7 @@ export function UserProfilePage() {
                 <form className="grid gap-5 sm:grid-cols-2" onSubmit={saveProfile}>
                   <FormField htmlFor="profile-display-name" label={translate('displayName')}>
                     <Input
+                      disabled={saving}
                       id="profile-display-name"
                       maxLength={160}
                       required
@@ -518,6 +537,7 @@ export function UserProfilePage() {
                   </FormField>
                   <FormField htmlFor="profile-locale" label={translate('preferredLocale')}>
                     <Select
+                      disabled={saving}
                       id="profile-locale"
                       name="preferredLocale"
                       value={preferredLocale}
