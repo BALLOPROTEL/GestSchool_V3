@@ -1,0 +1,42 @@
+name: Prettier diagnostic
+
+on:
+  push:
+    branches:
+      - feat/lot17-audit
+
+permissions:
+  contents: read
+
+jobs:
+  prettier:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320
+        with:
+          version: 10.24.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: 24.20.0
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Print exact Prettier output
+        run: |
+          pnpm exec prettier --write apps/web/e2e/audit.spec.ts
+          echo '--- PRETTIER DIFF START ---'
+          git --no-pager diff -- apps/web/e2e/audit.spec.ts
+          echo '--- PRETTIER DIFF END ---'
+          echo '--- PRETTIER FILE START ---'
+          cat apps/web/e2e/audit.spec.ts
+          echo '--- PRETTIER FILE END ---'
