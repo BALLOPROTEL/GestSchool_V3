@@ -119,6 +119,12 @@ jobs:
       - name: Certify LOT16 identity migration dry-run
         run: pnpm lot16:identity:dry-run:test
 
+      - name: Diagnose profile formatting
+        run: |
+          pnpm exec prettier --write apps/web/src/features/profiles/profile-pages.tsx
+          git diff -- apps/web/src/features/profiles/profile-pages.tsx
+          git checkout -- apps/web/src/features/profiles/profile-pages.tsx
+
       - name: Check formatting
         run: pnpm format:check
 
