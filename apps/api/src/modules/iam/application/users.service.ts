@@ -39,10 +39,12 @@ export class UsersService {
         : 'fr';
     const notifications: ProfileNotificationPreferences = {
       EMAIL: true,
-      WHATSAPP: true,
-      IN_APP: true,
+      WHATSAPP: false,
     };
-    for (const row of rows) notifications[row.channel] = row.enabled;
+    for (const row of rows) {
+      if (row.channel === 'EMAIL' || row.channel === 'WHATSAPP')
+        notifications[row.channel] = row.enabled;
+    }
     return {
       user: {
         id: user.id,
