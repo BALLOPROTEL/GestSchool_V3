@@ -2,13 +2,29 @@ import { z } from 'zod';
 
 export const auditPermissionCodes = ['audit.read'] as const;
 
-export const auditListQuery = z.strictObject({
-  q: z.string().trim().max(120).optional().default(''),
-  action: z.string().trim().max(120).optional(),
-  entityType: z.string().trim().max(120).optional(),
-  page: z.coerce.number().int().min(1).max(100000).optional().default(1),
-  pageSize: z.coerce.number().int().min(1).max(100).optional().default(25),
-});
+const auditDate = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/)
+  .optional();
+
+export const auditListQuery = z
+  .strictObject({
+    q: z.string().trim().max(120).optional().default(''),
+    action: z.string().trim().max(120).optional(),
+    entityType: z.string().trim().max(120).optional(),
+    from: auditDate,
+    to: auditDate,
+    page: z.coerce.number().int().min(1).max(100000).optional().default(1),
+    pageSize: z.coerce.number().int().min(1).max(100).optional().default(25),
+  })
+  .superRefine((value, context) => {
+    if (value.from && value.to && value.from > value.to)
+      context.addIssue({
+        code: 'custom',
+        message: 'AUDIT_DATE_RANGE_INVALID',
+        path: ['to'],
+      });
+  });
 
 export type AuditListQuery = z.infer<typeof auditListQuery>;
 
