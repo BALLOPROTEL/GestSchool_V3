@@ -27,10 +27,7 @@ test('LOT17.4 renders a real tenant audit event with bounded filters', async ({ 
 
   await login(page, account.crud, true);
   await page.goto('/fr/settings');
-  await expect(page.locator('[data-settings-ready]')).toHaveAttribute(
-    'data-settings-ready',
-    'true',
-  );
+  await expect(page.locator('[data-settings-ready]')).toHaveAttribute('data-settings-ready', 'true');
 
   const address = page.getByLabel('Adresse', { exact: true });
   const originalAddress = await address.inputValue();
@@ -87,10 +84,7 @@ test('LOT17.4 renders a real tenant audit event with bounded filters', async ({ 
   await page.getByRole('button', { name: 'Effacer', exact: true }).click();
 
   await page.goto('/fr/settings');
-  await expect(page.locator('[data-settings-ready]')).toHaveAttribute(
-    'data-settings-ready',
-    'true',
-  );
+  await expect(page.locator('[data-settings-ready]')).toHaveAttribute('data-settings-ready', 'true');
   await page.getByLabel('Adresse', { exact: true }).fill(originalAddress);
   const restoreResponse = page.waitForResponse(
     (response) =>
