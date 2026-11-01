@@ -13,10 +13,18 @@ export class PrismaAuditRepository extends AuditRepository {
 
   override async list(context: RequestContext, query: AuditListQuery): Promise<AuditListView> {
     const search = query.q.trim();
+    const occurredAt =
+      query.from || query.to
+        ? {
+            ...(query.from ? { gte: new Date(`${query.from}T00:00:00.000Z`) } : {}),
+            ...(query.to ? { lte: new Date(`${query.to}T23:59:59.999Z`) } : {}),
+          }
+        : undefined;
     const where: Prisma.AuditLogWhereInput = {
       tenantId: context.tenantId,
       ...(query.action ? { action: query.action } : {}),
       ...(query.entityType ? { entityType: query.entityType } : {}),
+      ...(occurredAt ? { occurredAt } : {}),
       ...(search
         ? {
             OR: [
