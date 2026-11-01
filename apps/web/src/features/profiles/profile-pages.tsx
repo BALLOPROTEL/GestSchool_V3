@@ -208,15 +208,6 @@ export function UserProfilePage() {
     try {
       await authRequest('profile', { displayName, preferredLocale }, 'PUT');
       await reloadProfile();
-      if (session && profile) {
-        accept({
-          ...session,
-          session: {
-            ...session.session,
-            user: { ...session.session.user, displayName: displayName.trim() },
-          },
-        });
-      }
       toast.success(translate('saved'));
     } catch {
       toast.error(translate('saveError'));
