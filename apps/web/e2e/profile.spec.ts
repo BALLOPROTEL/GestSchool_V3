@@ -126,8 +126,11 @@ test('LOT17.5 uses real profile, preferences, MFA and revocable sessions', async
   await page.getByRole('tab', { name: 'Activité', exact: true }).click();
 
   const current = page.locator('[data-profile-session][data-current="true"]');
-  const other = page.locator('[data-profile-session][data-current="false"]').first();
+  const others = page.locator('[data-profile-session][data-current="false"]');
+  const otherCount = await others.count();
+  const other = others.first();
   await expect(current).toBeVisible();
+  expect(otherCount).toBeGreaterThan(0);
   await expect(other).toBeVisible();
 
   const revoke = page.waitForResponse(
@@ -137,7 +140,7 @@ test('LOT17.5 uses real profile, preferences, MFA and revocable sessions', async
   );
   await other.getByRole('button', { name: 'Révoquer', exact: true }).click();
   expect((await revoke).status()).toBe(200);
-  await expect(page.locator('[data-profile-session][data-current="false"]')).toHaveCount(0);
+  await expect(others).toHaveCount(otherCount - 1);
 
   await secondContext.close();
 
