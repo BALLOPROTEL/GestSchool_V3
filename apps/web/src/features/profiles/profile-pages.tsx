@@ -48,7 +48,6 @@ import { authRequest, AuthClientError } from '../auth/auth-client';
 import { useAuth } from '../auth/auth-provider';
 import { getInitials } from '../shared/format';
 import { PageHeader } from '../shared/page-header';
-import { usePathname, useRouter } from '../../i18n/navigation';
 
 type Authenticated = Extract<LoginResult, { kind: 'session' }>;
 
@@ -215,8 +214,6 @@ export function UserProfilePage() {
   const common = useTranslations('Common');
   const translate = useTranslations('Profile');
   const locale = useLocale();
-  const pathname = usePathname();
-  const router = useRouter();
   const { session, accept } = useAuth();
   const [profile, setProfile] = useState<ProfileView | null>(null);
   const [sessions, setSessions] = useState<ProfileSessionView[]>([]);
@@ -288,9 +285,18 @@ export function UserProfilePage() {
     setSaving(true);
     try {
       await authRequest('profile', { displayName, preferredLocale }, 'PUT');
+      if (preferredLocale !== locale) {
+        const localizedPath = window.location.pathname.replace(
+          /^\/(fr|en|ar)(?=\/|$)/,
+          `/${preferredLocale}`,
+        );
+        window.location.assign(
+          `${localizedPath}${window.location.search}${window.location.hash}`,
+        );
+        return;
+      }
       await reloadProfile();
       toast.success(translate('saved'));
-      if (preferredLocale !== locale) router.replace(pathname, { locale: preferredLocale });
     } catch {
       toast.error(translate('saveError'));
     } finally {
