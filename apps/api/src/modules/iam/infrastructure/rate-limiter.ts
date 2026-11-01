@@ -37,7 +37,7 @@ export class RateLimiter {
   }
   async check(endpoint: string, ip: string, identifier?: string): Promise<void> {
     const sensitive =
-      /login|migrate-v2|forgot-password|reset-password|refresh|activation|mfa|webhooks\/brevo/.test(
+      /login|migrate-v2|forgot-password|reset-password|change-password|refresh|activation|mfa|webhooks\/brevo/.test(
         endpoint,
       );
     if (!sensitive) return;
@@ -60,6 +60,22 @@ export class RateLimiter {
       throw new IamRedisUnavailable(error);
     }
   }
+  async checkAuthenticatedCredential(endpoint: string, userId: string): Promise<void> {
+    try {
+      const count = Number(
+        await this.client.eval(countScript, {
+          keys: [`${this.prefix}:credential:${tokenHash(endpoint)}:${userId}`],
+          arguments: ['60000'],
+        }),
+      );
+      if (count > 10) throw new IamError('AUTH_RATE_LIMITED', 429);
+      if (count > 3) await setTimeout(Math.min(600, (count - 3) * 75));
+    } catch (error) {
+      if (error instanceof IamError) throw error;
+      throw new IamRedisUnavailable(error);
+    }
+  }
+
   async checkTenantAction(endpoint: string, tenantId: string, userId: string): Promise<void> {
     try {
       const count = Number(
