@@ -1110,7 +1110,8 @@
     "revokeSession": "إلغاء",
     "noSessions": "لا توجد جلسات نشطة.",
     "sessionRevoked": "تم إلغاء الجلسة.",
-    "sessionError": "تعذر إدارة الجلسات."
+    "sessionError": "تعذر إدارة الجلسات.",
+    "inAppRequiredDescription": "تبقى إشعارات GestSchool المهمة مفعّلة دائماً حتى لا يتم إخفاء المعلومات الإلزامية."
   },
   "DesignSystem": {
     "alerts": "التنبيهات",
