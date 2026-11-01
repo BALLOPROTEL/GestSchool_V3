@@ -38,7 +38,7 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
-import type { ReactNode } from 'react';
+import type { FormEvent, ReactNode } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -203,7 +203,7 @@ export function UserProfilePage() {
     setSessions(await authRequest<ProfileSessionView[]>('sessions', undefined, 'GET'));
   }
 
-  async function saveProfile(event: React.FormEvent<HTMLFormElement>) {
+  async function saveProfile(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSaving(true);
     try {
@@ -239,7 +239,7 @@ export function UserProfilePage() {
     }
   }
 
-  async function changePassword(event: React.FormEvent<HTMLFormElement>) {
+  async function changePassword(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (newPassword !== confirmPassword) {
       toast.error(translate('passwordMismatch'));
@@ -265,7 +265,7 @@ export function UserProfilePage() {
     }
   }
 
-  async function beginMfa(event: React.FormEvent<HTMLFormElement>) {
+  async function beginMfa(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSecurityBusy(true);
     try {
@@ -288,7 +288,7 @@ export function UserProfilePage() {
     }
   }
 
-  async function confirmMfa(event: React.FormEvent<HTMLFormElement>) {
+  async function confirmMfa(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!enrollment) return;
     setSecurityBusy(true);
@@ -311,7 +311,7 @@ export function UserProfilePage() {
     }
   }
 
-  async function disableMfa(event: React.FormEvent<HTMLFormElement>) {
+  async function disableMfa(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSecurityBusy(true);
     try {
