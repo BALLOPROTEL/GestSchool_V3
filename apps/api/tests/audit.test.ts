@@ -183,6 +183,10 @@ describe('LOT17.4 real audit repository', () => {
       }).success,
     ).toBe(false);
     expect(auditListQuery.safeParse({ from: '01-11-2026' }).success).toBe(false);
+    expect(auditListQuery.safeParse({ from: '2026-13-01' }).success).toBe(false);
+    expect(auditListQuery.safeParse({ from: '2026-02-30' }).success).toBe(false);
+    expect(auditListQuery.safeParse({ from: '2024-02-29' }).success).toBe(true);
+    expect(auditListQuery.safeParse({ from: '2025-02-29' }).success).toBe(false);
   });
 
   it('rejects audit access without audit.read', () => {
