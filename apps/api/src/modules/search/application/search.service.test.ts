@@ -40,6 +40,18 @@ function fixture() {
   return { service, students, guardians, teachers, academics, enrollments, finance, documents };
 }
 
+function person(prefix: string, index: number) {
+  return {
+    id: `${prefix}-${index}`,
+    firstName: prefix,
+    lastName: String(index),
+    status: 'ACTIVE',
+    archivedAt: null,
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+  };
+}
+
 describe('global search aggregation', () => {
   it('returns no data and does not call a domain for a short query', async () => {
     const { service, students, finance } = fixture();
@@ -144,15 +156,6 @@ describe('global search aggregation', () => {
 
   it('enforces the global result limit after per-category limits', async () => {
     const { service, students, guardians } = fixture();
-    const person = (prefix: string, index: number) => ({
-      id: `${prefix}-${index}`,
-      firstName: prefix,
-      lastName: String(index),
-      status: 'ACTIVE',
-      archivedAt: null,
-      createdAt: '2026-01-01T00:00:00.000Z',
-      updatedAt: '2026-01-01T00:00:00.000Z',
-    });
     students.list.mockResolvedValue({
       items: [1, 2, 3].map((index) => person('Student', index)),
       total: 3,
