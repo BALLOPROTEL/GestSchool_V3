@@ -24,7 +24,7 @@ import type {
   FinanceView,
 } from '@gestschool/contracts';
 import { AlertCircle, CircleDollarSign, FileText, Plus, TrendingUp } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useAuth } from '../auth/auth-provider';
 import { useDebounced, usePeopleData } from '../directory/people-hooks';
@@ -103,6 +103,9 @@ function FinanceWorkspace({ studentId }: { studentId?: string }) {
       row?: FinanceView;
       item?: FeeItemView;
     }>();
+  useEffect(() => {
+    if (!studentId) setQuery(new URLSearchParams(window.location.search).get('search') ?? '');
+  }, [studentId]);
   const search = useDebounced(query);
   const scope = `${studentId ? `&studentId=${studentId}` : ''}${year ? `&academicYearId=${year}` : ''}${classId ? `&classId=${classId}` : ''}`;
   const path = `finance/${resource}?page=${page}&pageSize=20&search=${encodeURIComponent(search)}&status=${status}&sort=${sort}${scope}${dateFrom ? `&dateFrom=${dateFrom}` : ''}${dateTo ? `&dateTo=${dateTo}` : ''}${resource === 'invoices' && overdue ? '&overdue=true' : ''}${resource === 'payments' && method ? `&paymentMethod=${method}` : ''}`;

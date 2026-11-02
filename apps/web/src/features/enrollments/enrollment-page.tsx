@@ -21,7 +21,7 @@ import {
   type EnrollmentView,
 } from '@gestschool/contracts';
 import { CheckCircle2, CircleX, Clock3, FileText, Plus } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '../auth/auth-provider';
 import { useDebounced, usePeopleData } from '../directory/people-hooks';
@@ -60,6 +60,9 @@ function EnrollmentWorkspace({ studentId }: { studentId?: string }) {
   const allowed = canEnrollment(session?.session);
   const administrative = canEnrollment(session?.session, 'create');
   const [query, setQuery] = useState('');
+  useEffect(() => {
+    if (!studentId) setQuery(new URLSearchParams(window.location.search).get('search') ?? '');
+  }, [studentId]);
   const search = useDebounced(query);
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState('ALL');

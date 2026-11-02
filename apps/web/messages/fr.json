@@ -587,7 +587,7 @@
     "profile": "Mon profil",
     "search": "Rechercher un élève, une classe…",
     "searchDialog": "Recherche globale",
-    "searchHint": "Saisissez un nom ou choisissez un raccourci.",
+    "searchHint": "Saisissez au moins 2 caractères pour rechercher dans les données auxquelles vous avez accès.",
     "searchShortcut": "Ctrl+K",
     "skip": "Aller au contenu principal",
     "theme": "Changer de thème",
@@ -606,7 +606,20 @@
       "STUDENT": "Élève"
     },
     "contextLoading": "Chargement du contexte…",
-    "contextUnavailable": "Contexte indisponible"
+    "contextUnavailable": "Contexte indisponible",
+    "searchMinChars": "Saisissez au moins 2 caractères.",
+    "searchLoading": "Recherche en cours…",
+    "searchEmpty": "Aucun résultat accessible pour cette recherche.",
+    "searchError": "Impossible d’effectuer la recherche.",
+    "searchKinds": {
+      "student": "Élèves",
+      "guardian": "Parents / responsables",
+      "teacher": "Enseignants",
+      "class": "Classes",
+      "enrollment": "Inscriptions",
+      "invoice": "Factures",
+      "document": "Documents"
+    }
   },
   "Auth": {
     "activate": "Activer mon compte",

@@ -587,7 +587,7 @@
     "profile": "ملفي الشخصي",
     "search": "البحث عن تلميذ أو قسم…",
     "searchDialog": "البحث العام",
-    "searchHint": "أدخل اسماً أو اختر اختصاراً.",
+    "searchHint": "أدخل حرفين على الأقل للبحث في البيانات المسموح لك بالوصول إليها.",
     "searchShortcut": "Ctrl+K",
     "skip": "الانتقال إلى المحتوى الرئيسي",
     "theme": "تغيير المظهر",
@@ -606,7 +606,20 @@
       "STUDENT": "التلميذ"
     },
     "contextLoading": "جارٍ تحميل السياق…",
-    "contextUnavailable": "السياق غير متاح"
+    "contextUnavailable": "السياق غير متاح",
+    "searchMinChars": "أدخل حرفين على الأقل.",
+    "searchLoading": "جارٍ البحث…",
+    "searchEmpty": "لا توجد نتائج متاحة لهذا البحث.",
+    "searchError": "تعذر إجراء البحث.",
+    "searchKinds": {
+      "student": "التلاميذ",
+      "guardian": "أولياء الأمور",
+      "teacher": "الأساتذة",
+      "class": "الأقسام",
+      "enrollment": "التسجيلات",
+      "invoice": "الفواتير",
+      "document": "الوثائق"
+    }
   },
   "Auth": {
     "activate": "تفعيل حسابي",

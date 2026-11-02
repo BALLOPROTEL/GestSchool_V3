@@ -39,6 +39,7 @@ export async function peopleRequest<T>(
   method = 'GET',
   retry = true,
   extraHeaders: Record<string, string> = {},
+  signal?: AbortSignal,
 ): Promise<T> {
   const session = currentSession();
   if (!session) throw new PeopleError('AUTH_SESSION_EXPIRED');
@@ -54,11 +55,12 @@ export async function peopleRequest<T>(
       ...extraHeaders,
     },
     ...(method !== 'GET' ? { body: JSON.stringify(body ?? {}) } : {}),
+    ...(signal ? { signal } : {}),
   });
   if (response.status === 401 && retry) {
     const renewed = await restoreSession();
     window.dispatchEvent(new Event('gestschool:session'));
-    if (renewed) return peopleRequest<T>(path, body, method, false, extraHeaders);
+    if (renewed) return peopleRequest<T>(path, body, method, false, extraHeaders, signal);
   }
   if (!response.ok) {
     const error = (await response.json()) as { code?: string; requestId?: string };

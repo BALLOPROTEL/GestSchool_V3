@@ -13,3 +13,5 @@ export * from './iam-admin.js';
 
 export * from './audit.js';
 export * from './profile.js';
+
+export * from './search.js';

@@ -29,5 +29,6 @@ import {
     AcademicService,
     { provide: AcademicRepository, useClass: PrismaAcademicRepository },
   ],
+  exports: [AcademicService],
 })
 export class AcademicsModule {}
