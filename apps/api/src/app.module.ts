@@ -19,6 +19,7 @@ import { DashboardModule } from './modules/dashboard/dashboard.module.js';
 import { AttendanceModule } from './modules/attendance/attendance.module.js';
 import { SettingsModule } from './modules/settings/settings.module.js';
 import { AuditModule } from './modules/audit/audit.module.js';
+import { SearchModule } from './modules/search/search.module.js';
 
 @Module({
   controllers: [AppController],
@@ -41,6 +42,7 @@ import { AuditModule } from './modules/audit/audit.module.js';
     AttendanceModule,
     SettingsModule,
     AuditModule,
+    SearchModule,
   ],
 })
 export class AppModule {}

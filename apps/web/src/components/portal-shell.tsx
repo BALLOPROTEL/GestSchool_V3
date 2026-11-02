@@ -1,5 +1,6 @@
 'use client';
 
+import { globalSearchKinds, type GlobalSearchResult } from '@gestschool/contracts';
 import {
   Avatar,
   AvatarFallback,
@@ -63,12 +64,13 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
-import type { CSSProperties, ReactNode } from 'react';
+import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from '../features/auth/auth-provider';
 import { peopleRequest } from '../features/directory/people-client';
 import { getInitials } from '../features/shared/format';
+import { globalSearchRequest } from '../features/search/search-client';
 import { ShellContextProvider, useShellContext } from '../features/shell/shell-context';
 
 import { Link, usePathname, useRouter } from '../i18n/navigation';
@@ -436,9 +438,13 @@ export function ThemeToggle() {
 
 function SearchDialog() {
   const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const [items, setItems] = useState<GlobalSearchResult[]>([]);
+  const [state, setState] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
+  const [activeIndex, setActiveIndex] = useState(-1);
   const common = useTranslations('Common');
   const shell = useTranslations('Shell');
-  const nav = useTranslations('Nav');
+  const locale = useLocale();
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -451,14 +457,86 @@ function SearchDialog() {
     return () => document.removeEventListener('keydown', onKeyDown);
   }, []);
 
-  const shortcuts = [
-    { href: '/students', key: 'students' },
-    { href: '/classes', key: 'classes' },
-    { href: '/finance', key: 'finance' },
-  ] as const;
+  useEffect(() => {
+    if (!open) return;
+    const value = query.trim();
+    if (value.length < 2) {
+      setItems([]);
+      setState('idle');
+      setActiveIndex(-1);
+      return;
+    }
+
+    setItems([]);
+    setActiveIndex(-1);
+    setState('loading');
+
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => {
+      void globalSearchRequest(value, controller.signal)
+        .then((result) => {
+          setItems(result.items);
+          setActiveIndex(result.items.length ? 0 : -1);
+          setState('ready');
+        })
+        .catch((error: unknown) => {
+          if (error instanceof DOMException && error.name === 'AbortError') return;
+          setItems([]);
+          setActiveIndex(-1);
+          setState('error');
+        });
+    }, 250);
+
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [open, query]);
+
+  const close = () => {
+    setOpen(false);
+    setQuery('');
+    setItems([]);
+    setState('idle');
+    setActiveIndex(-1);
+  };
+
+  const navigate = (result: GlobalSearchResult) => {
+    if (
+      !/^\/(?:students\/[^/?#]+|parents|teachers|classes|enrollments|finance|documents)(?:[/?]|$)/.test(
+        result.resourcePath,
+      )
+    ) {
+      setState('error');
+      return;
+    }
+    close();
+    window.location.assign(`/${locale}${result.resourcePath}`);
+  };
+
+  const onInputKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
+    if (state !== 'ready' || !items.length) return;
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      setActiveIndex((index) => (index + 1) % items.length);
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      setActiveIndex((index) => (index <= 0 ? items.length - 1 : index - 1));
+    } else if (event.key === 'Enter' && activeIndex >= 0) {
+      event.preventDefault();
+      const result = items[activeIndex];
+      if (result) navigate(result);
+    }
+  };
 
   return (
-    <Dialog onOpenChange={setOpen} open={open}>
+    <Dialog
+      onOpenChange={(nextOpen) => {
+        if (nextOpen) setOpen(true);
+        else close();
+      }}
+      open={open}
+    >
       <Button
         aria-label={shell('search')}
         className="h-9 min-w-0 flex-1 justify-start bg-muted/70 px-3 text-muted-foreground hover:bg-muted md:max-w-[300px]"
@@ -478,16 +556,96 @@ function SearchDialog() {
         </DialogHeader>
         <div className="relative">
           <Search className="absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input autoFocus className="ps-9" placeholder={shell('search')} type="search" />
+          <Input
+            aria-activedescendant={
+              activeIndex >= 0 && items[activeIndex]
+                ? `global-search-option-${items[activeIndex].kind}-${items[activeIndex].id}`
+                : undefined
+            }
+            aria-controls="global-search-results"
+            aria-label={shell('search')}
+            data-global-search-input
+            autoComplete="off"
+            autoFocus
+            className="ps-9"
+            onChange={(event) => setQuery(event.target.value)}
+            onKeyDown={onInputKeyDown}
+            placeholder={shell('search')}
+            type="search"
+            value={query}
+          />
         </div>
-        <div className="grid gap-2 sm:grid-cols-3">
-          {shortcuts.map((shortcut) => (
-            <Button asChild key={shortcut.href} variant="outline">
-              <Link href={shortcut.href} onClick={() => setOpen(false)}>
-                {nav(shortcut.key)}
-              </Link>
-            </Button>
-          ))}
+        <div
+          aria-label={shell('searchDialog')}
+          className="max-h-[min(55vh,420px)] space-y-4 overflow-y-auto"
+          id="global-search-results"
+          role="listbox"
+        >
+          {query.trim().length < 2 ? (
+            <p className="p-3 text-sm text-muted-foreground">{shell('searchMinChars')}</p>
+          ) : null}
+          {state === 'loading' ? (
+            <p className="p-3 text-sm text-muted-foreground" role="status">
+              {shell('searchLoading')}
+            </p>
+          ) : null}
+          {state === 'error' ? (
+            <p className="p-3 text-sm text-destructive" role="alert">
+              {shell('searchError')}
+            </p>
+          ) : null}
+          {state === 'ready' && items.length === 0 ? (
+            <p className="p-3 text-sm text-muted-foreground">{shell('searchEmpty')}</p>
+          ) : null}
+          {state === 'ready'
+            ? globalSearchKinds.map((kind) => {
+                const group = items.filter((result) => result.kind === kind);
+                if (!group.length) return null;
+                return (
+                  <section
+                    aria-label={shell(`searchKinds.${kind}`)}
+                    className="space-y-1"
+                    key={kind}
+                    role="group"
+                  >
+                    <h3 className="px-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      {shell(`searchKinds.${kind}`)}
+                    </h3>
+                    <div className="space-y-1">
+                      {group.map((result) => {
+                        const index = items.indexOf(result);
+                        return (
+                          <button
+                            aria-selected={activeIndex === index}
+                            className={cn(
+                              'flex w-full min-w-0 items-start gap-3 rounded-lg px-3 py-2 text-start outline-none transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring',
+                              activeIndex === index && 'bg-muted',
+                            )}
+                            data-global-search-result
+                            id={`global-search-option-${result.kind}-${result.id}`}
+                            key={`${result.kind}:${result.id}`}
+                            onClick={() => navigate(result)}
+                            onMouseEnter={() => setActiveIndex(index)}
+                            role="option"
+                            type="button"
+                          >
+                            <Search aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+                            <span className="min-w-0">
+                              <strong className="block truncate text-sm">{result.title}</strong>
+                              {result.subtitle ? (
+                                <span className="block truncate text-xs text-muted-foreground">
+                                  {result.subtitle}
+                                </span>
+                              ) : null}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </section>
+                );
+              })
+            : null}
         </div>
         <p className="flex items-center gap-2 text-xs text-muted-foreground">
           <Command className="size-3.5" />

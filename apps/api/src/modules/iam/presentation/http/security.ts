@@ -41,6 +41,7 @@ export interface IamRequest extends Request {
 }
 const PUBLIC = 'iam:public';
 const PERMISSION = 'iam:permission';
+const ANY_PERMISSION = 'iam:any-permission';
 // gradeBulkInput supports 1000 rows (5003 visited nodes) with 500-character
 // comments. JSON escaping can use six bytes per character, so allow 4 MiB.
 const JSON_BODY_LIMIT = '4mb';
@@ -50,6 +51,9 @@ export const RequirePermission = (
   permission: string,
   scopes: readonly AccessScope[] = ['OWN', 'TENANT', 'PLATFORM'],
 ) => SetMetadata(PERMISSION, { permission, scopes });
+export const RequireAnyPermission = (
+  policies: readonly { permission: string; scopes: readonly AccessScope[] }[],
+) => SetMetadata(ANY_PERMISSION, policies);
 const isPublic = (reflector: Reflector, context: ExecutionContext): boolean =>
   reflector.getAllAndOverride<boolean>(PUBLIC, [context.getHandler(), context.getClass()]) === true;
 export function cookie(request: Request, name: string): string {
@@ -274,14 +278,21 @@ export class PermissionGuard implements CanActivate {
     const policy = this.reflector.getAllAndOverride<
       { permission: string; scopes: readonly AccessScope[] } | undefined
     >(PERMISSION, [context.getHandler(), context.getClass()]);
+    const anyPolicies = this.reflector.getAllAndOverride<
+      readonly { permission: string; scopes: readonly AccessScope[] }[] | undefined
+    >(ANY_PERMISSION, [context.getHandler(), context.getClass()]);
     const request = context.switchToHttp().getRequest<IamRequest>();
-    if (
-      !policy ||
-      !request.context?.grants.some(
-        (grant) => grant.permission === policy.permission && policy.scopes.includes(grant.scope),
-      )
-    )
-      deny();
+    const grants = request.context?.grants ?? [];
+    const allowed =
+      (policy &&
+        grants.some(
+          (grant) => grant.permission === policy.permission && policy.scopes.includes(grant.scope),
+        )) ||
+      (anyPolicies &&
+        anyPolicies.some(({ permission, scopes }) =>
+          grants.some((grant) => grant.permission === permission && scopes.includes(grant.scope)),
+        ));
+    if (!allowed) deny();
     return true;
   }
 }

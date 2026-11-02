@@ -13,7 +13,7 @@ import {
 import type { AcademicEntity, AcademicView, PageResult } from '@gestschool/contracts';
 import { Plus, SearchX } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../auth/auth-provider';
 import { usePeopleData as useAcademicData, useDebounced } from '../directory/people-hooks';
 import { SearchField } from '../shared/search-field';
@@ -40,6 +40,10 @@ export function AcademicList({
   const { session } = useAuth();
   const allowed = canAcademic(session?.session, kind);
   const [query, setQuery] = useState('');
+  useEffect(() => {
+    if (kind === 'classes' && !parent)
+      setQuery(new URLSearchParams(window.location.search).get('search') ?? '');
+  }, [kind, parent]);
   const search = useDebounced(query);
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState(kind === 'academic-years' ? 'ALL' : 'ACTIVE');

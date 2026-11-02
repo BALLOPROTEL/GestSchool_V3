@@ -14,5 +14,6 @@ import {
     EnrollmentService,
     { provide: EnrollmentRepository, useClass: PrismaEnrollmentRepository },
   ],
+  exports: [EnrollmentService],
 })
 export class EnrollmentsModule {}

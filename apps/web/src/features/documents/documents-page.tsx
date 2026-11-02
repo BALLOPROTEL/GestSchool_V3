@@ -52,6 +52,10 @@ export function DocumentsPanel({ studentId, sourceId, documentType, eligible = t
     [error, setError] = useState(false),
     [busy, setBusy] = useState(false);
   const [templates, setTemplates] = useState(false);
+  useEffect(() => {
+    if (!studentId && !sourceId)
+      setSearch(new URLSearchParams(window.location.search).get('search') ?? '');
+  }, [sourceId, studentId]);
   const debounced = useDebounced(search),
     canRead = canDocuments(session?.session, 'documents.read');
   const q = new URLSearchParams({ page: String(page), pageSize: '10', search: debounced });

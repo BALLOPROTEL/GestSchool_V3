@@ -587,7 +587,7 @@
     "profile": "My profile",
     "search": "Search for a student or class…",
     "searchDialog": "Global search",
-    "searchHint": "Enter a name or choose a shortcut.",
+    "searchHint": "Enter at least 2 characters to search the data you are allowed to access.",
     "searchShortcut": "Ctrl+K",
     "skip": "Skip to main content",
     "theme": "Change theme",
@@ -606,7 +606,20 @@
       "STUDENT": "Student"
     },
     "contextLoading": "Loading context…",
-    "contextUnavailable": "Context unavailable"
+    "contextUnavailable": "Context unavailable",
+    "searchMinChars": "Enter at least 2 characters.",
+    "searchLoading": "Searching…",
+    "searchEmpty": "No accessible results for this search.",
+    "searchError": "Unable to search.",
+    "searchKinds": {
+      "student": "Students",
+      "guardian": "Parents / guardians",
+      "teacher": "Teachers",
+      "class": "Classes",
+      "enrollment": "Enrollments",
+      "invoice": "Invoices",
+      "document": "Documents"
+    }
   },
   "Auth": {
     "activate": "Activate my account",

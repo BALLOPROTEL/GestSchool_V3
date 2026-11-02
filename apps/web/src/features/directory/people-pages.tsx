@@ -21,7 +21,7 @@ import type { DataTableColumn } from '@gestschool/ui';
 import type { PeopleKind, PersonView, PageResult } from '@gestschool/contracts';
 import { Plus, SearchX } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from '../../i18n/navigation';
 import { useAuth } from '../auth/auth-provider';
 import { getInitials } from '../shared/format';
@@ -50,6 +50,9 @@ export function PeoplePage({ kind }: { kind: PeopleKind }) {
   const { session } = useAuth();
   const allowed = canRead(session?.session, kind);
   const [query, setQuery] = useState('');
+  useEffect(() => {
+    setQuery(new URLSearchParams(window.location.search).get('search') ?? '');
+  }, []);
   const search = useDebounced(query);
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState('ACTIVE');
