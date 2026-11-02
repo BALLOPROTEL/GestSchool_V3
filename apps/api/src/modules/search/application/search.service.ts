@@ -125,7 +125,7 @@ export class SearchService {
       const resourcePath =
         kind === 'student'
           ? `/students/${person.id}`
-          : `/${kind === 'guardian' ? 'parents' : 'teachers'}?search=${encodeURIComponent(title)}`;
+          : `/${kind === 'guardian' ? 'parents' : 'teachers'}?search=${encodeURIComponent(search)}`;
       return item(kind, person.id, title, resourcePath, personSubtitle);
     });
   }
@@ -173,7 +173,7 @@ export class SearchService {
         'enrollment',
         enrollment.id,
         enrollment.studentName,
-        `/enrollments?search=${encodeURIComponent(enrollment.studentName)}`,
+        `/enrollments?search=${encodeURIComponent(search)}`,
         compact([
           enrollment.matricule,
           enrollment.className,
