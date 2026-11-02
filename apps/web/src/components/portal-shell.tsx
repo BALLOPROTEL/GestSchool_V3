@@ -261,10 +261,7 @@ function SidebarIdentity({ collapsed = false }: { collapsed?: boolean }) {
       {collapsed ? null : (
         <span className="min-w-0 flex-1 leading-tight">
           <span className="block truncate text-xs font-semibold text-white">{displayName}</span>
-          <span
-            className="block truncate text-[10px] font-medium text-blue-300"
-            data-shell-role
-          >
+          <span className="block truncate text-[10px] font-medium text-blue-300" data-shell-role>
             <RoleLabel role={primaryRole} />
           </span>
           <span className="block truncate text-[10px] text-slate-400" data-shell-tenant-name>
@@ -328,7 +325,7 @@ function MobileSchoolContext() {
             ? shell('contextLoading')
             : contextError
               ? shell('contextUnavailable')
-              : activeAcademicYear?.name ?? shell('noActiveAcademicYear')}
+              : (activeAcademicYear?.name ?? shell('noActiveAcademicYear'))}
         </p>
       </div>
     </div>
@@ -744,7 +741,7 @@ function Topbar() {
               ? shell('contextLoading')
               : contextError
                 ? shell('contextUnavailable')
-                : activeAcademicYear?.name ?? shell('noActiveAcademicYear')}
+                : (activeAcademicYear?.name ?? shell('noActiveAcademicYear'))}
           </span>
         </div>
       </div>

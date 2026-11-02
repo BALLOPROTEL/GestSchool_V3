@@ -62,18 +62,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Diagnose portal shell formatting
-        run: |
-          set -euo pipefail
-          file="apps/web/src/components/portal-shell.tsx"
-          if pnpm exec prettier --check "$file"; then
-            exit 0
-          fi
-          cp "$file" /tmp/portal-shell.before.tsx
-          pnpm exec prettier --write "$file"
-          git --no-pager diff --no-index -- /tmp/portal-shell.before.tsx "$file" || true
-          exit 1
-
       - name: Generate Prisma client
         run: pnpm db:generate
 
