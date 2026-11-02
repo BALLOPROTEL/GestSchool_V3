@@ -645,6 +645,56 @@ describe('activation and password reset tests', () => {
   });
 });
 describe('multi-tenant tests', () => {
+  it('lists only accessible tenant contexts with their active academic year', async () => {
+    const user = await fixture();
+    const outsider = await fixture();
+    const active = await database.academicYear.create({
+      data: {
+        tenantId: user.tenant.id,
+        code: '2026-2027',
+        name: '2026–2027',
+        startsOn: new Date('2026-09-01'),
+        endsOn: new Date('2027-06-30'),
+        status: 'ACTIVE',
+      },
+    });
+    await database.academicYear.create({
+      data: {
+        tenantId: user.tenant.id,
+        code: '2025-2026',
+        name: '2025–2026',
+        startsOn: new Date('2025-09-01'),
+        endsOn: new Date('2026-06-30'),
+        status: 'CLOSED',
+      },
+    });
+    await database.academicYear.create({
+      data: {
+        tenantId: outsider.tenant.id,
+        code: 'OUTSIDER-2026',
+        name: 'Outsider 2026',
+        startsOn: new Date('2026-09-01'),
+        endsOn: new Date('2027-06-30'),
+        status: 'ACTIVE',
+      },
+    });
+
+    const response = await (await signIn(user)).send('/api/v1/auth/memberships', undefined, 'GET');
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual([
+      {
+        membershipId: user.membership.id,
+        tenant: { id: user.tenant.id, name: user.tenant.name },
+        activeAcademicYear: {
+          id: active.id,
+          name: active.name,
+          startsOn: '2026-09-01',
+          endsOn: '2027-06-30',
+        },
+      },
+    ]);
+    expect(JSON.stringify(response.body)).not.toContain(outsider.tenant.id);
+  });
   it('switches only to an active membership belonging to the authenticated user', async () => {
     const user = await fixture();
     const target = await fixture();

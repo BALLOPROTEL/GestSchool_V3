@@ -1,6 +1,24 @@
 import type { AcademicEntity, AcademicView, SessionView } from '@gestschool/contracts';
-import { PeopleError } from '../directory/people-client';
-export { peopleRequest as academicRequest } from '../directory/people-client';
+import { PeopleError, peopleRequest } from '../directory/people-client';
+import { notifyShellContextRefresh } from '../shell/shell-events';
+
+export function academicYearAffectsShell(path: string, method: string): boolean {
+  if (path === 'academic-years' && method === 'POST') return true;
+  if (/^academic-years\/[^/]+$/.test(path) && method === 'PATCH') return true;
+  return /^academic-years\/[^/]+\/(activate|close|archive)$/.test(path) && method === 'POST';
+}
+
+export async function academicRequest<T>(
+  path: string,
+  body?: unknown,
+  method = 'GET',
+  retry = true,
+  extraHeaders: Record<string, string> = {},
+): Promise<T> {
+  const result = await peopleRequest<T>(path, body, method, retry, extraHeaders);
+  if (academicYearAffectsShell(path, method)) notifyShellContextRefresh();
+  return result;
+}
 
 export const academicLabels = {
   'academic-years': 'years',

@@ -6,7 +6,12 @@ import {
   type AcademicView,
 } from '@gestschool/contracts';
 import { PeopleError } from '../directory/people-client';
-import { academicErrorKey, academicWritable, canAcademic } from './academic-client';
+import {
+  academicErrorKey,
+  academicWritable,
+  academicYearAffectsShell,
+  canAcademic,
+} from './academic-client';
 
 const session = (role: keyof typeof roleGrants): SessionView => ({
   user: { id: 'user', displayName: 'test' },
@@ -17,6 +22,21 @@ const session = (role: keyof typeof roleGrants): SessionView => ({
   grants: [...roleGrants[role]],
 });
 describe('LOT 6 presentation permissions and workflow', () => {
+  it.each([
+    ['academic-years', 'POST', true],
+    ['academic-years/year-1', 'PATCH', true],
+    ['academic-years/year-1/activate', 'POST', true],
+    ['academic-years/year-1/close', 'POST', true],
+    ['academic-years/year-1/archive', 'POST', true],
+    ['academic-years/year-1/periods', 'POST', false],
+    ['academic-years', 'GET', false],
+    ['classes/class-1', 'PATCH', false],
+  ] as const)(
+    'detects whether %s %s changes the shell academic-year context',
+    (path, method, expected) => {
+      expect(academicYearAffectsShell(path, method)).toBe(expected);
+    },
+  );
   it.each(['SCHOOL_ADMIN', 'DIRECTOR', 'ACADEMIC_STAFF'] as const)(
     '%s administers academic references',
     (role) => {

@@ -197,6 +197,16 @@ export const roleGrants: Readonly<Record<SystemRole, readonly Grant[]>> = {
     ...grants(['students.read'], 'OWN'),
   ],
 };
+export interface MembershipContextView {
+  membershipId: string;
+  tenant: { id: string; name: string };
+  activeAcademicYear: {
+    id: string;
+    name: string;
+    startsOn: string;
+    endsOn: string;
+  } | null;
+}
 export interface SessionView {
   user: { id: string; displayName: string };
   sessionId: string;

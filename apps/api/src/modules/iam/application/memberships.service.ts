@@ -1,4 +1,4 @@
-import { privilegedRoles } from '@gestschool/contracts';
+import { privilegedRoles, type MembershipContextView } from '@gestschool/contracts';
 import { deny, type RequestContext, type RequestMetadata } from '../domain/context.js';
 import type { IamRepository, MembershipRecord } from '../infrastructure/iam.repository.js';
 
@@ -46,13 +46,22 @@ export class MembershipsService {
         resolveMembership(item).roles.some((role) => privilegedRoles.includes(role)),
     );
   }
-  async list(userId: string) {
-    return (await this.repository.memberships(userId))
-      .filter((item) => item.status === 'ACTIVE' && item.tenant.status === 'ACTIVE')
-      .map((item) => ({
+  async list(userId: string): Promise<MembershipContextView[]> {
+    return (await this.repository.membershipContexts(userId)).map((item) => {
+      const activeAcademicYear = item.tenant.academicYears[0] ?? null;
+      return {
         membershipId: item.id,
-        tenant: { id: item.tenantId, name: item.tenant.name },
-      }));
+        tenant: { id: item.tenant.id, name: item.tenant.name },
+        activeAcademicYear: activeAcademicYear
+          ? {
+              id: activeAcademicYear.id,
+              name: activeAcademicYear.name,
+              startsOn: activeAcademicYear.startsOn.toISOString().slice(0, 10),
+              endsOn: activeAcademicYear.endsOn.toISOString().slice(0, 10),
+            }
+          : null,
+      };
+    });
   }
   context(
     membership: MembershipRecord,

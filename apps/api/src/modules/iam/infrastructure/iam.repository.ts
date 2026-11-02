@@ -109,6 +109,38 @@ export class IamRepository {
         update: { enabled: values[channel] },
       });
   }
+  membershipContexts(userId: string) {
+    return observeIamDatabase('MEMBERSHIPS_LOOKUP', () =>
+      this.db.membership.findMany({
+        where: {
+          userId,
+          status: 'ACTIVE',
+          tenant: { is: { status: 'ACTIVE' } },
+        },
+        select: {
+          id: true,
+          tenant: {
+            select: {
+              id: true,
+              name: true,
+              academicYears: {
+                where: { status: 'ACTIVE', archivedAt: null },
+                orderBy: [{ startsOn: 'desc' }, { id: 'desc' }],
+                take: 1,
+                select: {
+                  id: true,
+                  name: true,
+                  startsOn: true,
+                  endsOn: true,
+                },
+              },
+            },
+          },
+        },
+        orderBy: { id: 'asc' },
+      }),
+    );
+  }
   memberships(userId: string) {
     return observeIamDatabase('MEMBERSHIPS_LOOKUP', () =>
       this.db.membership.findMany({

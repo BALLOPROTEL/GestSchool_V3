@@ -572,7 +572,7 @@
     "admin": "Administrateur",
     "collapse": "Réduire la navigation",
     "currentSchool": "Établissement actif",
-    "demo": "Interface de démonstration — données fictives",
+    "demo": "Environnement de test — ne pas utiliser pour des données de production",
     "expand": "Développer la navigation",
     "language": "Changer de langue",
     "logout": "Se déconnecter",
@@ -591,7 +591,22 @@
     "searchShortcut": "Ctrl+K",
     "skip": "Aller au contenu principal",
     "theme": "Changer de thème",
-    "unread": "Notifications non lues"
+    "unread": "Notifications non lues",
+    "academicYearLabel": "Année scolaire active",
+    "noActiveAcademicYear": "Aucune année active",
+    "switchSchoolError": "Impossible de changer d’établissement.",
+    "roles": {
+      "SUPER_ADMIN": "Super administrateur",
+      "SCHOOL_ADMIN": "Administrateur d’établissement",
+      "DIRECTOR": "Directeur",
+      "ACADEMIC_STAFF": "Équipe académique",
+      "ACCOUNTANT": "Comptable",
+      "TEACHER": "Enseignant",
+      "PARENT": "Parent",
+      "STUDENT": "Élève"
+    },
+    "contextLoading": "Chargement du contexte…",
+    "contextUnavailable": "Contexte indisponible"
   },
   "Auth": {
     "activate": "Activer mon compte",
