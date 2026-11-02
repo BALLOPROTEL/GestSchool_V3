@@ -572,7 +572,7 @@
     "admin": "Administrateur",
     "collapse": "Réduire la navigation",
     "currentSchool": "Établissement actif",
-    "demo": "Interface de démonstration — données fictives",
+    "demo": "Environnement de test — ne pas utiliser pour des données de production",
     "expand": "Développer la navigation",
     "language": "Changer de langue",
     "logout": "Se déconnecter",

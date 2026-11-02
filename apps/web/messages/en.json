@@ -572,7 +572,7 @@
     "admin": "Administrator",
     "collapse": "Collapse navigation",
     "currentSchool": "Active school",
-    "demo": "Demonstration interface — fictional data",
+    "demo": "Test environment — do not use for production data",
     "expand": "Expand navigation",
     "language": "Change language",
     "logout": "Sign out",

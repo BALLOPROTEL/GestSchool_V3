@@ -763,7 +763,13 @@ function Topbar() {
   );
 }
 
-function PortalShellContent({ children }: { children: ReactNode }) {
+function PortalShellContent({
+  children,
+  showDemoBanner,
+}: {
+  children: ReactNode;
+  showDemoBanner: boolean;
+}) {
   const [collapsed, setCollapsed] = useState(false);
   const shell = useTranslations('Shell');
 
@@ -792,9 +798,11 @@ function PortalShellContent({ children }: { children: ReactNode }) {
       <DesktopSidebar collapsed={collapsed} onToggle={toggleSidebar} />
       <div className="min-w-0 transition-[padding] duration-200 lg:ps-[var(--sidebar-width)]">
         <Topbar />
-        <div className="border-b border-border bg-blue-50/70 px-4 py-1.5 text-center text-[10px] font-medium text-blue-800 dark:bg-blue-950/25 dark:text-blue-300">
-          {shell('demo')}
-        </div>
+        {showDemoBanner ? (
+          <div className="border-b border-border bg-blue-50/70 px-4 py-1.5 text-center text-[10px] font-medium text-blue-800 dark:bg-blue-950/25 dark:text-blue-300">
+            {shell('demo')}
+          </div>
+        ) : null}
         <main className="min-w-0" id="main-content" tabIndex={-1}>
           {children}
         </main>
@@ -803,10 +811,16 @@ function PortalShellContent({ children }: { children: ReactNode }) {
   );
 }
 
-export function PortalShell({ children }: { children: ReactNode }) {
+export function PortalShell({
+  children,
+  showDemoBanner = false,
+}: {
+  children: ReactNode;
+  showDemoBanner?: boolean;
+}) {
   return (
     <ShellContextProvider>
-      <PortalShellContent>{children}</PortalShellContent>
+      <PortalShellContent showDemoBanner={showDemoBanner}>{children}</PortalShellContent>
     </ShellContextProvider>
   );
 }
