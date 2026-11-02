@@ -100,14 +100,18 @@ function FormField({
 
 function PasswordInput({
   autoComplete,
+  disabled,
   id,
   minLength,
+  name,
   onChange,
   value,
 }: {
   autoComplete: string;
+  disabled?: boolean;
   id: string;
   minLength?: number;
+  name: string;
   onChange: (value: string) => void;
   value: string;
 }) {
@@ -118,8 +122,10 @@ function PasswordInput({
       <Input
         autoComplete={autoComplete}
         className="pe-10"
+        disabled={disabled}
         id={id}
         minLength={minLength}
+        name={name}
         required
         type={visible ? 'text' : 'password'}
         value={value}
@@ -128,6 +134,7 @@ function PasswordInput({
       <Button
         aria-label={visible ? translate('hidePassword') : translate('showPassword')}
         className="absolute end-1 top-1/2 -translate-y-1/2"
+        disabled={disabled}
         onClick={() => setVisible((current) => !current)}
         size="icon-sm"
         type="button"
@@ -574,13 +581,25 @@ export function UserProfilePage() {
                 </CardHeader>
                 <CardContent>
                   <form className="grid gap-4 sm:grid-cols-2" onSubmit={changePassword}>
+                    <Input
+                      aria-hidden="true"
+                      autoComplete="username"
+                      className="sr-only"
+                      name="username"
+                      readOnly
+                      tabIndex={-1}
+                      type="email"
+                      value={profile.user.email}
+                    />
                     <FormField
                       htmlFor="profile-current-password"
                       label={translate('currentPassword')}
                     >
                       <PasswordInput
                         autoComplete="current-password"
+                        disabled={securityBusy}
                         id="profile-current-password"
+                        name="currentPassword"
                         value={currentPassword}
                         onChange={setCurrentPassword}
                       />
@@ -589,8 +608,10 @@ export function UserProfilePage() {
                     <FormField htmlFor="profile-new-password" label={translate('newPassword')}>
                       <PasswordInput
                         autoComplete="new-password"
+                        disabled={securityBusy}
                         id="profile-new-password"
                         minLength={12}
+                        name="newPassword"
                         value={newPassword}
                         onChange={setNewPassword}
                       />
@@ -601,8 +622,10 @@ export function UserProfilePage() {
                     >
                       <PasswordInput
                         autoComplete="new-password"
+                        disabled={securityBusy}
                         id="profile-confirm-password"
                         minLength={12}
+                        name="confirmPassword"
                         value={confirmPassword}
                         onChange={setConfirmPassword}
                       />
@@ -642,7 +665,9 @@ export function UserProfilePage() {
                       <FormField htmlFor="mfa-password" label={translate('currentPassword')}>
                         <PasswordInput
                           autoComplete="current-password"
+                          disabled={securityBusy}
                           id="mfa-password"
+                          name="mfaPassword"
                           value={mfaPassword}
                           onChange={setMfaPassword}
                         />
@@ -694,7 +719,9 @@ export function UserProfilePage() {
                       >
                         <PasswordInput
                           autoComplete="current-password"
+                          disabled={securityBusy}
                           id="mfa-disable-password"
+                          name="mfaDisablePassword"
                           value={mfaPassword}
                           onChange={setMfaPassword}
                         />

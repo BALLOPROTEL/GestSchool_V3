@@ -76,7 +76,20 @@ test('LOT17.5 uses real profile, preferences, MFA and revocable sessions', async
     .click();
   expect((await languageUpdate).status()).toBe(200);
   await expect(page).toHaveURL(new RegExp('/' + nextLocale + '/profile$'));
+  await expect(page.locator('html')).toHaveAttribute('lang', nextLocale);
   await expect(page.locator('[data-profile-ready]')).toHaveAttribute('data-profile-ready', 'true');
+  await expect(
+    page.getByRole('heading', {
+      name: nextLocale === 'en' ? 'My profile' : 'Mon profil',
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('tab', {
+      name: nextLocale === 'en' ? 'Personal information' : 'Informations personnelles',
+      exact: true,
+    }),
+  ).toBeVisible();
 
   await page.locator('#profile-locale').selectOption(originalLocale);
   const languageRestore = page.waitForResponse(
@@ -138,15 +151,34 @@ test('LOT17.5 uses real profile, preferences, MFA and revocable sessions', async
   ).toBeVisible();
 
   const currentPassword = page.getByLabel('Mot de passe actuel', { exact: true }).first();
+  const newPassword = page.getByLabel('Nouveau mot de passe', { exact: true });
+  const confirmPassword = page.getByLabel('Confirmer le nouveau mot de passe', { exact: true });
+  await expect(currentPassword).toHaveAttribute('name', 'currentPassword');
+  await expect(currentPassword).toHaveAttribute('autocomplete', 'current-password');
+  await expect(newPassword).toHaveAttribute('name', 'newPassword');
+  await expect(newPassword).toHaveAttribute('autocomplete', 'new-password');
+  await expect(confirmPassword).toHaveAttribute('name', 'confirmPassword');
+  await expect(confirmPassword).toHaveAttribute('autocomplete', 'new-password');
+
+  let passwordChangeRequests = 0;
+  page.on('request', (request) => {
+    if (
+      new URL(request.url()).pathname === '/api/v1/auth/change-password' &&
+      request.method() === 'POST'
+    )
+      passwordChangeRequests += 1;
+  });
+
   await currentPassword.fill(account.crud.password);
   await page.getByRole('button', { name: 'Afficher le mot de passe', exact: true }).first().click();
   await expect(currentPassword).toHaveAttribute('type', 'text');
   await page.getByRole('button', { name: 'Masquer le mot de passe', exact: true }).first().click();
   await expect(currentPassword).toHaveAttribute('type', 'password');
-  await page.getByLabel('Nouveau mot de passe', { exact: true }).fill('Profile E2E password 1234');
-  await page
-    .getByLabel('Confirmer le nouveau mot de passe', { exact: true })
-    .fill('Profile E2E password 5678');
+  await newPassword.fill('Profile E2E password 1234');
+  await expect(currentPassword).toHaveValue(account.crud.password);
+  await confirmPassword.fill('Profile E2E password 5678');
+  await expect(currentPassword).toHaveValue(account.crud.password);
+  expect(passwordChangeRequests).toBe(0);
   await page.getByRole('button', { name: 'Modifier le mot de passe', exact: true }).click();
   await expect(page.getByText('Les nouveaux mots de passe ne correspondent pas.')).toBeVisible();
 
