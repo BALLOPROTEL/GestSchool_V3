@@ -31,9 +31,12 @@ describe('LOT 6 presentation permissions and workflow', () => {
     ['academic-years/year-1/periods', 'POST', false],
     ['academic-years', 'GET', false],
     ['classes/class-1', 'PATCH', false],
-  ] as const)('detects whether %s %s changes the shell academic-year context', (path, method, expected) => {
-    expect(academicYearAffectsShell(path, method)).toBe(expected);
-  });
+  ] as const)(
+    'detects whether %s %s changes the shell academic-year context',
+    (path, method, expected) => {
+      expect(academicYearAffectsShell(path, method)).toBe(expected);
+    },
+  );
   it.each(['SCHOOL_ADMIN', 'DIRECTOR', 'ACADEMIC_STAFF'] as const)(
     '%s administers academic references',
     (role) => {
