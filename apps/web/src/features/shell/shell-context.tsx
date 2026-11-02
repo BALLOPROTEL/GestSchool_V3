@@ -21,7 +21,7 @@ interface ShellContextValue {
 
 const ShellContext = createContext<ShellContextValue | null>(null);
 
-function currentMembership(session: SessionView): MembershipContextView {
+function fallbackMembershipContext(session: SessionView): MembershipContextView {
   return {
     membershipId: session.membershipId,
     tenant: session.tenant,
@@ -55,20 +55,20 @@ export function ShellContextProvider({ children }: { children: ReactNode }) {
     let active = true;
     setContextError(false);
     setContextLoading(true);
-    setMemberships([currentMembership(sessionView)]);
+    setMemberships([fallbackMembershipContext(sessionView)]);
     void authRequest<MembershipContextView[]>('memberships', undefined, 'GET')
       .then((items) => {
         if (!active) return;
         setMemberships(
           items.some((item) => item.membershipId === sessionView.membershipId)
             ? items
-            : [currentMembership(sessionView), ...items],
+            : [fallbackMembershipContext(sessionView), ...items],
         );
       })
       .catch(() => {
         if (active) {
           setContextError(true);
-          setMemberships([currentMembership(sessionView)]);
+          setMemberships([fallbackMembershipContext(sessionView)]);
         }
       })
       .finally(() => {
