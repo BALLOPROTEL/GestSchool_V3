@@ -69,6 +69,13 @@ test('LOT 6 academic workflow with real teacher assignments on mobile and deskto
   await page.getByRole('dialog').getByRole('button', { name: 'Confirmer' }).click();
   await expect(page.getByRole('dialog')).toBeHidden();
   await expect(yearRow).toContainText('Actif');
+  if (info.project.name === '360x800') {
+    await page.getByRole('button', { name: 'Ouvrir la navigation', exact: true }).click();
+    await expect(page.locator('[data-shell-year]:visible')).toContainText(`Année ${code}`);
+    await page.keyboard.press('Escape');
+  } else {
+    await expect(page.locator('[data-shell-year]').first()).toContainText(`Année ${code}`);
+  }
   await yearRow.getByRole('button', { name: 'Périodes', exact: true }).click();
   for (const [ordinal, startsOn, endsOn] of [
     ['1', '2027-09-01', '2028-01-31'],

@@ -5,6 +5,7 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 
 import { authRequest } from '../auth/auth-client';
 import { useAuth } from '../auth/auth-provider';
+import { shellContextRefreshEvent } from './shell-events';
 
 type Authenticated = Extract<LoginResult, { kind: 'session' }>;
 
@@ -33,7 +34,14 @@ export function ShellContextProvider({ children }: { children: ReactNode }) {
   const [contextError, setContextError] = useState(false);
   const [contextLoading, setContextLoading] = useState(true);
   const [switchingTenant, setSwitchingTenant] = useState(false);
+  const [revision, setRevision] = useState(0);
   const sessionView = session?.session;
+
+  useEffect(() => {
+    const refresh = () => setRevision((value) => value + 1);
+    window.addEventListener(shellContextRefreshEvent, refresh);
+    return () => window.removeEventListener(shellContextRefreshEvent, refresh);
+  }, []);
 
   useEffect(() => {
     if (!sessionView) {
@@ -69,7 +77,7 @@ export function ShellContextProvider({ children }: { children: ReactNode }) {
     return () => {
       active = false;
     };
-  }, [sessionView?.membershipId, sessionView?.tenant.id]);
+  }, [revision, sessionView?.membershipId, sessionView?.tenant.id]);
 
   const activeAcademicYear = useMemo(
     () =>
