@@ -68,6 +68,7 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from '../features/auth/auth-provider';
 import { peopleRequest } from '../features/directory/people-client';
+import { getInitials } from '../features/shared/format';
 
 import { Link, usePathname, useRouter } from '../i18n/navigation';
 import type { AppLocale } from '../i18n/routing';
@@ -218,6 +219,9 @@ function NavigationList({
 
 function SidebarIdentity({ collapsed = false }: { collapsed?: boolean }) {
   const shell = useTranslations('Shell');
+  const { session } = useAuth();
+  const displayName = session?.session.user.displayName ?? '—';
+  const tenantName = session?.session.tenant.name ?? '—';
   return (
     <Link
       aria-label={shell('profile')}
@@ -228,12 +232,14 @@ function SidebarIdentity({ collapsed = false }: { collapsed?: boolean }) {
       href="/profile"
     >
       <Avatar className="size-8">
-        <AvatarFallback className="bg-blue-600 text-[11px] text-white">AK</AvatarFallback>
+        <AvatarFallback className="bg-blue-600 text-[11px] text-white">
+          {getInitials(displayName)}
+        </AvatarFallback>
       </Avatar>
       {collapsed ? null : (
         <span className="min-w-0 flex-1 leading-tight">
-          <span className="block truncate text-xs font-semibold text-white">Amadou Kouyaté</span>
-          <span className="block truncate text-[10px] text-slate-400">{shell('admin')}</span>
+          <span className="block truncate text-xs font-semibold text-white">{displayName}</span>
+          <span className="block truncate text-[10px] text-slate-400">{tenantName}</span>
         </span>
       )}
     </Link>
@@ -561,7 +567,9 @@ function ProfileMenu() {
       <DropdownTrigger asChild>
         <Button className="gap-2 px-1.5 sm:px-2" variant="ghost">
           <Avatar className="size-7">
-            <AvatarFallback className="bg-blue-600 text-[10px] text-white">AK</AvatarFallback>
+            <AvatarFallback className="bg-blue-600 text-[10px] text-white">
+              {getInitials(session?.session.user.displayName ?? '—')}
+            </AvatarFallback>
           </Avatar>
           <span className="hidden max-w-24 truncate text-xs sm:block">
             {session?.session.user.displayName}

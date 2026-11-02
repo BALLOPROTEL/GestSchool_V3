@@ -1,4 +1,4 @@
-import type { LoginResult } from '@gestschool/contracts';
+import type { LoginResult, ProfileSessionView } from '@gestschool/contracts';
 import {
   deny,
   type AccessClaims,
@@ -151,8 +151,15 @@ export class SessionsService {
       );
     });
   }
-  list(context: RequestContext) {
-    return this.repository.listSessions(context.userId);
+  async list(context: RequestContext): Promise<ProfileSessionView[]> {
+    const rows = await this.repository.listSessions(context.userId);
+    return rows.map((row) => ({
+      id: row.id,
+      userAgent: row.userAgent,
+      createdAt: row.createdAt.toISOString(),
+      lastUsedAt: row.lastUsedAt.toISOString(),
+      expiresAt: row.expiresAt.toISOString(),
+    }));
   }
   async switch(context: RequestContext, membershipId: string): Promise<SessionResult> {
     return this.repository.atomic(context.userId, async (repository) => {

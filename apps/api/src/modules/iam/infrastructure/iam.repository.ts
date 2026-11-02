@@ -62,6 +62,53 @@ export class IamRepository {
       this.db.user.findUnique({ where: { id: userId }, include: { identity: true } }),
     );
   }
+  async updateOwnProfile(
+    userId: string,
+    membershipId: string,
+    tenantId: string,
+    displayName: string,
+    preferredLocale: 'fr' | 'en' | 'ar',
+  ): Promise<void> {
+    const membership = await this.db.membership.updateMany({
+      where: { id: membershipId, userId, tenantId, status: 'ACTIVE' },
+      data: { preferredLocale },
+    });
+    if (membership.count !== 1) throw new IamError('AUTH_FORBIDDEN', 403);
+    await this.db.user.update({
+      where: { id: userId },
+      data: { displayName, preferredLocale },
+    });
+  }
+  profilePreferences(tenantId: string, membershipId: string) {
+    return this.db.notificationPreference.findMany({
+      where: { tenantId, membershipId },
+      select: { channel: true, enabled: true },
+      orderBy: { channel: 'asc' },
+    });
+  }
+  async updateProfilePreferences(
+    tenantId: string,
+    membershipId: string,
+    values: { EMAIL: boolean; WHATSAPP: boolean },
+  ): Promise<void> {
+    for (const channel of ['EMAIL', 'WHATSAPP'] as const)
+      await this.db.notificationPreference.upsert({
+        where: {
+          tenantId_membershipId_channel: {
+            tenantId,
+            membershipId,
+            channel,
+          },
+        },
+        create: {
+          tenantId,
+          membershipId,
+          channel,
+          enabled: values[channel],
+        },
+        update: { enabled: values[channel] },
+      });
+  }
   memberships(userId: string) {
     return observeIamDatabase('MEMBERSHIPS_LOOKUP', () =>
       this.db.membership.findMany({

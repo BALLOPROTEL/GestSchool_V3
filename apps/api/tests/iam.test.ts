@@ -356,6 +356,154 @@ describe('auth tests', () => {
     expect((await browser.send('/iam-cert/unannotated', undefined, 'GET')).status).toBe(403);
   });
 });
+describe('profile self-service tests', () => {
+  it('returns a safe real profile with messaging-policy defaults', async () => {
+    const record = await fixture('STUDENT');
+    const browser = await signIn(record);
+    const result = await browser.send('/api/v1/auth/profile', undefined, 'GET');
+
+    expect(result.status).toBe(200);
+    expect((result.body['user'] as Record<string, unknown>)['email']).toBe(record.user.email);
+    expect((result.body['user'] as Record<string, unknown>)['displayName']).toBe('IAM Test');
+    expect(result.body['notifications']).toEqual({ EMAIL: true, WHATSAPP: false });
+    const serialized = JSON.stringify(result.body);
+    expect(serialized).not.toContain('passwordHash');
+    expect(serialized).not.toContain('mfaSecret');
+    expect(serialized).not.toContain('tokenHash');
+  });
+
+  it('updates only the authenticated profile and membership locale', async () => {
+    const record = await fixture('STUDENT');
+    const browser = await signIn(record);
+    const result = await browser.send(
+      '/api/v1/auth/profile',
+      { displayName: 'Profil Réel', preferredLocale: 'en' },
+      'PUT',
+    );
+
+    expect(result.status).toBe(200);
+    const [user, membership] = await Promise.all([
+      database.user.findUniqueOrThrow({ where: { id: record.user.id } }),
+      database.membership.findUniqueOrThrow({ where: { id: record.membership.id } }),
+    ]);
+    expect(user.displayName).toBe('Profil Réel');
+    expect(user.preferredLocale).toBe('en');
+    expect(membership.preferredLocale).toBe('en');
+  });
+
+  it('persists email and WhatsApp preferences with safe defaults', async () => {
+    const record = await fixture('STUDENT');
+    const browser = await signIn(record);
+    const update = await browser.send(
+      '/api/v1/auth/preferences',
+      { EMAIL: false, WHATSAPP: true },
+      'PUT',
+    );
+    expect(update.status).toBe(200);
+
+    const rows = await database.notificationPreference.findMany({
+      where: { tenantId: record.tenant.id, membershipId: record.membership.id },
+      orderBy: { channel: 'asc' },
+    });
+    expect(rows.map((row) => [row.channel, row.enabled])).toEqual([
+      ['EMAIL', false],
+      ['WHATSAPP', true],
+    ]);
+
+    const profile = await browser.send('/api/v1/auth/profile', undefined, 'GET');
+    expect(profile.body['notifications']).toEqual({ EMAIL: false, WHATSAPP: true });
+  });
+
+  it('changes the password atomically and revokes every old session', async () => {
+    const record = await fixture('STUDENT');
+    const first = await signIn(record);
+    const second = await signIn(record);
+    const nextPassword = `Profile password ${opaqueToken()}`;
+    secretValues.add(nextPassword);
+
+    const changed = await first.send('/api/v1/auth/change-password', {
+      currentPassword: password,
+      newPassword: nextPassword,
+      confirmPassword: nextPassword,
+    });
+    expect(changed.status).toBe(201);
+    expect((await first.send('/api/v1/auth/me', undefined, 'GET')).status).toBe(401);
+    expect((await second.send('/api/v1/auth/me', undefined, 'GET')).status).toBe(401);
+
+    const oldLogin = await (
+      await new Browser().init()
+    ).send('/api/v1/auth/login', {
+      email: record.user.email,
+      password,
+    });
+    expect(oldLogin.status).toBe(401);
+
+    const newLogin = await (
+      await new Browser().init()
+    ).send('/api/v1/auth/login', {
+      email: record.user.email,
+      password: nextPassword,
+    });
+    expect(newLogin.status).toBe(201);
+    expect(newLogin.body['kind']).toBe('session');
+  });
+
+  it('rate-limits authenticated password changes per user before password verification', async () => {
+    const record = await fixture('STUDENT');
+    const browser = await signIn(record);
+
+    for (let attempt = 0; attempt < 10; attempt += 1)
+      await iam.limiter.checkAuthenticatedCredential('change-password', record.user.id);
+
+    const blockedPassword = `Blocked password ${opaqueToken()}`;
+    secretValues.add(blockedPassword);
+    const blocked = await browser.send('/api/v1/auth/change-password', {
+      currentPassword: 'wrong current password',
+      newPassword: blockedPassword,
+      confirmPassword: blockedPassword,
+    });
+    expect(blocked.status).toBe(429);
+    expect(blocked.body['code']).toBe('AUTH_RATE_LIMITED');
+    expect((await browser.send('/api/v1/auth/me', undefined, 'GET')).status).toBe(200);
+  });
+
+  it('shares password-change rate limits across equivalent route casing', async () => {
+    const ip = `canonical-${randomUUID()}`;
+    const identifier = `identity-${randomUUID()}`;
+
+    for (let attempt = 0; attempt < 10; attempt += 1)
+      await iam.limiter.check('/api/v1/auth/change-password', ip, identifier);
+
+    await expect(
+      iam.limiter.check('/API/V1/AUTH/CHANGE-PASSWORD', ip, identifier),
+    ).rejects.toMatchObject({ code: 'AUTH_RATE_LIMITED', status: 429 });
+
+    const userId = randomUUID();
+    for (let attempt = 0; attempt < 10; attempt += 1)
+      await iam.limiter.checkAuthenticatedCredential('change-password', userId);
+
+    await expect(
+      iam.limiter.checkAuthenticatedCredential('CHANGE-PASSWORD', userId),
+    ).rejects.toMatchObject({ code: 'AUTH_RATE_LIMITED', status: 429 });
+  });
+
+  it('rejects a wrong current password without revoking the active session', async () => {
+    const record = await fixture('STUDENT');
+    const browser = await signIn(record);
+    const nextPassword = `Rejected password ${opaqueToken()}`;
+    secretValues.add(nextPassword);
+
+    const changed = await browser.send('/api/v1/auth/change-password', {
+      currentPassword: 'wrong current password',
+      newPassword: nextPassword,
+      confirmPassword: nextPassword,
+    });
+    expect(changed.status).toBe(401);
+    expect(changed.body['code']).toBe('AUTH_INVALID_CREDENTIALS');
+    expect((await browser.send('/api/v1/auth/me', undefined, 'GET')).status).toBe(200);
+  });
+});
+
 describe('session tests', () => {
   it('rejects an access token immediately after revocation', async () => {
     const user = await fixture();
@@ -387,7 +535,10 @@ describe('session tests', () => {
     ).toBe(404);
     const sessions = await a.send('/api/v1/auth/sessions', undefined, 'GET');
     expect(JSON.stringify(sessions.body).includes(field(other.body, 'sessionId'))).toBe(false);
-    expect(JSON.stringify(sessions.body).includes('tokenHash')).toBe(false);
+    const serialized = JSON.stringify(sessions.body);
+    expect(serialized.includes('tokenHash')).toBe(false);
+    expect(serialized.includes('ipAddress')).toBe(false);
+    expect(serialized.includes('tenantId')).toBe(false);
   });
   it('rechecks account state after issuing a valid access token', async () => {
     const user = await fixture();

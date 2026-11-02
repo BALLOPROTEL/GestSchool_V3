@@ -1,4 +1,4 @@
-import { deny, type RequestMetadata } from '../domain/context.js';
+import { deny, type RequestContext, type RequestMetadata } from '../domain/context.js';
 import { setTimeout } from 'node:timers/promises';
 import { opaqueToken, Passwords, tokenHash, validatePassword } from '../infrastructure/crypto.js';
 import { loadMessagingConfig } from '@gestschool/config/messaging';
@@ -115,6 +115,44 @@ export class CredentialsService {
         current.userId,
         tenantId,
         membershipId,
+      );
+    });
+  }
+
+  async change(
+    context: RequestContext,
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<void> {
+    validatePassword(newPassword);
+    const initial = await this.repository.user(context.userId);
+    if (
+      !initial?.identity?.activatedAt ||
+      initial.disabledAt ||
+      !(await this.passwords.verify(initial.identity.passwordHash, currentPassword))
+    )
+      deny('AUTH_INVALID_CREDENTIALS', 401);
+    if (await this.passwords.verify(initial.identity.passwordHash, newPassword))
+      deny('AUTH_INVALID_REQUEST', 409);
+
+    const nextHash = await this.passwords.hash(newPassword);
+    await this.repository.atomic(context.userId, async (repository) => {
+      const current = await repository.user(context.userId);
+      if (
+        !current?.identity?.activatedAt ||
+        current.disabledAt ||
+        current.identity.passwordHash !== initial.identity?.passwordHash
+      )
+        deny('AUTH_SESSION_EXPIRED', 401);
+      await repository.password(current.id, nextHash);
+      await repository.invalidateTokens(current.id);
+      await repository.revoke(current.id);
+      await repository.audit(
+        'password.changed',
+        context,
+        current.id,
+        context.tenantId,
+        context.membershipId,
       );
     });
   }

@@ -12,3 +12,4 @@ export * from './settings.js';
 export * from './iam-admin.js';
 
 export * from './audit.js';
+export * from './profile.js';
