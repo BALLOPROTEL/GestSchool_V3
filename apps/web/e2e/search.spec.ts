@@ -73,7 +73,7 @@ test('LOT17.7 global search returns real permitted data and navigates with the f
   const pageSearch = page
     .getByRole('main')
     .getByRole('searchbox', { name: 'Rechercher', exact: true });
-  await expect(pageSearch).toHaveValue(title);
+  await expect(pageSearch).toHaveValue(suffix);
   await expect(page.getByRole('row').filter({ hasText: title })).toBeVisible();
   verifyNoErrors();
 });
