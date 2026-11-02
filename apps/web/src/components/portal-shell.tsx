@@ -467,9 +467,12 @@ function SearchDialog() {
       return;
     }
 
+    setItems([]);
+    setActiveIndex(-1);
+    setState('loading');
+
     const controller = new AbortController();
     const timer = window.setTimeout(() => {
-      setState('loading');
       void globalSearchRequest(value, controller.signal)
         .then((result) => {
           setItems(result.items);
@@ -512,7 +515,7 @@ function SearchDialog() {
   };
 
   const onInputKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
-    if (!items.length) return;
+    if (state !== 'ready' || !items.length) return;
     if (event.key === 'ArrowDown') {
       event.preventDefault();
       setActiveIndex((index) => (index + 1) % items.length);
