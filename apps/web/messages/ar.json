@@ -591,7 +591,21 @@
     "searchShortcut": "Ctrl+K",
     "skip": "الانتقال إلى المحتوى الرئيسي",
     "theme": "تغيير المظهر",
-    "unread": "إشعارات غير مقروءة"
+    "unread": "إشعارات غير مقروءة",
+    "academicYearLabel": "السنة الدراسية النشطة",
+    "noActiveAcademicYear": "لا توجد سنة دراسية نشطة",
+    "switchSchoolError": "تعذر تغيير المؤسسة.",
+    "roles": {
+      "SUPER_ADMIN": "مدير النظام العام",
+      "SCHOOL_ADMIN": "مدير المؤسسة",
+      "DIRECTOR": "مدير المؤسسة",
+      "ACADEMIC_STAFF": "الشؤون الأكاديمية",
+      "ACCOUNTANT": "المحاسب",
+      "TEACHER": "الأستاذ",
+      "PARENT": "ولي الأمر",
+      "STUDENT": "التلميذ"
+    },
+    "contextLoading": "جارٍ تحميل السياق…"
   },
   "Auth": {
     "activate": "تفعيل حسابي",

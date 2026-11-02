@@ -69,6 +69,7 @@ import { toast } from 'sonner';
 import { useAuth } from '../features/auth/auth-provider';
 import { peopleRequest } from '../features/directory/people-client';
 import { getInitials } from '../features/shared/format';
+import { ShellContextProvider, useShellContext } from '../features/shell/shell-context';
 
 import { Link, usePathname, useRouter } from '../i18n/navigation';
 import type { AppLocale } from '../i18n/routing';
@@ -88,12 +89,31 @@ type NavGroup = {
   items: readonly NavItem[];
 };
 
+const roleTranslationKeys = {
+  SUPER_ADMIN: 'roles.SUPER_ADMIN',
+  SCHOOL_ADMIN: 'roles.SCHOOL_ADMIN',
+  DIRECTOR: 'roles.DIRECTOR',
+  ACADEMIC_STAFF: 'roles.ACADEMIC_STAFF',
+  ACCOUNTANT: 'roles.ACCOUNTANT',
+  TEACHER: 'roles.TEACHER',
+  PARENT: 'roles.PARENT',
+  STUDENT: 'roles.STUDENT',
+} as const;
+
+function RoleLabel({ role }: { role?: string | undefined }) {
+  const shell = useTranslations('Shell');
+  if (!role) return <>—</>;
+  if (Object.hasOwn(roleTranslationKeys, role))
+    return <>{shell(roleTranslationKeys[role as keyof typeof roleTranslationKeys])}</>;
+  return <>{role.replaceAll('_', ' ')}</>;
+}
+
 const navigation: readonly NavGroup[] = [
   { items: [{ href: '/', icon: LayoutDashboard, key: 'dashboard' }] },
   {
     key: 'schoolLife',
     items: [
-      { badge: '1K+', href: '/students', icon: GraduationCap, key: 'students' },
+      { href: '/students', icon: GraduationCap, key: 'students' },
       { href: '/parents', icon: UsersRound, key: 'parents' },
       { href: '/teachers', icon: UserRoundCheck, key: 'teachers' },
       { href: '/enrollments', icon: ClipboardList, key: 'enrollments' },
@@ -222,6 +242,7 @@ function SidebarIdentity({ collapsed = false }: { collapsed?: boolean }) {
   const { session } = useAuth();
   const displayName = session?.session.user.displayName ?? '—';
   const tenantName = session?.session.tenant.name ?? '—';
+  const primaryRole = session?.session.roles[0];
   return (
     <Link
       aria-label={shell('profile')}
@@ -239,7 +260,15 @@ function SidebarIdentity({ collapsed = false }: { collapsed?: boolean }) {
       {collapsed ? null : (
         <span className="min-w-0 flex-1 leading-tight">
           <span className="block truncate text-xs font-semibold text-white">{displayName}</span>
-          <span className="block truncate text-[10px] text-slate-400">{tenantName}</span>
+          <span
+            className="block truncate text-[10px] font-medium text-blue-300"
+            data-shell-role
+          >
+            <RoleLabel role={primaryRole} />
+          </span>
+          <span className="block truncate text-[10px] text-slate-400" data-shell-tenant-name>
+            {tenantName}
+          </span>
         </span>
       )}
     </Link>
@@ -248,13 +277,53 @@ function SidebarIdentity({ collapsed = false }: { collapsed?: boolean }) {
 
 function MobileSchoolContext() {
   const shell = useTranslations('Shell');
+  const locale = useLocale();
+  const { session } = useAuth();
+  const { memberships, activeAcademicYear, contextLoading, switchingTenant, switchTenant } =
+    useShellContext();
+  const currentMembershipId = session?.session.membershipId ?? '';
+
   return (
-    <div className="mx-3 mb-4 space-y-2 rounded-lg border border-sidebar-border bg-sidebar-accent/55 p-3">
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-        {shell('currentSchool')}
-      </p>
-      <p className="truncate text-xs font-semibold text-white">Lycée Moderne Victor Hugo</p>
-      <p className="text-[11px] text-slate-400">{shell('academicYear', { year: '2026–2027' })}</p>
+    <div className="mx-3 mb-4 space-y-3 rounded-lg border border-sidebar-border bg-sidebar-accent/55 p-3">
+      <label className="block space-y-1">
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+          {shell('currentSchool')}
+        </span>
+        <Select
+          aria-label={shell('currentSchool')}
+          className="w-full border-sidebar-border bg-sidebar text-xs text-white"
+          data-shell-school
+          disabled={switchingTenant}
+          value={currentMembershipId}
+          onChange={(event) => {
+            const membershipId = event.target.value;
+            void switchTenant(membershipId)
+              .then(() => window.location.assign(`/${locale}`))
+              .catch(() => toast.error(shell('switchSchoolError')));
+          }}
+        >
+          {memberships.map((membership) => (
+            <SelectItem key={membership.membershipId} value={membership.membershipId}>
+              {membership.tenant.name}
+            </SelectItem>
+          ))}
+        </Select>
+      </label>
+      <div>
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+          {shell('academicYearLabel')}
+        </p>
+        <p
+          className="mt-1 truncate text-xs font-semibold text-white"
+          data-shell-year={
+            contextLoading ? 'loading' : activeAcademicYear ? 'active' : 'none'
+          }
+        >
+          {contextLoading
+            ? shell('contextLoading')
+            : (activeAcademicYear?.name ?? shell('noActiveAcademicYear'))}
+        </p>
+      </div>
     </div>
   );
 }
@@ -582,7 +651,10 @@ function ProfileMenu() {
           <span className="block truncate text-foreground">
             {session?.session.user.displayName}
           </span>
-          <span className="mt-0.5 block truncate font-normal">{session?.session.tenant.name}</span>
+          <span className="mt-0.5 block truncate font-normal">
+            <RoleLabel role={session?.session.roles[0]} />
+          </span>
+          <span className="block truncate font-normal">{session?.session.tenant.name}</span>
         </DropdownLabel>
         <DropdownSeparator />
         <DropdownItem asChild>
@@ -615,6 +687,12 @@ function ProfileMenu() {
 
 function Topbar() {
   const shell = useTranslations('Shell');
+  const locale = useLocale();
+  const { session } = useAuth();
+  const { memberships, activeAcademicYear, contextLoading, switchingTenant, switchTenant } =
+    useShellContext();
+  const currentMembershipId = session?.session.membershipId ?? '';
+
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-border bg-card/95 px-3 backdrop-blur supports-[backdrop-filter]:bg-card/85 sm:px-4">
       <MobileNavigation />
@@ -623,20 +701,36 @@ function Topbar() {
         <Select
           aria-label={shell('currentSchool')}
           className="w-52 border-0 bg-transparent font-semibold shadow-none"
+          data-shell-school
+          disabled={switchingTenant}
+          value={currentMembershipId}
+          onChange={(event) => {
+            const membershipId = event.target.value;
+            void switchTenant(membershipId)
+              .then(() => window.location.assign(`/${locale}`))
+              .catch(() => toast.error(shell('switchSchoolError')));
+          }}
         >
-          <SelectItem>Lycée Moderne Victor Hugo</SelectItem>
-          <SelectItem>Collège Saint-Charles</SelectItem>
-          <SelectItem>École Les Flamboyants</SelectItem>
+          {memberships.map((membership) => (
+            <SelectItem key={membership.membershipId} value={membership.membershipId}>
+              {membership.tenant.name}
+            </SelectItem>
+          ))}
         </Select>
-        <Select
-          aria-label={shell('academicYear', { year: '2026–2027' })}
-          className="w-32 border-0 bg-transparent font-mono text-xs shadow-none"
-          dir="ltr"
+        <div
+          className="flex min-w-28 items-center gap-2 px-2 text-xs text-muted-foreground"
+          data-shell-year={
+            contextLoading ? 'loading' : activeAcademicYear ? 'active' : 'none'
+          }
         >
-          <SelectItem>2026–2027</SelectItem>
-          <SelectItem>2025–2026</SelectItem>
-          <SelectItem>2024–2025</SelectItem>
-        </Select>
+          <CalendarCheck aria-hidden="true" className="size-4" />
+          <span className="sr-only">{shell('academicYearLabel')}</span>
+          <span className="truncate font-mono text-foreground">
+            {contextLoading
+              ? shell('contextLoading')
+              : (activeAcademicYear?.name ?? shell('noActiveAcademicYear'))}
+          </span>
+        </div>
       </div>
       <SearchDialog />
       <div className="ms-auto flex shrink-0 items-center gap-0.5">
@@ -649,7 +743,7 @@ function Topbar() {
   );
 }
 
-export function PortalShell({ children }: { children: ReactNode }) {
+function PortalShellContent({ children }: { children: ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const shell = useTranslations('Shell');
 
@@ -686,5 +780,13 @@ export function PortalShell({ children }: { children: ReactNode }) {
         </main>
       </div>
     </div>
+  );
+}
+
+export function PortalShell({ children }: { children: ReactNode }) {
+  return (
+    <ShellContextProvider>
+      <PortalShellContent>{children}</PortalShellContent>
+    </ShellContextProvider>
   );
 }

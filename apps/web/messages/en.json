@@ -591,7 +591,21 @@
     "searchShortcut": "Ctrl+K",
     "skip": "Skip to main content",
     "theme": "Change theme",
-    "unread": "Unread notifications"
+    "unread": "Unread notifications",
+    "academicYearLabel": "Active academic year",
+    "noActiveAcademicYear": "No active academic year",
+    "switchSchoolError": "Unable to switch school.",
+    "roles": {
+      "SUPER_ADMIN": "Super administrator",
+      "SCHOOL_ADMIN": "School administrator",
+      "DIRECTOR": "Principal",
+      "ACADEMIC_STAFF": "Academic staff",
+      "ACCOUNTANT": "Accountant",
+      "TEACHER": "Teacher",
+      "PARENT": "Parent",
+      "STUDENT": "Student"
+    },
+    "contextLoading": "Loading context…"
   },
   "Auth": {
     "activate": "Activate my account",
