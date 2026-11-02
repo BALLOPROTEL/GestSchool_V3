@@ -42,9 +42,7 @@ test('LOT17.6 renders real tenant and active-year shell context', async ({ page 
   );
 
   const currentMembershipId = await school.inputValue();
-  const current = memberships.find(
-    (membership) => membership.membershipId === currentMembershipId,
-  );
+  const current = memberships.find((membership) => membership.membershipId === currentMembershipId);
   expect(current).toBeTruthy();
   await expect(page.locator('[data-shell-tenant-name]').first()).toHaveText(
     current?.tenant.name ?? '',
@@ -133,12 +131,8 @@ test('LOT17.6 keeps real shell context usable on mobile', async ({ page }, info)
   );
 
   const currentMembershipId = await school.inputValue();
-  const current = memberships.find(
-    (membership) => membership.membershipId === currentMembershipId,
-  );
+  const current = memberships.find((membership) => membership.membershipId === currentMembershipId);
   const year = page.locator('[data-shell-year]:visible');
-  await expect(year).toContainText(
-    current?.activeAcademicYear?.name ?? 'Aucune année active',
-  );
+  await expect(year).toContainText(current?.activeAcademicYear?.name ?? 'Aucune année active');
   verifyNoErrors();
 });

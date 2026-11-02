@@ -322,15 +322,13 @@ function MobileSchoolContext() {
         </p>
         <p
           className="mt-1 truncate text-xs font-semibold text-white"
-          data-shell-year={
-            contextLoading ? 'loading' : activeAcademicYear ? 'active' : 'none'
-          }
+          data-shell-year={contextLoading ? 'loading' : activeAcademicYear ? 'active' : 'none'}
         >
           {contextLoading
             ? shell('contextLoading')
             : contextError
               ? shell('contextUnavailable')
-              : (activeAcademicYear?.name ?? shell('noActiveAcademicYear'))}
+              : activeAcademicYear?.name ?? shell('noActiveAcademicYear')}
         </p>
       </div>
     </div>
@@ -737,9 +735,7 @@ function Topbar() {
         </Select>
         <div
           className="flex min-w-28 items-center gap-2 px-2 text-xs text-muted-foreground"
-          data-shell-year={
-            contextLoading ? 'loading' : activeAcademicYear ? 'active' : 'none'
-          }
+          data-shell-year={contextLoading ? 'loading' : activeAcademicYear ? 'active' : 'none'}
         >
           <CalendarCheck aria-hidden="true" className="size-4" />
           <span className="sr-only">{shell('academicYearLabel')}</span>
@@ -748,7 +744,7 @@ function Topbar() {
               ? shell('contextLoading')
               : contextError
                 ? shell('contextUnavailable')
-                : (activeAcademicYear?.name ?? shell('noActiveAcademicYear'))}
+                : activeAcademicYear?.name ?? shell('noActiveAcademicYear')}
           </span>
         </div>
       </div>

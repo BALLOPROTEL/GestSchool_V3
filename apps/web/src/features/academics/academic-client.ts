@@ -5,9 +5,7 @@ import { notifyShellContextRefresh } from '../shell/shell-events';
 export function academicYearAffectsShell(path: string, method: string): boolean {
   if (path === 'academic-years' && method === 'POST') return true;
   if (/^academic-years\/[^/]+$/.test(path) && method === 'PATCH') return true;
-  return (
-    /^academic-years\/[^/]+\/(activate|close|archive)$/.test(path) && method === 'POST'
-  );
+  return /^academic-years\/[^/]+\/(activate|close|archive)$/.test(path) && method === 'POST';
 }
 
 export async function academicRequest<T>(
