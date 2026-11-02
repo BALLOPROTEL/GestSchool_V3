@@ -605,7 +605,8 @@
       "PARENT": "Parent",
       "STUDENT": "Élève"
     },
-    "contextLoading": "Chargement du contexte…"
+    "contextLoading": "Chargement du contexte…",
+    "contextUnavailable": "Contexte indisponible"
   },
   "Auth": {
     "activate": "Activer mon compte",

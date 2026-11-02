@@ -605,7 +605,8 @@
       "PARENT": "ولي الأمر",
       "STUDENT": "التلميذ"
     },
-    "contextLoading": "جارٍ تحميل السياق…"
+    "contextLoading": "جارٍ تحميل السياق…",
+    "contextUnavailable": "السياق غير متاح"
   },
   "Auth": {
     "activate": "تفعيل حسابي",

@@ -279,8 +279,14 @@ function MobileSchoolContext() {
   const shell = useTranslations('Shell');
   const locale = useLocale();
   const { session } = useAuth();
-  const { memberships, activeAcademicYear, contextLoading, switchingTenant, switchTenant } =
-    useShellContext();
+  const {
+    memberships,
+    activeAcademicYear,
+    contextError,
+    contextLoading,
+    switchingTenant,
+    switchTenant,
+  } = useShellContext();
   const currentMembershipId = session?.session.membershipId ?? '';
 
   return (
@@ -321,7 +327,9 @@ function MobileSchoolContext() {
         >
           {contextLoading
             ? shell('contextLoading')
-            : (activeAcademicYear?.name ?? shell('noActiveAcademicYear'))}
+            : contextError
+              ? shell('contextUnavailable')
+              : (activeAcademicYear?.name ?? shell('noActiveAcademicYear'))}
         </p>
       </div>
     </div>
@@ -689,8 +697,14 @@ function Topbar() {
   const shell = useTranslations('Shell');
   const locale = useLocale();
   const { session } = useAuth();
-  const { memberships, activeAcademicYear, contextLoading, switchingTenant, switchTenant } =
-    useShellContext();
+  const {
+    memberships,
+    activeAcademicYear,
+    contextError,
+    contextLoading,
+    switchingTenant,
+    switchTenant,
+  } = useShellContext();
   const currentMembershipId = session?.session.membershipId ?? '';
 
   return (
@@ -728,7 +742,9 @@ function Topbar() {
           <span className="truncate font-mono text-foreground">
             {contextLoading
               ? shell('contextLoading')
-              : (activeAcademicYear?.name ?? shell('noActiveAcademicYear'))}
+              : contextError
+                ? shell('contextUnavailable')
+                : (activeAcademicYear?.name ?? shell('noActiveAcademicYear'))}
           </span>
         </div>
       </div>

@@ -11,6 +11,7 @@ type Authenticated = Extract<LoginResult, { kind: 'session' }>;
 interface ShellContextValue {
   memberships: MembershipContextView[];
   activeAcademicYear: MembershipContextView['activeAcademicYear'];
+  contextError: boolean;
   contextLoading: boolean;
   switchingTenant: boolean;
   switchTenant: (membershipId: string) => Promise<void>;
@@ -29,6 +30,7 @@ function currentMembership(session: SessionView): MembershipContextView {
 export function ShellContextProvider({ children }: { children: ReactNode }) {
   const { session, accept } = useAuth();
   const [memberships, setMemberships] = useState<MembershipContextView[]>([]);
+  const [contextError, setContextError] = useState(false);
   const [contextLoading, setContextLoading] = useState(true);
   const [switchingTenant, setSwitchingTenant] = useState(false);
   const sessionView = session?.session;
@@ -36,11 +38,13 @@ export function ShellContextProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!sessionView) {
       setMemberships([]);
+      setContextError(false);
       setContextLoading(false);
       return;
     }
 
     let active = true;
+    setContextError(false);
     setContextLoading(true);
     setMemberships([currentMembership(sessionView)]);
     void authRequest<MembershipContextView[]>('memberships', undefined, 'GET')
@@ -53,7 +57,10 @@ export function ShellContextProvider({ children }: { children: ReactNode }) {
         );
       })
       .catch(() => {
-        if (active) setMemberships([currentMembership(sessionView)]);
+        if (active) {
+          setContextError(true);
+          setMemberships([currentMembership(sessionView)]);
+        }
       })
       .finally(() => {
         if (active) setContextLoading(false);
@@ -88,6 +95,7 @@ export function ShellContextProvider({ children }: { children: ReactNode }) {
       value={{
         memberships,
         activeAcademicYear,
+        contextError,
         contextLoading,
         switchingTenant,
         switchTenant,
