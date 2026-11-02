@@ -110,7 +110,7 @@ export class IamRepository {
       });
   }
   membershipContexts(userId: string) {
-    return observeIamDatabase('MEMBERSHIP_CONTEXTS_LOOKUP', () =>
+    return observeIamDatabase('MEMBERSHIPS_LOOKUP', () =>
       this.db.membership.findMany({
         where: {
           userId,
