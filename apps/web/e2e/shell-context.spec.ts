@@ -60,6 +60,26 @@ test('LOT17.6 renders real tenant and active-year shell context', async ({ page 
   await expect(page.getByText('1K+', { exact: true })).toHaveCount(0);
   await expect(page.locator('[data-shell-role]').first()).not.toHaveText(/_/);
 
+  const originalTenantName = current?.tenant.name ?? '';
+  const renamedTenant = `${originalTenantName} LOT17.6`;
+  await page.goto('/fr/settings');
+  await expect(page.locator('[data-settings-ready]')).toHaveAttribute(
+    'data-settings-ready',
+    'true',
+  );
+  const schoolName = page.getByLabel('Nom de l’établissement', { exact: true });
+  await expect(schoolName).toHaveValue(originalTenantName);
+  await schoolName.fill(renamedTenant);
+  await page.getByRole('button', { name: 'Enregistrer les modifications', exact: true }).click();
+  await expect(page.locator('[data-shell-tenant-name]').first()).toHaveText(renamedTenant);
+  await expect(page.locator('[data-shell-school]').first().locator('option:checked')).toHaveText(
+    renamedTenant,
+  );
+
+  await schoolName.fill(originalTenantName);
+  await page.getByRole('button', { name: 'Enregistrer les modifications', exact: true }).click();
+  await expect(page.locator('[data-shell-tenant-name]').first()).toHaveText(originalTenantName);
+
   const alternate = memberships.find(
     (membership) => membership.membershipId !== currentMembershipId,
   );

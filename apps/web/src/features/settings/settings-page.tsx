@@ -26,6 +26,7 @@ import { useAuth } from '../auth/auth-provider';
 import { PeopleError, peopleRequest } from '../directory/people-client';
 import { usePeopleData } from '../directory/people-hooks';
 import { PageHeader } from '../shared/page-header';
+import { notifyShellContextRefresh } from '../shell/shell-events';
 
 function Field({
   children,
@@ -124,6 +125,7 @@ export function SettingsPage() {
     try {
       const updated = await peopleRequest<TenantSettingsView>('settings', form, 'PATCH');
       setForm(editableFromView(updated));
+      notifyShellContextRefresh();
       toast.success(translate('saved'));
     } catch {
       toast.error(translate('saveError'));

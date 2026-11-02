@@ -11,6 +11,7 @@ type Authenticated = Extract<LoginResult, { kind: 'session' }>;
 
 interface ShellContextValue {
   memberships: MembershipContextView[];
+  currentTenant: MembershipContextView['tenant'] | null;
   activeAcademicYear: MembershipContextView['activeAcademicYear'];
   contextError: boolean;
   contextLoading: boolean;
@@ -79,12 +80,12 @@ export function ShellContextProvider({ children }: { children: ReactNode }) {
     };
   }, [revision, sessionView?.membershipId, sessionView?.tenant.id]);
 
-  const activeAcademicYear = useMemo(
-    () =>
-      memberships.find((item) => item.membershipId === sessionView?.membershipId)
-        ?.activeAcademicYear ?? null,
+  const currentMembership = useMemo(
+    () => memberships.find((item) => item.membershipId === sessionView?.membershipId) ?? null,
     [memberships, sessionView?.membershipId],
   );
+  const currentTenant = currentMembership?.tenant ?? sessionView?.tenant ?? null;
+  const activeAcademicYear = currentMembership?.activeAcademicYear ?? null;
 
   const switchTenant = async (membershipId: string) => {
     if (!sessionView || membershipId === sessionView.membershipId) return;
@@ -102,6 +103,7 @@ export function ShellContextProvider({ children }: { children: ReactNode }) {
     <ShellContext.Provider
       value={{
         memberships,
+        currentTenant,
         activeAcademicYear,
         contextError,
         contextLoading,

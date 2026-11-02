@@ -240,8 +240,9 @@ function NavigationList({
 function SidebarIdentity({ collapsed = false }: { collapsed?: boolean }) {
   const shell = useTranslations('Shell');
   const { session } = useAuth();
+  const { currentTenant } = useShellContext();
   const displayName = session?.session.user.displayName ?? '—';
-  const tenantName = session?.session.tenant.name ?? '—';
+  const tenantName = currentTenant?.name ?? session?.session.tenant.name ?? '—';
   const primaryRole = session?.session.roles[0];
   return (
     <Link
@@ -635,6 +636,7 @@ function NotificationMenu() {
 
 function ProfileMenu() {
   const { session, logout } = useAuth();
+  const { currentTenant } = useShellContext();
   const router = useRouter();
   const iam = useTranslations('Iam');
   const shell = useTranslations('Shell');
@@ -662,7 +664,9 @@ function ProfileMenu() {
           <span className="mt-0.5 block truncate font-normal">
             <RoleLabel role={session?.session.roles[0]} />
           </span>
-          <span className="block truncate font-normal">{session?.session.tenant.name}</span>
+          <span className="block truncate font-normal">
+            {currentTenant?.name ?? session?.session.tenant.name}
+          </span>
         </DropdownLabel>
         <DropdownSeparator />
         <DropdownItem asChild>
