@@ -11,6 +11,7 @@ interface AttendanceFixture {
   ownStudentId: string;
   parent: Credentials;
   student: Credentials;
+  targetClassId: string;
 }
 
 function fixtures() {
@@ -31,7 +32,7 @@ test('LOT17.8 certifies the real attendance sheet, export and tenant isolation',
   test.skip(info.project.name !== '1440x900', 'Attendance write path certified once.');
   const data = fixture(info.project.name);
   const other = Object.values(fixtures().enrollments).find(
-    (candidate) => candidate.classId !== data.classId,
+    (candidate) => candidate.targetClassId !== data.targetClassId,
   );
   if (!other) throw new Error('Missing cross-tenant attendance fixture');
 
@@ -48,7 +49,7 @@ test('LOT17.8 certifies the real attendance sheet, export and tenant isolation',
   await page.goto('/fr/attendance');
   await expect(page.getByRole('heading', { level: 1, name: 'Suivi des présences' })).toBeVisible();
 
-  await page.getByRole('combobox', { name: 'Classe', exact: true }).selectOption(data.classId);
+  await page.getByRole('combobox', { name: 'Classe', exact: true }).selectOption(data.targetClassId);
   await page.getByLabel('Date', { exact: true }).fill('2026-10-30');
   const row = page.locator('tbody tr').first();
   await expect(row).toBeVisible();
@@ -72,7 +73,7 @@ test('LOT17.8 certifies the real attendance sheet, export and tenant isolation',
   expect((await download).suggestedFilename()).toBe('gestschool-attendance-2026-10-30.csv');
 
   const hidden = await page.request.get(
-    `/api/v1/attendance/sheet?classId=${other.classId}&date=2026-10-30`,
+    `/api/v1/attendance/sheet?classId=${other.targetClassId}&date=2026-10-30`,
     { headers: { Authorization: `Bearer ${auth.accessToken}` } },
   );
   expect(hidden.status()).toBe(404);
