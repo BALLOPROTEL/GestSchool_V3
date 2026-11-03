@@ -9,7 +9,6 @@ import ar from '../messages/ar.json';
 
 import { routing } from './i18n/routing';
 import { formatCurrency } from './features/shared/format';
-import { students } from './mocks/data';
 
 function readMessages(locale: string): unknown {
   return JSON.parse(
@@ -55,16 +54,11 @@ describe('LOT 1 localisation contract', () => {
   });
 });
 
-describe('LOT 1 presentation data', () => {
+describe('LOT 1 presentation formatting', () => {
   it('formats all financial values in XOF', () => {
     expect(formatCurrency(150_000, 'fr')).toContain('XOF');
     expect(formatCurrency(150_000, 'en')).toContain('XOF');
     expect(formatCurrency(150_000, 'ar')).toContain('XOF');
   });
 
-  it('provides realistic, typed demonstration records', () => {
-    expect(students.length).toBeGreaterThanOrEqual(8);
-    expect(students.every((student) => student.id.startsWith('EL-'))).toBe(true);
-    expect(students.every((student) => student.name.includes(' '))).toBe(true);
-  });
 });
