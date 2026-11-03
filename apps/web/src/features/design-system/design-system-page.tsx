@@ -66,9 +66,9 @@ import type { DataTableColumn } from '@gestschool/ui';
 import { Bell, ChevronDown, Inbox, Plus, UsersRound } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 import { Link } from '../../i18n/navigation';
-import { useMockAction } from '../shared/mock-action';
 import { PageHeader } from '../shared/page-header';
 
 type PreviewRow = { id: string; name: string; status: 'active' | 'pending' };
@@ -92,7 +92,8 @@ export function DesignSystemPage() {
   const nav = useTranslations('Nav');
   const status = useTranslations('Status');
   const translate = useTranslations('DesignSystem');
-  const mockAction = useMockAction();
+  const demoAction = (label?: string) =>
+    toast.info(label ?? common('confirm'), { description: common('mockAction') });
   const [page, setPage] = useState(2);
   const columns: readonly DataTableColumn<PreviewRow>[] = [
     { cell: (row) => <span className="font-mono text-xs">{row.id}</span>, header: 'ID', id: 'id' },
@@ -264,7 +265,7 @@ export function DesignSystemPage() {
                       <Button variant="outline">{common('cancel')}</Button>
                     </DialogClose>
                     <DialogClose asChild>
-                      <Button onClick={() => mockAction(common('confirm'))}>
+                      <Button onClick={() => demoAction(common('confirm'))}>
                         {common('confirm')}
                       </Button>
                     </DialogClose>
@@ -303,13 +304,13 @@ export function DesignSystemPage() {
                 <DropdownContent>
                   <DropdownLabel>{common('actions')}</DropdownLabel>
                   <DropdownSeparator />
-                  <DropdownItem onSelect={() => mockAction(common('view'))}>
+                  <DropdownItem onSelect={() => demoAction(common('view'))}>
                     {common('view')}
                   </DropdownItem>
-                  <DropdownItem onSelect={() => mockAction(common('edit'))}>
+                  <DropdownItem onSelect={() => demoAction(common('edit'))}>
                     {common('edit')}
                   </DropdownItem>
-                  <DropdownItem destructive onSelect={() => mockAction(common('delete'))}>
+                  <DropdownItem destructive onSelect={() => demoAction(common('delete'))}>
                     {common('delete')}
                   </DropdownItem>
                 </DropdownContent>
@@ -440,7 +441,7 @@ export function DesignSystemPage() {
               <ErrorState
                 actionLabel={common('retry')}
                 description={translate('errorDescription')}
-                onAction={() => mockAction(common('retry'))}
+                onAction={() => demoAction(common('retry'))}
                 title={translate('errorTitle')}
               />
             </div>
@@ -449,7 +450,7 @@ export function DesignSystemPage() {
             <PermissionDenied
               actionLabel={common('back')}
               description={translate('permissionDescription')}
-              onAction={() => mockAction(common('back'))}
+              onAction={() => demoAction(common('back'))}
               title={translate('permissionTitle')}
             />
           </div>
