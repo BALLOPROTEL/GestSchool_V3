@@ -60,5 +60,4 @@ describe('LOT 1 presentation formatting', () => {
     expect(formatCurrency(150_000, 'en')).toContain('XOF');
     expect(formatCurrency(150_000, 'ar')).toContain('XOF');
   });
-
 });
