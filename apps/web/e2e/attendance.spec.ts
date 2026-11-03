@@ -51,7 +51,9 @@ test('LOT17.8 certifies the real attendance sheet, export and tenant isolation',
   await page.goto('/fr/attendance');
   await expect(page.getByRole('heading', { level: 1, name: 'Suivi des présences' })).toBeVisible();
 
-  await page.getByRole('combobox', { name: 'Classe', exact: true }).selectOption(data.targetClassId);
+  await page
+    .getByRole('combobox', { name: 'Classe', exact: true })
+    .selectOption(data.targetClassId);
   await page.getByLabel('Date', { exact: true }).fill('2026-10-30');
   const row = page.locator('tbody tr').first();
   await expect(row).toBeVisible();
@@ -106,7 +108,9 @@ test('LOT17.8 certifies parent CHILDREN and student OWN attendance history as re
     if (auth.kind !== 'session') throw new Error('Expected scoped attendance session');
 
     await page.goto('/fr/attendance');
-    await expect(page.getByRole('heading', { level: 1, name: 'Suivi des présences' })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { level: 1, name: 'Suivi des présences' }),
+    ).toBeVisible();
     await expect(page.getByRole('button', { name: 'Enregistrer', exact: true })).toHaveCount(0);
 
     const student = page.getByRole('combobox', { name: 'Élève', exact: true });
