@@ -5,10 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 const webRoot = fileURLToPath(new URL('../apps/web/src/', import.meta.url));
 
-const forbiddenFiles = [
-  'mocks/data.ts',
-  'features/shared/mock-action.ts',
-];
+const forbiddenFiles = ['mocks/data.ts', 'features/shared/mock-action.ts'];
 
 const visibleRoutes = [
   'app/[locale]/(portal)/page.tsx',
@@ -77,12 +74,12 @@ for (const path of visibleRoutes)
 
 const sourceFiles = (await walk(webRoot)).filter((path) => {
   if (!['.ts', '.tsx'].includes(extname(path))) return false;
-  const normalized = relative(webRoot, path).replaceAll('\\\\', '/');
+  const normalized = relative(webRoot, path).replaceAll('\\', '/');
   return !normalized.endsWith('.test.ts') && !normalized.endsWith('.test.tsx');
 });
 
 for (const path of sourceFiles) {
-  const normalized = relative(webRoot, path).replaceAll('\\\\', '/');
+  const normalized = relative(webRoot, path).replaceAll('\\', '/');
   const content = await readFile(path, 'utf8');
   for (const rule of forbiddenPatterns)
     if (rule.pattern.test(content)) failures.push({ code: rule.code, path: normalized });
