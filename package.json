@@ -52,7 +52,8 @@
     "redis:recovery:test": "pnpm --filter @gestschool/infrastructure... build && node scripts/lot15-redis-bullmq-recovery.mjs",
     "capacity:test": "pnpm --filter @gestschool/api... build && node scripts/lot15-capacity-certification.mjs",
     "lot16:identity:dry-run": "node scripts/lot16-identity-dry-run.mjs",
-    "lot16:identity:dry-run:test": "node scripts/lot16-identity-dry-run.test.mjs"
+    "lot16:identity:dry-run:test": "node scripts/lot16-identity-dry-run.test.mjs",
+    "lot17:zero-mock:certify": "node scripts/lot17-zero-mock-certification.mjs"
   },
   "devDependencies": {
     "@gestschool/config": "workspace:*",
