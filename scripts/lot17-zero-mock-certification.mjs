@@ -57,35 +57,49 @@ async function walk(directory) {
   const files = [];
   for (const entry of entries) {
     const path = `${directory}/${entry.name}`;
-    if (entry.isDirectory()) files.push(...(await walk(path)));
-    else files.push(path);
+    if (entry.isDirectory()) {
+      files.push(...(await walk(path)));
+    } else {
+      files.push(path);
+    }
   }
   return files;
 }
 
 const failures = [];
 
-for (const path of forbiddenFiles)
-  if (await exists(`${webRoot}/${path}`))
+for (const path of forbiddenFiles) {
+  if (await exists(`${webRoot}/${path}`)) {
     failures.push({ code: 'LEGACY_MOCK_FILE', path });
+  }
+}
 
-for (const path of visibleRoutes)
-  if (!(await exists(`${webRoot}/${path}`)))
+for (const path of visibleRoutes) {
+  if (!(await exists(`${webRoot}/${path}`))) {
     failures.push({ code: 'VISIBLE_ROUTE_MISSING', path });
+  }
+}
 
 const sourceFiles = (await walk(webRoot)).filter((path) => {
-  if (!['.ts', '.tsx'].includes(extname(path))) return false;
+  if (!['.ts', '.tsx'].includes(extname(path))) {
+    return false;
+  }
   const normalized = relative(webRoot, path).replaceAll('\\', '/');
   return !normalized.endsWith('.test.ts') && !normalized.endsWith('.test.tsx');
 });
 
 for (const path of sourceFiles) {
   const normalized = relative(webRoot, path).replaceAll('\\', '/');
-  if (forbiddenDirectories.some((prefix) => normalized.startsWith(prefix)))
+  if (forbiddenDirectories.some((prefix) => normalized.startsWith(prefix))) {
     failures.push({ code: 'LEGACY_MOCK_DIRECTORY', path: normalized });
+  }
+
   const content = await readFile(path, 'utf8');
-  for (const rule of forbiddenPatterns)
-    if (rule.pattern.test(content)) failures.push({ code: rule.code, path: normalized });
+  for (const rule of forbiddenPatterns) {
+    if (rule.pattern.test(content)) {
+      failures.push({ code: rule.code, path: normalized });
+    }
+  }
 }
 
 if (failures.length) {
@@ -94,8 +108,8 @@ if (failures.length) {
   );
   process.exitCode = 1;
 } else {
-  process.stdout.write(
+  const message =
     `LOT17 zero-mock certification = PASS (${sourceFiles.length} production source files, ` +
-      `${visibleRoutes.length} visible routes)\n`,
-  );
+    `${visibleRoutes.length} visible routes)\n`;
+  process.stdout.write(message);
 }
