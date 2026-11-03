@@ -86,10 +86,13 @@ for (const path of sourceFiles) {
 }
 
 if (failures.length) {
-  process.stderr.write(`LOT17 zero-mock certification = FAIL\n${JSON.stringify(failures, null, 2)}\n`);
+  process.stderr.write(
+    `LOT17 zero-mock certification = FAIL\n${JSON.stringify(failures, null, 2)}\n`,
+  );
   process.exitCode = 1;
 } else {
   process.stdout.write(
-    `LOT17 zero-mock certification = PASS (${sourceFiles.length} production source files, ${visibleRoutes.length} visible routes)\n`,
+    `LOT17 zero-mock certification = PASS (${sourceFiles.length} production source files, ` +
+      `${visibleRoutes.length} visible routes)\n`,
   );
 }
