@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 const webRoot = fileURLToPath(new URL('../apps/web/src/', import.meta.url));
 
 const forbiddenFiles = ['mocks/data.ts', 'features/shared/mock-action.ts'];
-const forbiddenDirectories = ['mocks/'];
+const forbiddenDirectories = ['mocks'];
 
 const visibleRoutes = [
   'app/[locale]/(portal)/page.tsx',
@@ -74,6 +74,12 @@ for (const path of forbiddenFiles) {
   }
 }
 
+for (const path of forbiddenDirectories) {
+  if (await exists(`${webRoot}/${path}`)) {
+    failures.push({ code: 'LEGACY_MOCK_DIRECTORY', path });
+  }
+}
+
 for (const path of visibleRoutes) {
   if (!(await exists(`${webRoot}/${path}`))) {
     failures.push({ code: 'VISIBLE_ROUTE_MISSING', path });
@@ -90,10 +96,6 @@ const sourceFiles = (await walk(webRoot)).filter((path) => {
 
 for (const path of sourceFiles) {
   const normalized = relative(webRoot, path).replaceAll('\\', '/');
-  if (forbiddenDirectories.some((prefix) => normalized.startsWith(prefix))) {
-    failures.push({ code: 'LEGACY_MOCK_DIRECTORY', path: normalized });
-  }
-
   const content = await readFile(path, 'utf8');
   for (const rule of forbiddenPatterns) {
     if (rule.pattern.test(content)) {
