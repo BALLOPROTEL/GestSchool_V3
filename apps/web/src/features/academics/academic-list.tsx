@@ -30,10 +30,12 @@ export function AcademicList({
   kind,
   parent,
   select,
+  creationBlocked = false,
 }: {
   kind: AcademicEntity;
   parent?: AcademicView | undefined;
   select?: ((row: AcademicView) => void) | undefined;
+  creationBlocked?: boolean;
 }) {
   const t = useTranslations('Academics');
   const common = useTranslations('Common');
@@ -74,6 +76,7 @@ export function AcademicList({
   const openParent = !parent || academicWritable(parent);
   const createAction = kind === 'class-subjects' ? 'update' : 'create';
   const creatable =
+    !creationBlocked &&
     openParent &&
     canAcademic(session?.session, kind, createAction) &&
     (kind !== 'teaching-assignments' || Boolean(parent));
