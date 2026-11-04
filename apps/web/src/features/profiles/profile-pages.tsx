@@ -55,6 +55,7 @@ interface MfaEnrollment {
   challenge: string;
   secret: string;
   uri: string;
+  qrCodeDataUrl: string;
 }
 
 function ProfileFact({
@@ -681,11 +682,27 @@ export function UserProfilePage() {
                   {!profile.security.mfaEnabled && enrollment ? (
                     <form className="max-w-xl space-y-4" onSubmit={confirmMfa}>
                       <div className="rounded-lg border border-border bg-muted/40 p-4">
-                        <p className="text-sm font-semibold">{translate('mfaSetupKey')}</p>
-                        <code className="mt-2 block break-all text-xs">{enrollment.secret}</code>
-                        <p className="mt-3 text-xs text-muted-foreground">
-                          {translate('mfaSecretNotice')}
-                        </p>
+                        <div className="text-center">
+                          <p className="text-sm font-semibold">{translate('mfaScan')}</p>
+                          <img
+                            alt={translate('mfaQrAlt')}
+                            className="mx-auto mt-3 size-52 rounded-lg bg-white p-2"
+                            data-testid="profile-mfa-qr"
+                            height={208}
+                            src={enrollment.qrCodeDataUrl}
+                            width={208}
+                          />
+                        </div>
+                        <div className="mt-4 border-t border-border pt-4">
+                          <p className="text-sm font-semibold">{translate('mfaManual')}</p>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {translate('mfaSetupKey')}
+                          </p>
+                          <code className="mt-2 block break-all text-xs">{enrollment.secret}</code>
+                          <p className="mt-3 text-xs text-muted-foreground">
+                            {translate('mfaSecretNotice')}
+                          </p>
+                        </div>
                       </div>
                       <FormField htmlFor="mfa-code" label={translate('mfaCode')}>
                         <Input
