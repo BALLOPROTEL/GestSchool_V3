@@ -388,7 +388,7 @@
     "immutableYear": "Année non modifiable",
     "description": "Référentiel académique de votre établissement.",
     "subjectsHint": "Les coefficients sont définis pour chaque classe, dans son détail.",
-    "assignmentHint": "Ouvrez le détail d’une classe pour créer ou modifier ses affectations.",
+    "assignmentHint": "Sélectionnez une classe ci-dessus pour créer ou modifier ses affectations. Sans sélection, la liste globale reste consultable.",
     "navigation": "Gestion académique",
     "back": "Retour à la liste",
     "details": "Voir le détail",
@@ -440,7 +440,9 @@
     "selectYearFirst": "Sélectionnez une année scolaire pour afficher et gérer ses périodes.",
     "selectClassFirst": "Pour créer ou modifier une affectation, sélectionnez d’abord une classe. Sans sélection, la liste globale reste consultable.",
     "classSubjectsHint": "Ajoutez d’abord les matières et leurs coefficients dans cette classe. Les affectations professeur/période se gèrent ensuite dans la page Affectations.",
-    "manageAssignments": "Gérer les affectations de cette classe"
+    "manageAssignments": "Gérer les affectations de cette classe",
+    "missingClassPrerequisites": "Impossible de créer une classe tant que les prérequis suivants ne sont pas disponibles :",
+    "missingAssignmentPrerequisites": "Impossible de créer une affectation tant que les éléments suivants manquent :"
   },
   "People": {
     "firstName": "Prénom",
