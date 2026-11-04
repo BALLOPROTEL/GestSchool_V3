@@ -33,8 +33,10 @@ function ClassesWorkspace() {
   const levels = usePeopleData<{ total: number }>(
     canCreateClass ? 'levels?status=ACTIVE&pageSize=1' : null,
   );
-  const missingYears = canCreateClass && !years.loading && (years.data?.total ?? 0) === 0;
-  const missingLevels = canCreateClass && !levels.loading && (levels.data?.total ?? 0) === 0;
+  const missingYears =
+    canCreateClass && !years.loading && !years.error && (years.data?.total ?? 0) === 0;
+  const missingLevels =
+    canCreateClass && !levels.loading && !levels.error && (levels.data?.total ?? 0) === 0;
   const creationBlocked =
     canCreateClass &&
     (years.loading ||
