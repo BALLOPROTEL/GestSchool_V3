@@ -46,6 +46,10 @@ export class StudentController {
   ) {
     const avatar = await this.service.avatar(requestContext(request), id);
     response.setHeader('Cache-Control', 'private, no-store');
+    if (!avatar) {
+      response.status(204);
+      return;
+    }
     return new StreamableFile(Buffer.from(avatar.bytes), {
       type: avatar.mimeType,
       disposition: 'inline',
