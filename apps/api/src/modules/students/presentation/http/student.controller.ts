@@ -1,6 +1,8 @@
+import type { Response } from 'express';
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Inject,
   Param,
@@ -8,6 +10,9 @@ import {
   Post,
   Query,
   Req,
+  Res,
+  StreamableFile,
+  Put,
   HttpCode,
 } from '@nestjs/common';
 import { emptyCommand } from '@gestschool/contracts';
@@ -32,6 +37,40 @@ export class StudentController {
   get(@Req() request: IamRequest, @Param('id') id: string) {
     return this.service.get(requestContext(request), id);
   }
+  @Get(':id/avatar')
+  @RequirePermission('students.read', readScopes)
+  async avatar(
+    @Req() request: IamRequest,
+    @Param('id') id: string,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const avatar = await this.service.avatar(requestContext(request), id);
+    response.setHeader('Cache-Control', 'private, no-store');
+    if (!avatar) {
+      response.status(204);
+      return;
+    }
+    return new StreamableFile(Buffer.from(avatar.bytes), {
+      type: avatar.mimeType,
+      disposition: 'inline',
+      length: avatar.bytes.length,
+    });
+  }
+
+  @Put(':id/avatar')
+  @RequirePermission('students.update', writeScopes)
+  async updateAvatar(@Req() request: IamRequest, @Param('id') id: string, @Body() body: unknown) {
+    await this.service.updateAvatar(requestContext(request), id, body);
+    return { ok: true };
+  }
+
+  @Delete(':id/avatar')
+  @RequirePermission('students.update', writeScopes)
+  async deleteAvatar(@Req() request: IamRequest, @Param('id') id: string) {
+    await this.service.deleteAvatar(requestContext(request), id);
+    return { ok: true };
+  }
+
   @Post()
   @RequirePermission('students.create', writeScopes)
   create(@Req() request: IamRequest, @Body() body: unknown) {

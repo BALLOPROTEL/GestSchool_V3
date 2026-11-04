@@ -32,6 +32,9 @@ test('requires MFA before entering the portal and revokes the session on logout'
   await page.getByLabel('Mot de passe', { exact: true }).fill(fixture.mfa.password);
   await page.getByRole('button', { name: /Se connecter/ }).click();
   await expect(page.getByRole('heading', { name: 'Vérification en deux étapes' })).toBeVisible();
+  const qr = page.getByTestId('mfa-qr');
+  await expect(qr).toBeVisible();
+  await expect(qr).toHaveAttribute('src', /^data:image\/png;base64,/);
   const secret = await page.getByTestId('mfa-secret').textContent();
   if (!secret) throw new Error('Missing enrollment key');
   await page.getByLabel('Code à six chiffres').fill(totp(secret));

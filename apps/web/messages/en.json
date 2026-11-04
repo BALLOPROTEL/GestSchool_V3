@@ -741,7 +741,15 @@
     "schoolYear": "Academic year",
     "summary": "Subject summary",
     "upToDate": "No balance due",
-    "title": "Aminata Diallo"
+    "title": "Aminata Diallo",
+    "addPhoto": "Add photo",
+    "changePhoto": "Change photo",
+    "removePhoto": "Remove photo",
+    "photoInput": "Choose the student photo",
+    "photoAlt": "Photo of {name}",
+    "photoSaved": "Student photo saved.",
+    "photoDeleted": "Student photo removed.",
+    "photoError": "Unable to update the photo. Use a valid PNG or JPEG up to 2 MB."
   },
   "Parents": {
     "add": "Add parent",
@@ -1141,7 +1149,19 @@
     "sessionError": "Unable to manage sessions.",
     "inAppRequiredDescription": "Important GestSchool notifications always stay enabled so required information is never hidden.",
     "showPassword": "Show password",
-    "hidePassword": "Hide password"
+    "hidePassword": "Hide password",
+    "mfaScan": "Scan this QR code with your authenticator app.",
+    "mfaManual": "Or enter the setup key manually",
+    "mfaQrAlt": "Two-factor authentication setup QR code",
+    "addPhoto": "Add photo",
+    "changePhoto": "Change photo",
+    "removePhoto": "Remove photo",
+    "photoHint": "PNG or JPEG, up to 2 MB.",
+    "photoAlt": "Profile photo",
+    "photoInput": "Choose a profile photo",
+    "photoSaved": "Profile photo saved.",
+    "photoDeleted": "Profile photo removed.",
+    "photoError": "Unable to update the photo. Use a valid PNG or JPEG up to 2 MB."
   },
   "DesignSystem": {
     "alerts": "Alerts",
@@ -1210,6 +1230,9 @@
     "LEGACY_V2_MIGRATION_EMAIL_REQUIRED": "This V2 account has no usable email address for V3.",
     "LEGACY_V2_MIGRATION_UNSUPPORTED": "This V2 account role is not supported.",
     "LEGACY_V2_MIGRATION_COLLISION": "A matching account or school already exists in V3.",
-    "LEGACY_V2_MIGRATION_UNAVAILABLE": "GestSchool V2 is temporarily unavailable. Try again later."
+    "LEGACY_V2_MIGRATION_UNAVAILABLE": "GestSchool V2 is temporarily unavailable. Try again later.",
+    "mfaScan": "Scan this QR code with your authenticator app.",
+    "mfaManual": "Or enter the setup key manually",
+    "mfaQrAlt": "Two-factor authentication setup QR code"
   }
 }

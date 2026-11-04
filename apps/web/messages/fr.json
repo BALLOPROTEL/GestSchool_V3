@@ -741,7 +741,15 @@
     "schoolYear": "Année scolaire",
     "summary": "Synthèse par matière",
     "upToDate": "Aucun solde dû",
-    "title": "Aminata Diallo"
+    "title": "Aminata Diallo",
+    "addPhoto": "Ajouter une photo",
+    "changePhoto": "Changer la photo",
+    "removePhoto": "Supprimer la photo",
+    "photoInput": "Choisir la photo de l’élève",
+    "photoAlt": "Photo de {name}",
+    "photoSaved": "Photo de l’élève enregistrée.",
+    "photoDeleted": "Photo de l’élève supprimée.",
+    "photoError": "Impossible de mettre à jour la photo. Utilisez un PNG ou JPEG valide de 2 Mo maximum."
   },
   "Parents": {
     "add": "Ajouter un parent",
@@ -1141,7 +1149,19 @@
     "sessionError": "Impossible de gérer les sessions.",
     "inAppRequiredDescription": "Les notifications importantes dans GestSchool restent toujours actives pour ne pas masquer les informations obligatoires.",
     "showPassword": "Afficher le mot de passe",
-    "hidePassword": "Masquer le mot de passe"
+    "hidePassword": "Masquer le mot de passe",
+    "mfaScan": "Scannez ce QR code avec votre application d’authentification.",
+    "mfaManual": "Ou saisissez la clé manuellement",
+    "mfaQrAlt": "QR code de configuration de l’authentification à deux facteurs",
+    "addPhoto": "Ajouter une photo",
+    "changePhoto": "Changer la photo",
+    "removePhoto": "Supprimer la photo",
+    "photoHint": "PNG ou JPEG, 2 Mo maximum.",
+    "photoAlt": "Photo de profil",
+    "photoInput": "Choisir une photo de profil",
+    "photoSaved": "Photo de profil enregistrée.",
+    "photoDeleted": "Photo de profil supprimée.",
+    "photoError": "Impossible de mettre à jour la photo. Utilisez un PNG ou JPEG valide de 2 Mo maximum."
   },
   "DesignSystem": {
     "alerts": "Alertes",
@@ -1210,6 +1230,9 @@
     "LEGACY_V2_MIGRATION_EMAIL_REQUIRED": "Ce compte V2 n’a pas d’adresse e-mail exploitable pour V3.",
     "LEGACY_V2_MIGRATION_UNSUPPORTED": "Le rôle de ce compte V2 n’est pas pris en charge.",
     "LEGACY_V2_MIGRATION_COLLISION": "Un compte ou établissement correspondant existe déjà dans V3.",
-    "LEGACY_V2_MIGRATION_UNAVAILABLE": "GestSchool V2 est temporairement indisponible. Réessaie plus tard."
+    "LEGACY_V2_MIGRATION_UNAVAILABLE": "GestSchool V2 est temporairement indisponible. Réessaie plus tard.",
+    "mfaScan": "Scannez ce QR code avec votre application d’authentification.",
+    "mfaManual": "Ou saisissez la clé manuellement",
+    "mfaQrAlt": "QR code de configuration de l’authentification à deux facteurs"
   }
 }

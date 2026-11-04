@@ -9,6 +9,7 @@ import type {
 import {
   Avatar,
   AvatarFallback,
+  AvatarImage,
   Badge,
   Button,
   Card,
@@ -28,6 +29,7 @@ import {
 } from '@gestschool/ui';
 import {
   Building2,
+  Camera,
   Eye,
   EyeOff,
   KeyRound,
@@ -46,6 +48,11 @@ import { toast } from 'sonner';
 
 import { authRequest, AuthClientError } from '../auth/auth-client';
 import { useAuth } from '../auth/auth-provider';
+import {
+  deletePrivateAvatar,
+  uploadPrivateAvatar,
+  usePrivateAvatar,
+} from '../shared/avatar-client';
 import { getInitials } from '../shared/format';
 import { PageHeader } from '../shared/page-header';
 
@@ -54,7 +61,7 @@ type Authenticated = Extract<LoginResult, { kind: 'session' }>;
 interface MfaEnrollment {
   challenge: string;
   secret: string;
-  uri: string;
+  qrCodeDataUrl: string;
 }
 
 function ProfileFact({
@@ -240,6 +247,8 @@ export function UserProfilePage() {
   const [mfaPassword, setMfaPassword] = useState('');
   const [mfaCode, setMfaCode] = useState('');
   const [enrollment, setEnrollment] = useState<MfaEnrollment | null>(null);
+  const [avatarBusy, setAvatarBusy] = useState(false);
+  const avatarUrl = usePrivateAvatar('/api/v1/auth/profile/avatar', session?.session.membershipId);
 
   useEffect(() => {
     let active = true;
@@ -265,6 +274,31 @@ export function UserProfilePage() {
       active = false;
     };
   }, []);
+
+  async function changeAvatar(file: File | undefined) {
+    if (!file) return;
+    setAvatarBusy(true);
+    try {
+      await uploadPrivateAvatar('/api/v1/auth/profile/avatar', file);
+      toast.success(translate('photoSaved'));
+    } catch {
+      toast.error(translate('photoError'));
+    } finally {
+      setAvatarBusy(false);
+    }
+  }
+
+  async function removeAvatar() {
+    setAvatarBusy(true);
+    try {
+      await deletePrivateAvatar('/api/v1/auth/profile/avatar');
+      toast.success(translate('photoDeleted'));
+    } catch {
+      toast.error(translate('photoError'));
+    } finally {
+      setAvatarBusy(false);
+    }
+  }
 
   const currentSessionId = session?.session.sessionId ?? '';
   const privilegedMfa = useMemo(
@@ -489,10 +523,48 @@ export function UserProfilePage() {
         <Card className="h-fit min-w-0">
           <CardContent className="flex flex-col items-center p-6 text-center">
             <Avatar className="size-24 ring-4 ring-primary/10">
+              {avatarUrl ? <AvatarImage alt={translate('photoAlt')} src={avatarUrl} /> : null}
               <AvatarFallback className="bg-blue-600 text-2xl text-white">
                 {getInitials(profile.user.displayName)}
               </AvatarFallback>
             </Avatar>
+            <input
+              accept="image/jpeg,image/png"
+              aria-label={translate('photoInput')}
+              className="sr-only"
+              disabled={avatarBusy}
+              id="profile-avatar-input"
+              onChange={(event) => {
+                void changeAvatar(event.currentTarget.files?.[0]);
+                event.currentTarget.value = '';
+              }}
+              type="file"
+            />
+            <div className="mt-4 flex flex-wrap justify-center gap-2">
+              <Button
+                disabled={avatarBusy}
+                onClick={() => document.getElementById('profile-avatar-input')?.click()}
+                size="sm"
+                type="button"
+                variant="outline"
+              >
+                <Camera />
+                {avatarUrl ? translate('changePhoto') : translate('addPhoto')}
+              </Button>
+              {avatarUrl ? (
+                <Button
+                  disabled={avatarBusy}
+                  onClick={() => void removeAvatar()}
+                  size="sm"
+                  type="button"
+                  variant="ghost"
+                >
+                  <Trash2 />
+                  {translate('removePhoto')}
+                </Button>
+              ) : null}
+            </div>
+            <p className="mt-2 text-xs text-muted-foreground">{translate('photoHint')}</p>
             <h2 className="mt-4 text-lg font-bold">{profile.user.displayName}</h2>
             <p className="mt-1 text-sm text-muted-foreground">
               {profile.membership.roles.join(' · ')}
@@ -681,11 +753,27 @@ export function UserProfilePage() {
                   {!profile.security.mfaEnabled && enrollment ? (
                     <form className="max-w-xl space-y-4" onSubmit={confirmMfa}>
                       <div className="rounded-lg border border-border bg-muted/40 p-4">
-                        <p className="text-sm font-semibold">{translate('mfaSetupKey')}</p>
-                        <code className="mt-2 block break-all text-xs">{enrollment.secret}</code>
-                        <p className="mt-3 text-xs text-muted-foreground">
-                          {translate('mfaSecretNotice')}
-                        </p>
+                        <div className="text-center">
+                          <p className="text-sm font-semibold">{translate('mfaScan')}</p>
+                          <img
+                            alt={translate('mfaQrAlt')}
+                            className="mx-auto mt-3 size-52 rounded-lg bg-white p-2"
+                            data-testid="profile-mfa-qr"
+                            height={208}
+                            src={enrollment.qrCodeDataUrl}
+                            width={208}
+                          />
+                        </div>
+                        <div className="mt-4 border-t border-border pt-4">
+                          <p className="text-sm font-semibold">{translate('mfaManual')}</p>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {translate('mfaSetupKey')}
+                          </p>
+                          <code className="mt-2 block break-all text-xs">{enrollment.secret}</code>
+                          <p className="mt-3 text-xs text-muted-foreground">
+                            {translate('mfaSecretNotice')}
+                          </p>
+                        </div>
                       </div>
                       <FormField htmlFor="mfa-code" label={translate('mfaCode')}>
                         <Input

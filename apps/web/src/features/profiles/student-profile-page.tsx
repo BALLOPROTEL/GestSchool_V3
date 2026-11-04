@@ -2,6 +2,7 @@
 import {
   Avatar,
   AvatarFallback,
+  AvatarImage,
   Button,
   Card,
   CardContent,
@@ -15,15 +16,18 @@ import {
 import {
   ArrowLeft,
   CalendarCheck,
+  Camera,
   CheckCircle2,
   CircleDollarSign,
   GraduationCap,
   Pencil,
   Clock3,
+  Trash2,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { StudentFinance } from '../finance/finance-page';
 import { StudentResults } from '../grades/grades-page';
 import { DocumentsPanel } from '../documents/documents-page';
@@ -31,6 +35,11 @@ import { useDocumentCopy } from '../documents/document-copy';
 import { personId, type PersonView } from '@gestschool/contracts';
 import { Link } from '../../i18n/navigation';
 import { useAuth } from '../auth/auth-provider';
+import {
+  deletePrivateAvatar,
+  uploadPrivateAvatar,
+  usePrivateAvatar,
+} from '../shared/avatar-client';
 import { getInitials } from '../shared/format';
 import { canRead, canWrite, PeopleError } from '../directory/people-client';
 import { usePeopleData } from '../directory/people-hooks';
@@ -51,11 +60,40 @@ export function StudentProfilePage() {
   const allowed = canRead(session?.session, 'students');
   const [revision, setRevision] = useState(0);
   const [editing, setEditing] = useState(false);
+  const [avatarBusy, setAvatarBusy] = useState(false);
+  const avatarPath = allowed && valid.success ? `/api/v1/students/${valid.data}/avatar` : null;
+  const avatarUrl = usePrivateAvatar(avatarPath, valid.success ? valid.data : null);
   const result = usePeopleData<PersonView>(
     allowed && valid.success ? `students/${valid.data}` : null,
     revision,
   );
   const person = result.data;
+  async function changeAvatar(file: File | undefined) {
+    if (!file || !avatarPath) return;
+    setAvatarBusy(true);
+    try {
+      await uploadPrivateAvatar(avatarPath, file);
+      toast.success(profile('photoSaved'));
+    } catch {
+      toast.error(profile('photoError'));
+    } finally {
+      setAvatarBusy(false);
+    }
+  }
+
+  async function removeAvatar() {
+    if (!avatarPath) return;
+    setAvatarBusy(true);
+    try {
+      await deletePrivateAvatar(avatarPath);
+      toast.success(profile('photoDeleted'));
+    } catch {
+      toast.error(profile('photoError'));
+    } finally {
+      setAvatarBusy(false);
+    }
+  }
+
   return (
     <div className="page-shell" data-people-ready={!result.loading}>
       <Link
@@ -86,6 +124,14 @@ export function StudentProfilePage() {
               <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                 <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-end">
                   <Avatar className="-mt-10 size-20 border-4 border-card shadow-sm sm:size-24">
+                    {avatarUrl ? (
+                      <AvatarImage
+                        alt={profile('photoAlt', {
+                          name: `${person.firstName} ${person.lastName}`,
+                        })}
+                        src={avatarUrl}
+                      />
+                    ) : null}
                     <AvatarFallback className="bg-blue-100 text-xl text-blue-700 dark:bg-blue-950 dark:text-blue-300">
                       {getInitials(`${person.firstName} ${person.lastName}`)}
                     </AvatarFallback>
@@ -104,15 +150,51 @@ export function StudentProfilePage() {
                 </div>
                 {canWrite(session?.session, 'students', 'update') &&
                 person.status !== 'ARCHIVED' ? (
-                  <Button
-                    data-person-focus
-                    onClick={() => setEditing(true)}
-                    size="sm"
-                    variant="outline"
-                  >
-                    <Pencil />
-                    {common('edit')}
-                  </Button>
+                  <div className="flex flex-wrap gap-2">
+                    <input
+                      accept="image/jpeg,image/png"
+                      aria-label={profile('photoInput')}
+                      className="sr-only"
+                      disabled={avatarBusy}
+                      id="student-avatar-input"
+                      onChange={(event) => {
+                        void changeAvatar(event.currentTarget.files?.[0]);
+                        event.currentTarget.value = '';
+                      }}
+                      type="file"
+                    />
+                    <Button
+                      disabled={avatarBusy}
+                      onClick={() => document.getElementById('student-avatar-input')?.click()}
+                      size="sm"
+                      type="button"
+                      variant="outline"
+                    >
+                      <Camera />
+                      {avatarUrl ? profile('changePhoto') : profile('addPhoto')}
+                    </Button>
+                    {avatarUrl ? (
+                      <Button
+                        disabled={avatarBusy}
+                        onClick={() => void removeAvatar()}
+                        size="sm"
+                        type="button"
+                        variant="ghost"
+                      >
+                        <Trash2 />
+                        {profile('removePhoto')}
+                      </Button>
+                    ) : null}
+                    <Button
+                      data-person-focus
+                      onClick={() => setEditing(true)}
+                      size="sm"
+                      variant="outline"
+                    >
+                      <Pencil />
+                      {common('edit')}
+                    </Button>
+                  </div>
                 ) : null}
               </div>
               <dl className="mt-6 grid gap-4 border-t border-border pt-5 sm:grid-cols-2 xl:grid-cols-4">

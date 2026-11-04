@@ -4,6 +4,7 @@ import { globalSearchKinds, type GlobalSearchResult } from '@gestschool/contract
 import {
   Avatar,
   AvatarFallback,
+  AvatarImage,
   Badge,
   Button,
   Dialog,
@@ -69,6 +70,7 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from '../features/auth/auth-provider';
 import { peopleRequest } from '../features/directory/people-client';
+import { usePrivateAvatar } from '../features/shared/avatar-client';
 import { getInitials } from '../features/shared/format';
 import { globalSearchRequest } from '../features/search/search-client';
 import { ShellContextProvider, useShellContext } from '../features/shell/shell-context';
@@ -244,6 +246,10 @@ function SidebarIdentity({ collapsed = false }: { collapsed?: boolean }) {
   const { session } = useAuth();
   const { currentTenant } = useShellContext();
   const displayName = session?.session.user.displayName ?? '—';
+  const avatarUrl = usePrivateAvatar(
+    session ? '/api/v1/auth/profile/avatar' : null,
+    session?.session.membershipId,
+  );
   const tenantName = currentTenant?.name ?? session?.session.tenant.name ?? '—';
   const primaryRole = session?.session.roles[0];
   return (
@@ -256,6 +262,7 @@ function SidebarIdentity({ collapsed = false }: { collapsed?: boolean }) {
       href="/profile"
     >
       <Avatar className="size-8">
+        {avatarUrl ? <AvatarImage alt="" src={avatarUrl} /> : null}
         <AvatarFallback className="bg-blue-600 text-[11px] text-white">
           {getInitials(displayName)}
         </AvatarFallback>
@@ -794,11 +801,16 @@ function ProfileMenu() {
   const iam = useTranslations('Iam');
   const shell = useTranslations('Shell');
   const nav = useTranslations('Nav');
+  const avatarUrl = usePrivateAvatar(
+    session ? '/api/v1/auth/profile/avatar' : null,
+    session?.session.membershipId,
+  );
   return (
     <Dropdown>
       <DropdownTrigger asChild>
         <Button className="gap-2 px-1.5 sm:px-2" variant="ghost">
           <Avatar className="size-7">
+            {avatarUrl ? <AvatarImage alt="" src={avatarUrl} /> : null}
             <AvatarFallback className="bg-blue-600 text-[10px] text-white">
               {getInitials(session?.session.user.displayName ?? '—')}
             </AvatarFallback>

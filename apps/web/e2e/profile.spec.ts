@@ -3,6 +3,11 @@ import { readFileSync } from 'node:fs';
 import { login, type Credentials, watch } from './academic-helpers';
 import { expect, test } from './fixtures';
 
+const avatarPng = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAY0lEQVR4nO3PQQ3AIADAQEA1cpCDrIngcVnSU9DOfe74s6UDXjWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgfboqAmAfHjuUAAAAAElFTkSuQmCC',
+  'base64',
+);
+
 interface Fixtures {
   people: Record<
     string,
@@ -31,6 +36,32 @@ test('LOT17.5 uses real profile, preferences, MFA and revocable sessions', async
   await page.goto('/fr/profile');
   await expect(page.locator('[data-profile-ready]')).toHaveAttribute('data-profile-ready', 'true');
   await expect(page.getByText('Amadou Kouyaté', { exact: true })).toHaveCount(0);
+
+  const avatarPut = page.waitForResponse(
+    (response) =>
+      new URL(response.url()).pathname === '/api/v1/auth/profile/avatar' &&
+      response.request().method() === 'PUT',
+  );
+  await page.getByLabel('Choisir une photo de profil', { exact: true }).setInputFiles({
+    name: 'profile-avatar.png',
+    mimeType: 'image/png',
+    buffer: avatarPng,
+  });
+  expect((await avatarPut).status()).toBe(200);
+  await expect(page.getByRole('img', { name: 'Photo de profil', exact: true })).toBeVisible();
+
+  await page.reload();
+  await expect(page.locator('[data-profile-ready]')).toHaveAttribute('data-profile-ready', 'true');
+  await expect(page.getByRole('img', { name: 'Photo de profil', exact: true })).toBeVisible();
+
+  const avatarDelete = page.waitForResponse(
+    (response) =>
+      new URL(response.url()).pathname === '/api/v1/auth/profile/avatar' &&
+      response.request().method() === 'DELETE',
+  );
+  await page.getByRole('button', { name: 'Supprimer la photo', exact: true }).click();
+  expect((await avatarDelete).status()).toBe(200);
+  await expect(page.getByRole('img', { name: 'Photo de profil', exact: true })).toHaveCount(0);
 
   const displayName = page.getByLabel('Nom affiché', { exact: true });
   const locale = page.getByLabel('Langue préférée', { exact: true });
