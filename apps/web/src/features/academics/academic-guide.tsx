@@ -1,8 +1,11 @@
 'use client';
 
 import { Card, CardContent, cn } from '@gestschool/ui';
+import type { AcademicEntity } from '@gestschool/contracts';
 import { useTranslations } from 'next-intl';
 import { Link } from '../../i18n/navigation';
+import { useAuth } from '../auth/auth-provider';
+import { canAcademic } from './academic-client';
 
 export type AcademicSetupStep =
   | 'years'
@@ -12,17 +15,19 @@ export type AcademicSetupStep =
   | 'classes'
   | 'assignments';
 
-const steps: readonly { href: string; key: AcademicSetupStep }[] = [
-  { href: '/academic-years', key: 'years' },
-  { href: '/levels', key: 'levels' },
-  { href: '/periods', key: 'periods' },
-  { href: '/subjects', key: 'subjects' },
-  { href: '/classes', key: 'classes' },
-  { href: '/assignments', key: 'assignments' },
+const steps: readonly { href: string; key: AcademicSetupStep; entity: AcademicEntity }[] = [
+  { href: '/academic-years', key: 'years', entity: 'academic-years' },
+  { href: '/levels', key: 'levels', entity: 'levels' },
+  { href: '/periods', key: 'periods', entity: 'academic-periods' },
+  { href: '/subjects', key: 'subjects', entity: 'subjects' },
+  { href: '/classes', key: 'classes', entity: 'classes' },
+  { href: '/assignments', key: 'assignments', entity: 'teaching-assignments' },
 ];
 
 export function AcademicSetupGuide({ current }: { current: AcademicSetupStep }) {
   const t = useTranslations('Academics');
+  const { session } = useAuth();
+  const visibleSteps = steps.filter((step) => canAcademic(session?.session, step.entity));
 
   return (
     <Card>
@@ -32,7 +37,8 @@ export function AcademicSetupGuide({ current }: { current: AcademicSetupStep }) 
           <p className="mt-1 text-sm text-muted-foreground">{t('setupGuideDescription')}</p>
         </div>
         <ol className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-          {steps.map((step, index) => {
+          {visibleSteps.map((step) => {
+            const index = steps.findIndex((candidate) => candidate.key === step.key);
             const active = step.key === current;
             return (
               <li key={step.key}>
