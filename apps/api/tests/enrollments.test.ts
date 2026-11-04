@@ -171,7 +171,11 @@ async function reopen<T = EnrollmentView>(
   who = admin,
   reason = 'Administrative correction',
 ) {
-  return who.browser.send<T>(`enrollments/${row.id}/reopen`, { reason, effectiveDate: date }, 'POST');
+  return who.browser.send<T>(
+    `enrollments/${row.id}/reopen`,
+    { reason, effectiveDate: date },
+    'POST',
+  );
 }
 let tenantA: string;
 let tenantB: string;
