@@ -109,7 +109,14 @@ describe('LOT 7 presentation rules', () => {
   it.each(['CLOSED', 'ARCHIVED'] as const)(
     'freezes %s years for every action',
     (academicYearStatus) => {
-      for (const action of ['update', 'confirm', 'cancel', 'transfer', 'complete', 'reopen'] as const)
+      for (const action of [
+        'update',
+        'confirm',
+        'cancel',
+        'transfer',
+        'complete',
+        'reopen',
+      ] as const)
         expect(canEnrollmentAction({ ...row, academicYearStatus }, action)).toBe(false);
     },
   );
