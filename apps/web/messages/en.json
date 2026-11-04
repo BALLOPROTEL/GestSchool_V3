@@ -442,7 +442,8 @@
     "classSubjectsHint": "First add the subjects and coefficients for this class. Teacher/period assignments are then managed from the Teaching assignments page.",
     "manageAssignments": "Manage this class's assignments",
     "missingClassPrerequisites": "A class cannot be created until the following prerequisites are available:",
-    "missingAssignmentPrerequisites": "An assignment cannot be created until the following items are available:"
+    "missingAssignmentPrerequisites": "An assignment cannot be created until the following items are available:",
+    "prerequisiteUnavailable": "Prerequisites cannot be verified right now. Retry before creating this data."
   },
   "People": {
     "firstName": "First name",
