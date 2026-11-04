@@ -1,5 +1,7 @@
 import type {
   AccessScope,
+  AvatarMimeType,
+  AvatarUpload,
   ProfileNotificationPreferences,
   ProfileUpdate,
   ProfileView,
@@ -7,12 +9,14 @@ import type {
 } from '@gestschool/contracts';
 import { deny, type RequestContext } from '../domain/context.js';
 import type { IamRepository } from '../infrastructure/iam.repository.js';
+import { AvatarInputError, AvatarStorageService } from '../../../infrastructure/avatar-storage.service.js';
 import { CredentialsService } from './credentials.service.js';
 
 export class UsersService {
   constructor(
     private readonly repository: IamRepository,
     private readonly credentials: CredentialsService,
+    private readonly avatars?: AvatarStorageService,
   ) {}
   async profile(context: RequestContext) {
     const user = await this.repository.user(context.userId);
@@ -65,6 +69,105 @@ export class UsersService {
       },
       notifications,
     };
+  }
+
+  private avatarStorage(): AvatarStorageService {
+    if (!this.avatars) deny('AUTH_UNAVAILABLE', 503);
+    return this.avatars;
+  }
+
+  async avatar(
+    context: RequestContext,
+  ): Promise<{ bytes: Uint8Array; mimeType: AvatarMimeType } | null> {
+    const avatar = await this.repository.membershipAvatar(
+      context.membershipId,
+      context.userId,
+      context.tenantId,
+    );
+    if (!avatar) deny();
+    if (!avatar.avatarKey || !avatar.avatarMime) return null;
+    if (avatar.avatarMime !== 'image/jpeg' && avatar.avatarMime !== 'image/png')
+      deny('AUTH_UNAVAILABLE', 500);
+    return {
+      bytes: await this.avatarStorage().read(avatar.avatarKey, avatar.avatarMime),
+      mimeType: avatar.avatarMime,
+    };
+  }
+
+  async updateAvatar(context: RequestContext, input: AvatarUpload): Promise<void> {
+    let nextKey: string;
+    try {
+      nextKey = await this.avatarStorage().upload(
+        context.tenantId,
+        'memberships',
+        context.membershipId,
+        input,
+      );
+    } catch (error) {
+      if (error instanceof AvatarInputError) deny('AUTH_INVALID_REQUEST', 400);
+      throw error;
+    }
+
+    let previousKey: string | null = null;
+    try {
+      previousKey = await this.repository.atomic(context.userId, async (repository) => {
+        const current = await repository.membershipAvatar(
+          context.membershipId,
+          context.userId,
+          context.tenantId,
+        );
+        if (!current) deny();
+        const oldKey = current.avatarKey;
+        await repository.setMembershipAvatar(
+          context.membershipId,
+          context.userId,
+          context.tenantId,
+          nextKey,
+          input.mimeType,
+        );
+        await repository.audit(
+          'profile.avatar_updated',
+          context,
+          context.userId,
+          context.tenantId,
+          context.membershipId,
+        );
+        return oldKey;
+      });
+    } catch (error) {
+      await this.avatarStorage().remove(nextKey).catch(() => undefined);
+      throw error;
+    }
+
+    if (previousKey && previousKey !== nextKey)
+      await this.avatarStorage().remove(previousKey).catch(() => undefined);
+  }
+
+  async deleteAvatar(context: RequestContext): Promise<void> {
+    const previousKey = await this.repository.atomic(context.userId, async (repository) => {
+      const current = await repository.membershipAvatar(
+        context.membershipId,
+        context.userId,
+        context.tenantId,
+      );
+      if (!current) deny();
+      await repository.setMembershipAvatar(
+        context.membershipId,
+        context.userId,
+        context.tenantId,
+        null,
+        null,
+      );
+      await repository.audit(
+        'profile.avatar_deleted',
+        context,
+        context.userId,
+        context.tenantId,
+        context.membershipId,
+      );
+      return current.avatarKey;
+    });
+    if (previousKey) await this.avatarStorage().remove(previousKey).catch(() => undefined);
   }
 
   async updateOwnProfile(context: RequestContext, input: ProfileUpdate): Promise<void> {

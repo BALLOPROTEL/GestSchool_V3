@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { Prisma } from '@gestschool/database';
-import type { StudentCreate, StudentUpdate, PeopleQuery } from '@gestschool/contracts';
+import type { AvatarMimeType, StudentCreate, StudentUpdate, PeopleQuery } from '@gestschool/contracts';
 import { StudentRepository } from '../domain/student.repository.js';
 import type { RequestContext } from '../../iam/domain/context.js';
 import { hasScope, tenantPermission } from '../../people/domain/policy.js';
@@ -164,6 +164,70 @@ export class PrismaStudentRepository extends StudentRepository {
         personView(after),
       );
       return personView(after);
+    });
+  }
+
+  override async avatar(
+    context: RequestContext,
+    id: string,
+  ): Promise<{ key: string; mimeType: AvatarMimeType } | null> {
+    const row = await this.database.client.student.findFirst({
+      where: { AND: [studentReadWhere(context), { id }] },
+      select: { avatarKey: true, avatarMime: true },
+    });
+    if (!row?.avatarKey || (row.avatarMime !== 'image/jpeg' && row.avatarMime !== 'image/png'))
+      return null;
+    return { key: row.avatarKey, mimeType: row.avatarMime };
+  }
+
+  override setAvatar(
+    context: RequestContext,
+    id: string,
+    key: string,
+    mimeType: AvatarMimeType,
+  ): Promise<string | null> {
+    return this.database.write(context, async (db) => {
+      const before = found(
+        await db.student.findFirst({ where: { id, tenantId: context.tenantId } }),
+      );
+      editable(before.status);
+      const previousKey = before.avatarKey;
+      await db.student.update({
+        where: { tenantId_id: { tenantId: context.tenantId, id } },
+        data: { avatarKey: key, avatarMime: mimeType, avatarUpdatedAt: new Date() },
+      });
+      await audit(
+        db,
+        context,
+        'student.avatar_updated',
+        id,
+        { avatar: Boolean(before.avatarKey) },
+        { avatar: true },
+      );
+      return previousKey;
+    });
+  }
+
+  override clearAvatar(context: RequestContext, id: string): Promise<string | null> {
+    return this.database.write(context, async (db) => {
+      const before = found(
+        await db.student.findFirst({ where: { id, tenantId: context.tenantId } }),
+      );
+      editable(before.status);
+      const previousKey = before.avatarKey;
+      await db.student.update({
+        where: { tenantId_id: { tenantId: context.tenantId, id } },
+        data: { avatarKey: null, avatarMime: null, avatarUpdatedAt: null },
+      });
+      await audit(
+        db,
+        context,
+        'student.avatar_deleted',
+        id,
+        { avatar: Boolean(before.avatarKey) },
+        { avatar: false },
+      );
+      return previousKey;
     });
   }
 }

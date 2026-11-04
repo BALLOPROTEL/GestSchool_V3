@@ -59,3 +59,16 @@ export interface ProfileSessionView {
   lastUsedAt: string;
   expiresAt: string;
 }
+
+export const avatarMimeTypes = ['image/jpeg', 'image/png'] as const;
+export type AvatarMimeType = (typeof avatarMimeTypes)[number];
+
+export const avatarUpload = z.strictObject({
+  mimeType: z.enum(avatarMimeTypes),
+  base64: z
+    .string()
+    .min(4)
+    .max(2_800_000)
+    .regex(/^[A-Za-z0-9+/]+={0,2}$/),
+});
+export type AvatarUpload = z.infer<typeof avatarUpload>;

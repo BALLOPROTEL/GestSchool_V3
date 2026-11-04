@@ -741,7 +741,15 @@
     "schoolYear": "السنة الدراسية",
     "summary": "ملخص حسب المادة",
     "upToDate": "لا يوجد رصيد مستحق",
-    "title": "أمينة ديالو"
+    "title": "أمينة ديالو",
+    "addPhoto": "إضافة صورة",
+    "changePhoto": "تغيير الصورة",
+    "removePhoto": "حذف الصورة",
+    "photoInput": "اختر صورة التلميذ",
+    "photoAlt": "صورة {name}",
+    "photoSaved": "تم حفظ صورة التلميذ.",
+    "photoDeleted": "تم حذف صورة التلميذ.",
+    "photoError": "تعذر تحديث الصورة. استخدم صورة PNG أو JPEG صالحة بحجم لا يتجاوز 2 ميغابايت."
   },
   "Parents": {
     "add": "إضافة ولي أمر",
@@ -1141,7 +1149,19 @@
     "sessionError": "تعذر إدارة الجلسات.",
     "inAppRequiredDescription": "تبقى إشعارات GestSchool المهمة مفعّلة دائماً حتى لا يتم إخفاء المعلومات الإلزامية.",
     "showPassword": "إظهار كلمة المرور",
-    "hidePassword": "إخفاء كلمة المرور"
+    "hidePassword": "إخفاء كلمة المرور",
+    "mfaScan": "امسح رمز QR هذا باستخدام تطبيق المصادقة.",
+    "mfaManual": "أو أدخل مفتاح الإعداد يدوياً",
+    "mfaQrAlt": "رمز QR لإعداد المصادقة الثنائية",
+    "addPhoto": "إضافة صورة",
+    "changePhoto": "تغيير الصورة",
+    "removePhoto": "حذف الصورة",
+    "photoHint": "PNG أو JPEG، بحد أقصى 2 ميغابايت.",
+    "photoAlt": "الصورة الشخصية",
+    "photoInput": "اختر صورة شخصية",
+    "photoSaved": "تم حفظ الصورة الشخصية.",
+    "photoDeleted": "تم حذف الصورة الشخصية.",
+    "photoError": "تعذر تحديث الصورة. استخدم صورة PNG أو JPEG صالحة بحجم لا يتجاوز 2 ميغابايت."
   },
   "DesignSystem": {
     "alerts": "التنبيهات",
@@ -1210,6 +1230,9 @@
     "LEGACY_V2_MIGRATION_EMAIL_REQUIRED": "لا يحتوي حساب V2 هذا على بريد إلكتروني صالح لـ V3.",
     "LEGACY_V2_MIGRATION_UNSUPPORTED": "دور حساب V2 هذا غير مدعوم.",
     "LEGACY_V2_MIGRATION_COLLISION": "يوجد حساب أو مؤسسة مطابقة بالفعل في V3.",
-    "LEGACY_V2_MIGRATION_UNAVAILABLE": "GestSchool V2 غير متاح مؤقتاً. حاول لاحقاً."
+    "LEGACY_V2_MIGRATION_UNAVAILABLE": "GestSchool V2 غير متاح مؤقتاً. حاول لاحقاً.",
+    "mfaScan": "امسح رمز QR هذا باستخدام تطبيق المصادقة.",
+    "mfaManual": "أو أدخل مفتاح الإعداد يدوياً",
+    "mfaQrAlt": "رمز QR لإعداد المصادقة الثنائية"
   }
 }

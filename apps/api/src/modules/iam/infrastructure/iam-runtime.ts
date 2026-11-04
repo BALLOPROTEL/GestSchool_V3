@@ -1,5 +1,6 @@
 import type { OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { loadMessagingConfig } from '@gestschool/config/messaging';
+import { AvatarStorageService } from '../../../infrastructure/avatar-storage.service.js';
 import { AuthService } from '../application/auth.service.js';
 import { CredentialsService } from '../application/credentials.service.js';
 import { MembershipsService } from '../application/memberships.service.js';
@@ -28,6 +29,7 @@ export class IamRuntime implements OnModuleInit, OnModuleDestroy {
     readonly config: IamConfig,
     databaseUrl: string,
     redisUrl: string,
+    avatars?: AvatarStorageService,
   ) {
     if (process.env['NODE_ENV'] === 'production') loadMessagingConfig();
     this.repository = IamRepository.connect(databaseUrl);
@@ -38,7 +40,7 @@ export class IamRuntime implements OnModuleInit, OnModuleDestroy {
     this.auth = new AuthService(this.repository, this.passwords, this.sessions);
     this.credentials = new CredentialsService(this.repository, this.passwords);
     this.mfa = new MfaService(this.repository, this.crypto, this.passwords, this.sessions);
-    this.users = new UsersService(this.repository, this.credentials);
+    this.users = new UsersService(this.repository, this.credentials, avatars);
     this.legacyV2OwnerMigration = new LegacyV2OwnerMigrationService(
       this.repository,
       this.passwords,

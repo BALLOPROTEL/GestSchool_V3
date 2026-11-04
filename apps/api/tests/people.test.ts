@@ -20,6 +20,10 @@ import { configureIamHttp } from '../src/modules/iam/presentation/http/security.
 
 const db = createPrismaClient(loadInfrastructureConfig().databaseUrl);
 const password = opaqueToken();
+const avatarPayload = {
+  mimeType: 'image/png',
+  base64: 'iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAY0lEQVR4nO3PQQ3AIADAQEA1cpCDrIngcVnSU9DOfe74s6UDXjWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgfboqAmAfHjuUAAAAAElFTkSuQmCC',
+} as const;
 const errors: string[] = [];
 let app: INestApplication;
 let iam: IamRuntime;
@@ -394,6 +398,34 @@ describe('relationships, validation and scopes', () => {
     );
     expect(links.body.items.map((link) => link.guardianId)).toEqual([guardian.id]);
   });
+  it('keeps student avatars private and tenant-scoped', async () => {
+    expect(
+      (await admin.browser.send(`students/${child.id}/avatar`, avatarPayload, 'PUT')).status,
+    ).toBe(200);
+    const stored = await db.student.findUniqueOrThrow({
+      where: { tenantId_id: { tenantId: tenantA, id: child.id } },
+      select: { avatarKey: true, avatarMime: true },
+    });
+    expect(stored.avatarKey).toMatch(
+      new RegExp(`^tenants/${tenantA}/avatars/students/${child.id}/[0-9a-f-]+\\.png$`),
+    );
+    expect(stored.avatarMime).toBe('image/png');
+
+    expect(
+      (await other.browser.send(`students/${child.id}/avatar`, avatarPayload, 'PUT')).status,
+    ).toBe(404);
+    expect((await other.browser.send(`students/${child.id}/avatar`)).status).toBe(404);
+
+    expect(
+      (await admin.browser.send(`students/${child.id}/avatar`, undefined, 'DELETE')).status,
+    ).toBe(200);
+    const cleared = await db.student.findUniqueOrThrow({
+      where: { tenantId_id: { tenantId: tenantA, id: child.id } },
+      select: { avatarKey: true, avatarMime: true },
+    });
+    expect(cleared).toEqual({ avatarKey: null, avatarMime: null });
+  });
+
   it('denies cross-tenant association even with known valid UUIDs', async () => {
     const foreign = (
       await other.browser.send('guardians', { firstName: 'Foreign', lastName: 'Parent' }, 'POST')
