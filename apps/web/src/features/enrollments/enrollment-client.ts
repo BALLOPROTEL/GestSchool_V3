@@ -14,9 +14,10 @@ export function canEnrollment(session: SessionView | undefined, action = 'read')
 }
 export function canEnrollmentAction(
   row: EnrollmentView,
-  action: 'update' | 'confirm' | 'cancel' | 'transfer' | 'complete',
+  action: 'update' | 'confirm' | 'cancel' | 'transfer' | 'complete' | 'reopen',
 ): boolean {
   if (row.academicYearStatus === 'CLOSED' || row.academicYearStatus === 'ARCHIVED') return false;
+  if (action === 'reopen') return row.status === 'WITHDRAWN' || row.status === 'COMPLETED';
   return action === 'cancel'
     ? row.status === 'PENDING' || row.status === 'ACTIVE'
     : action === 'update' || action === 'confirm'
@@ -46,6 +47,7 @@ export function enrollmentErrorKey(error: unknown) {
     ENROLLMENT_CLASS_ARCHIVED: 'classArchived',
     ENROLLMENT_CLASS_YEAR_MISMATCH: 'classYearMismatch',
     ENROLLMENT_SAME_CLASS: 'sameClass',
+    ENROLLMENT_REOPEN_HISTORY_REQUIRED: 'reopenHistoryRequired',
     AUTH_INVALID_REQUEST: 'invalid',
     AUTH_FORBIDDEN: 'forbidden',
     AUTH_SESSION_EXPIRED: 'expired',
