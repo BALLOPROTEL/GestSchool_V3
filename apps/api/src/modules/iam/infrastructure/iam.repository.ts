@@ -155,6 +155,35 @@ export class IamRepository {
       this.db.membership.findFirst({ where: { id, userId }, include: membershipInclude }),
     );
   }
+  membershipAvatar(id: string, userId: string, tenantId: string) {
+    return observeIamDatabase('MEMBERSHIP_LOOKUP', () =>
+      this.db.membership.findFirst({
+        where: { id, userId, tenantId, status: 'ACTIVE' },
+        select: {
+          avatarKey: true,
+          avatarMime: true,
+          avatarUpdatedAt: true,
+        },
+      }),
+    );
+  }
+  async setMembershipAvatar(
+    id: string,
+    userId: string,
+    tenantId: string,
+    avatarKey: string | null,
+    avatarMime: 'image/jpeg' | 'image/png' | null,
+  ): Promise<void> {
+    const updated = await this.db.membership.updateMany({
+      where: { id, userId, tenantId, status: 'ACTIVE' },
+      data: {
+        avatarKey,
+        avatarMime,
+        avatarUpdatedAt: avatarKey ? new Date() : null,
+      },
+    });
+    if (updated.count !== 1) throw new IamError('AUTH_FORBIDDEN', 403);
+  }
   session(id: string) {
     return observeIamDatabase('SESSION_LOOKUP', () =>
       this.db.session.findUnique({ where: { id } }),
