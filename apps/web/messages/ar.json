@@ -1141,7 +1141,10 @@
     "sessionError": "تعذر إدارة الجلسات.",
     "inAppRequiredDescription": "تبقى إشعارات GestSchool المهمة مفعّلة دائماً حتى لا يتم إخفاء المعلومات الإلزامية.",
     "showPassword": "إظهار كلمة المرور",
-    "hidePassword": "إخفاء كلمة المرور"
+    "hidePassword": "إخفاء كلمة المرور",
+    "mfaScan": "امسح رمز QR هذا باستخدام تطبيق المصادقة.",
+    "mfaManual": "أو أدخل مفتاح الإعداد يدوياً",
+    "mfaQrAlt": "رمز QR لإعداد المصادقة الثنائية"
   },
   "DesignSystem": {
     "alerts": "التنبيهات",
@@ -1210,6 +1213,9 @@
     "LEGACY_V2_MIGRATION_EMAIL_REQUIRED": "لا يحتوي حساب V2 هذا على بريد إلكتروني صالح لـ V3.",
     "LEGACY_V2_MIGRATION_UNSUPPORTED": "دور حساب V2 هذا غير مدعوم.",
     "LEGACY_V2_MIGRATION_COLLISION": "يوجد حساب أو مؤسسة مطابقة بالفعل في V3.",
-    "LEGACY_V2_MIGRATION_UNAVAILABLE": "GestSchool V2 غير متاح مؤقتاً. حاول لاحقاً."
+    "LEGACY_V2_MIGRATION_UNAVAILABLE": "GestSchool V2 غير متاح مؤقتاً. حاول لاحقاً.",
+    "mfaScan": "امسح رمز QR هذا باستخدام تطبيق المصادقة.",
+    "mfaManual": "أو أدخل مفتاح الإعداد يدوياً",
+    "mfaQrAlt": "رمز QR لإعداد المصادقة الثنائية"
   }
 }
