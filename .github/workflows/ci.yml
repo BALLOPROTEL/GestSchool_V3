@@ -7,7 +7,7 @@ on:
       - main
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   quality:
@@ -46,7 +46,7 @@ jobs:
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
-          persist-credentials: true
+          persist-credentials: false
 
       - name: Install pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5 (peeled commit)
@@ -61,29 +61,6 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-
-      - name: Auto-format LOT18.2 touched files
-        run: |
-          pnpm exec prettier --write \
-            apps/web/e2e/academics.spec.ts \
-            apps/web/src/features/academics/academic-guide.tsx \
-            apps/web/src/features/academics/academic-navigation-pages.tsx \
-            apps/web/src/features/academics/academic-workspace.tsx
-          if ! git diff --quiet -- \
-            apps/web/e2e/academics.spec.ts \
-            apps/web/src/features/academics/academic-guide.tsx \
-            apps/web/src/features/academics/academic-navigation-pages.tsx \
-            apps/web/src/features/academics/academic-workspace.tsx; then
-            git config user.name "gestschool-ci"
-            git config user.email "gestschool-ci@users.noreply.github.com"
-            git add \
-              apps/web/e2e/academics.spec.ts \
-              apps/web/src/features/academics/academic-guide.tsx \
-              apps/web/src/features/academics/academic-navigation-pages.tsx \
-              apps/web/src/features/academics/academic-workspace.tsx
-            git commit -m "style(lot18): format academic navigation changes"
-            git push origin HEAD:feat/lot18-academic-navigation
-          fi
 
       - name: Generate Prisma client
         run: pnpm db:generate
