@@ -17,7 +17,7 @@ export type EnrollmentCommand =
   | { action: 'create'; input: EnrollmentCreate }
   | { action: 'update'; id: string; input: EnrollmentUpdate }
   | { action: 'confirm'; id: string }
-  | { action: 'cancel' | 'complete'; id: string; input: EnrollmentEnd }
+  | { action: 'cancel' | 'complete' | 'reopen'; id: string; input: EnrollmentEnd }
   | { action: 'transfer'; id: string; input: EnrollmentTransfer };
 export abstract class EnrollmentRepository {
   abstract list(context: RequestContext, query: EnrollmentQuery): Promise<EnrollmentList>;
