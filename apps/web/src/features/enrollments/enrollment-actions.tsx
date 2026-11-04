@@ -107,7 +107,7 @@ export function EnrollmentActionDialog({
                 id={`${id}-date`}
                 type="date"
                 required
-                min={row.enrolledOn}
+                min={action === 'reopen' ? (row.endedOn ?? row.enrolledOn) : row.enrolledOn}
                 value={date}
                 onChange={(event) => setDate(event.target.value)}
               />
