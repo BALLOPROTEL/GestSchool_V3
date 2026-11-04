@@ -96,7 +96,7 @@ export function usePrivateAvatar(path: string | null, identity?: string | null):
       }
       try {
         const response = await authorizedFetch(path);
-        if (response.status === 404) {
+        if (response.status === 204 || response.status === 404) {
           if (active) setUrl('');
           return;
         }
