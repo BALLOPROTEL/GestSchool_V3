@@ -81,12 +81,13 @@ export async function deletePrivateAvatar(path: string): Promise<void> {
   window.dispatchEvent(new Event(AVATAR_CHANGED));
 }
 
-export function usePrivateAvatar(path: string | null): string {
+export function usePrivateAvatar(path: string | null, identity?: string | null): string {
   const [url, setUrl] = useState('');
 
   useEffect(() => {
     let active = true;
     let objectUrl = '';
+    setUrl('');
 
     const load = async () => {
       if (!path) {
@@ -122,7 +123,7 @@ export function usePrivateAvatar(path: string | null): string {
       window.removeEventListener(AVATAR_CHANGED, reload);
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [path]);
+  }, [identity, path]);
 
   return url;
 }
