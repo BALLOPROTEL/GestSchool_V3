@@ -43,13 +43,11 @@ export function enrollmentTransition(
 }
 export function enrollmentReopenTransition(
   status: EnrollmentStatus,
-  latest:
-    | {
-        kind: string;
-        fromStatus: EnrollmentStatus | null;
-        toStatus: EnrollmentStatus;
-      }
-    | null,
+  latest: {
+    kind: string;
+    fromStatus: EnrollmentStatus | null;
+    toStatus: EnrollmentStatus;
+  } | null,
 ): EnrollmentStatus {
   if (status !== 'WITHDRAWN' && status !== 'COMPLETED')
     return enrollmentConflict('ENROLLMENT_INVALID_TRANSITION');
