@@ -4,6 +4,7 @@ import type {
   PageResult,
   PeopleQuery,
   PersonView,
+  type AvatarMimeType,
 } from '@gestschool/contracts';
 import type { RequestContext } from '../../iam/domain/context.js';
 export abstract class StudentRepository {
@@ -12,4 +13,15 @@ export abstract class StudentRepository {
   abstract create(context: RequestContext, input: StudentCreate): Promise<PersonView>;
   abstract update(context: RequestContext, id: string, input: StudentUpdate): Promise<PersonView>;
   abstract archive(context: RequestContext, id: string, restore: boolean): Promise<PersonView>;
+  abstract avatar(
+    context: RequestContext,
+    id: string,
+  ): Promise<{ key: string; mimeType: AvatarMimeType } | null>;
+  abstract setAvatar(
+    context: RequestContext,
+    id: string,
+    key: string,
+    mimeType: AvatarMimeType,
+  ): Promise<string | null>;
+  abstract clearAvatar(context: RequestContext, id: string): Promise<string | null>;
 }
