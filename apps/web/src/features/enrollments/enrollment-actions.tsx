@@ -34,7 +34,9 @@ export function EnrollmentActionDialog({
   const id = useId();
   const [classId, setClassId] = useState('');
   const [reason, setReason] = useState('');
-  const [date, setDate] = useState(action === 'reopen' ? (row.endedOn ?? row.enrolledOn) : row.enrolledOn);
+  const [date, setDate] = useState(
+    action === 'reopen' ? (row.endedOn ?? row.enrolledOn) : row.enrolledOn,
+  );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>();
   const capacity = usePeopleData<PageResult<EnrollmentClassView>>(
