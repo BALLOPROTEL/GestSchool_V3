@@ -8,7 +8,7 @@ ALTER TABLE "enrollment_events"
 ALTER TABLE "enrollment_events"
   ADD CONSTRAINT "enrollment_events_reason_check"
   CHECK (
-    kind NOT IN ('TRANSFERRED', 'CANCELLED', 'COMPLETED', 'REOPENED')
+    kind::text NOT IN ('TRANSFERRED', 'CANCELLED', 'COMPLETED', 'REOPENED')
     OR (reason IS NOT NULL AND length(btrim(reason)) >= 3)
   );
 
