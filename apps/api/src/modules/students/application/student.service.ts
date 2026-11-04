@@ -43,8 +43,10 @@ export class StudentService {
 
   async avatar(context: RequestContext, id: unknown) {
     this.read(context);
-    const avatar = await this.repository.avatar(context, personId.parse(id));
-    if (!avatar) deny('NOT_FOUND', 404);
+    const studentId = personId.parse(id);
+    await this.repository.get(context, studentId);
+    const avatar = await this.repository.avatar(context, studentId);
+    if (!avatar) return null;
     return {
       bytes: await this.avatars.read(avatar.key, avatar.mimeType),
       mimeType: avatar.mimeType,
