@@ -126,8 +126,27 @@ const navigation: readonly NavGroup[] = [
   {
     key: 'academic',
     items: [
-      { href: '/classes', icon: School, key: 'classes' },
-      { href: '/subjects', icon: BookOpenCheck, key: 'subjects' },
+      {
+        href: '/academic-years',
+        icon: CalendarCheck,
+        key: 'years',
+        permission: 'academic-years.read',
+      },
+      { href: '/levels', icon: Building2, key: 'levels', permission: 'levels.read' },
+      {
+        href: '/periods',
+        icon: ClipboardList,
+        key: 'periods',
+        permission: 'academic-periods.read',
+      },
+      { href: '/classes', icon: School, key: 'classes', permission: 'classes.read' },
+      { href: '/subjects', icon: BookOpenCheck, key: 'subjects', permission: 'subjects.read' },
+      {
+        href: '/assignments',
+        icon: UserRoundCheck,
+        key: 'assignments',
+        permission: 'teaching-assignments.read',
+      },
       { href: '/grades', icon: Medal, key: 'grades' },
       { href: '/attendance', icon: CalendarCheck, key: 'attendance' },
     ],
