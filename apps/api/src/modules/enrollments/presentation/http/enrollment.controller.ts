@@ -69,6 +69,12 @@ export class EnrollmentController {
   complete(@Req() req: IamRequest, @Param('id') id: string, @Body() input: unknown) {
     return this.service.transition(requestContext(req), 'complete', id, input);
   }
+  @Post(':id/reopen')
+  @HttpCode(200)
+  @RequirePermission('enrollments.reopen', enrollmentWriteScopes)
+  reopen(@Req() req: IamRequest, @Param('id') id: string, @Body() input: unknown) {
+    return this.service.transition(requestContext(req), 'reopen', id, input);
+  }
 }
 @Controller('api/v1')
 export class EnrollmentLookupController {
