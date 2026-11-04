@@ -1,13 +1,19 @@
 import { randomUUID } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
-import { S3StorageAdapter } from '@gestschool/infrastructure';
-import type { AvatarMimeType } from '@gestschool/contracts';
+import { S3StorageAdapter, validateAvatarImage } from '@gestschool/infrastructure';
+import type { AvatarMimeType, AvatarUpload } from '@gestschool/contracts';
 import {
   INFRASTRUCTURE_CONFIGURATION,
   type InfrastructureConfiguration,
 } from './tokens.js';
 
 type AvatarOwnerKind = 'memberships' | 'students';
+
+export class AvatarInputError extends Error {
+  constructor() {
+    super('AVATAR_INPUT_INVALID');
+  }
+}
 
 @Injectable()
 export class AvatarStorageService {
@@ -31,15 +37,26 @@ export class AvatarStorageService {
     }`;
   }
 
+  private decode(input: AvatarUpload): Uint8Array {
+    const bytes = Buffer.from(input.base64, 'base64');
+    if (bytes.toString('base64') !== input.base64) throw new AvatarInputError();
+    try {
+      validateAvatarImage(bytes, input.mimeType);
+    } catch {
+      throw new AvatarInputError();
+    }
+    return bytes;
+  }
+
   async upload(
     tenantId: string,
     kind: AvatarOwnerKind,
     ownerId: string,
-    mimeType: AvatarMimeType,
-    bytes: Uint8Array,
+    input: AvatarUpload,
   ): Promise<string> {
-    const key = this.key(tenantId, kind, ownerId, mimeType);
-    await this.storage.putAvatar(key, bytes, mimeType);
+    const bytes = this.decode(input);
+    const key = this.key(tenantId, kind, ownerId, input.mimeType);
+    await this.storage.putAvatar(key, bytes, input.mimeType);
     return key;
   }
 
