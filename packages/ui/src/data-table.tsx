@@ -30,7 +30,7 @@ export function DataTable<Row>({
   return (
     <div
       aria-label={caption}
-      className="w-full overflow-x-auto focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/40"
+      className="min-w-0 w-full max-w-full overflow-x-auto focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/40"
       data-slot="data-table-scroll"
       role="region"
       tabIndex={0}

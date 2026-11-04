@@ -180,7 +180,7 @@ function EnrollmentWorkspace({ studentId }: { studentId?: string }) {
   ];
   return (
     <section
-      className={studentId ? 'min-w-0 space-y-4' : 'page-shell'}
+      className={studentId ? 'min-w-0 space-y-4' : 'page-shell min-w-0'}
       data-enrollment-ready={!result.loading}
     >
       {!studentId ? (
@@ -341,11 +341,11 @@ function EnrollmentWorkspace({ studentId }: { studentId?: string }) {
               {t('loading')}
             </p>
           ) : null}
-          <Card className="mt-5 overflow-hidden">
+          <Card className="mt-5 min-w-0 max-w-full overflow-hidden">
             <CardHeader>
               <CardTitle>{studentId ? t('history') : original('caption')}</CardTitle>
             </CardHeader>
-            <CardContent className="px-0 pb-0">
+            <CardContent className="min-w-0 max-w-full px-0 pb-0">
               <DataTable
                 caption={studentId ? t('history') : original('caption')}
                 columns={columns}
