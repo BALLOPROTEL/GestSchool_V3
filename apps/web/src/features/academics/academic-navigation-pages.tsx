@@ -3,14 +3,14 @@
 import { Card, CardContent } from '@gestschool/ui';
 import type { AcademicView } from '@gestschool/contracts';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { usePeopleData } from '../directory/people-hooks';
 import { PageHeader } from '../shared/page-header';
 import { AcademicPicker } from './academic-components';
 import { AcademicSetupGuide } from './academic-guide';
 import { AcademicList } from './academic-list';
 
-function SelectionNotice({ children }: { children: React.ReactNode }) {
+function SelectionNotice({ children }: { children: ReactNode }) {
   return (
     <Card>
       <CardContent className="p-4 text-sm text-muted-foreground">{children}</CardContent>
