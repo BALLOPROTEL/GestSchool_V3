@@ -87,23 +87,25 @@ export function usePrivateAvatar(path: string | null, identity?: string | null):
   useEffect(() => {
     let active = true;
     let objectUrl = '';
+    let generation = 0;
     setUrl('');
 
     const load = async () => {
+      const requestGeneration = ++generation;
       if (!path) {
-        setUrl('');
+        if (active && requestGeneration === generation) setUrl('');
         return;
       }
       try {
         const response = await authorizedFetch(path);
         if (response.status === 204 || response.status === 404) {
-          if (active) setUrl('');
+          if (active && requestGeneration === generation) setUrl('');
           return;
         }
         if (!response.ok) throw new AvatarClientError('AVATAR_UNAVAILABLE');
         const blob = await response.blob();
         const next = URL.createObjectURL(blob);
-        if (!active) {
+        if (!active || requestGeneration !== generation) {
           URL.revokeObjectURL(next);
           return;
         }
@@ -111,7 +113,7 @@ export function usePrivateAvatar(path: string | null, identity?: string | null):
         objectUrl = next;
         setUrl(next);
       } catch {
-        if (active) setUrl('');
+        if (active && requestGeneration === generation) setUrl('');
       }
     };
 
@@ -120,6 +122,7 @@ export function usePrivateAvatar(path: string | null, identity?: string | null):
     window.addEventListener(AVATAR_CHANGED, reload);
     return () => {
       active = false;
+      generation += 1;
       window.removeEventListener(AVATAR_CHANGED, reload);
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
