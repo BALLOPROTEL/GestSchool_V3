@@ -165,13 +165,13 @@ async function transfer(row: EnrollmentView, classId: string, date = '2026-09-02
     'POST',
   );
 }
-async function reopen(
+async function reopen<T = EnrollmentView>(
   row: EnrollmentView,
   date: string,
   who = admin,
   reason = 'Administrative correction',
 ) {
-  return who.browser.send(`enrollments/${row.id}/reopen`, { reason, effectiveDate: date }, 'POST');
+  return who.browser.send<T>(`enrollments/${row.id}/reopen`, { reason, effectiveDate: date }, 'POST');
 }
 let tenantA: string;
 let tenantB: string;
@@ -601,9 +601,9 @@ describe('LOT 7 real enrollment HTTP workflow', () => {
       'POST',
     );
     await db.academicYear.update({ where: { id: g.year.id }, data: { status: 'CLOSED' } });
-    const reply = await reopen(row, dateOf(g));
+    const reply = await reopen<{ code: string }>(row, dateOf(g));
     expect(reply.status).toBe(409);
-    expect((reply.body as { code: string }).code).toBe('ENROLLMENT_YEAR_CLOSED');
+    expect(reply.body.code).toBe('ENROLLMENT_YEAR_CLOSED');
   });
 });
 describe('capacity and append-only enrollment history', () => {
@@ -645,9 +645,9 @@ describe('capacity and append-only enrollment history', () => {
     expect((await admin.browser.send(`enrollments/${row.id}/confirm`, {}, 'POST')).status).toBe(
       409,
     );
-    const blocked = await reopen(row, dateOf(g));
+    const blocked = await reopen<{ code: string }>(row, dateOf(g));
     expect(blocked.status).toBe(409);
-    expect((blocked.body as { code: string }).code).toBe('ENROLLMENT_CLASS_FULL');
+    expect(blocked.body.code).toBe('ENROLLMENT_CLASS_FULL');
     expect((await admin.browser.send(`enrollments/${row.id}`)).body.status).toBe('WITHDRAWN');
   });
   it('rejects capacity reduction below occupied or reserved places through Academics', async () => {
