@@ -8,6 +8,11 @@ import {
   CardHeader,
   CardTitle,
   DataTable,
+  Dropdown,
+  DropdownContent,
+  DropdownItem,
+  DropdownSeparator,
+  DropdownTrigger,
   KpiCard,
   Pagination,
   Select,
@@ -20,7 +25,7 @@ import {
   type EnrollmentList,
   type EnrollmentView,
 } from '@gestschool/contracts';
-import { CheckCircle2, CircleX, Clock3, FileText, Plus } from 'lucide-react';
+import { CheckCircle2, CircleX, Clock3, FileText, MoreHorizontal, Plus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '../auth/auth-provider';
@@ -130,36 +135,47 @@ function EnrollmentWorkspace({ studentId }: { studentId?: string }) {
     {
       id: 'actions',
       header: common('actions'),
-      cell: (row) => (
-        <div className="flex flex-wrap gap-1">
-          <Button variant="ghost" size="sm" onClick={() => setHistory(row)}>
-            {t('history')}
-          </Button>
-          {!studentId &&
+      cell: (row) => {
+        const editable =
+          !studentId &&
           canEnrollment(session?.session, 'update') &&
-          canEnrollmentAction(row, 'update') ? (
-            <Button variant="ghost" size="sm" onClick={() => setWizard(row)}>
-              {t('edit')}
-            </Button>
-          ) : null}
-          {!studentId
-            ? (['confirm', 'transfer', 'cancel', 'complete'] as const)
-                .filter(
-                  (kind) => canEnrollment(session?.session, kind) && canEnrollmentAction(row, kind),
-                )
-                .map((kind) => (
-                  <Button
-                    key={kind}
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setAction({ row, kind })}
-                  >
-                    {t(kind)}
-                  </Button>
-                ))
-            : null}
-        </div>
-      ),
+          canEnrollmentAction(row, 'update');
+        const transitions = !studentId
+          ? (['confirm', 'transfer', 'cancel', 'complete', 'reopen'] as const).filter(
+              (kind) => canEnrollment(session?.session, kind) && canEnrollmentAction(row, kind),
+            )
+          : [];
+        return (
+          <Dropdown>
+            <DropdownTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                aria-label={`${common('actions')}: ${row.studentName}`}
+              >
+                <MoreHorizontal aria-hidden="true" />
+                <span className="sr-only">{common('actions')}</span>
+              </Button>
+            </DropdownTrigger>
+            <DropdownContent align="end">
+              <DropdownItem onSelect={() => setHistory(row)}>{t('history')}</DropdownItem>
+              {editable || transitions.length ? <DropdownSeparator /> : null}
+              {editable ? (
+                <DropdownItem onSelect={() => setWizard(row)}>{t('edit')}</DropdownItem>
+              ) : null}
+              {transitions.map((kind) => (
+                <DropdownItem
+                  key={kind}
+                  destructive={kind === 'cancel'}
+                  onSelect={() => setAction({ row, kind })}
+                >
+                  {t(kind)}
+                </DropdownItem>
+              ))}
+            </DropdownContent>
+          </Dropdown>
+        );
+      },
     },
   ];
   return (
