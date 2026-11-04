@@ -1141,7 +1141,10 @@
     "sessionError": "Unable to manage sessions.",
     "inAppRequiredDescription": "Important GestSchool notifications always stay enabled so required information is never hidden.",
     "showPassword": "Show password",
-    "hidePassword": "Hide password"
+    "hidePassword": "Hide password",
+    "mfaScan": "Scan this QR code with your authenticator app.",
+    "mfaManual": "Or enter the setup key manually",
+    "mfaQrAlt": "Two-factor authentication setup QR code"
   },
   "DesignSystem": {
     "alerts": "Alerts",
@@ -1210,6 +1213,9 @@
     "LEGACY_V2_MIGRATION_EMAIL_REQUIRED": "This V2 account has no usable email address for V3.",
     "LEGACY_V2_MIGRATION_UNSUPPORTED": "This V2 account role is not supported.",
     "LEGACY_V2_MIGRATION_COLLISION": "A matching account or school already exists in V3.",
-    "LEGACY_V2_MIGRATION_UNAVAILABLE": "GestSchool V2 is temporarily unavailable. Try again later."
+    "LEGACY_V2_MIGRATION_UNAVAILABLE": "GestSchool V2 is temporarily unavailable. Try again later.",
+    "mfaScan": "Scan this QR code with your authenticator app.",
+    "mfaManual": "Or enter the setup key manually",
+    "mfaQrAlt": "Two-factor authentication setup QR code"
   }
 }
