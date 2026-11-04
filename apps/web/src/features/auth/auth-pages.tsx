@@ -146,6 +146,7 @@ export function LoginPage() {
   const [challenge, setChallenge] = useState('');
   const [enrollment, setEnrollment] = useState(false);
   const [secret, setSecret] = useState('');
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const submit = async (event: FormEvent<HTMLFormElement>) => {
@@ -166,16 +167,22 @@ export function LoginPage() {
       if (result.kind === 'session') {
         accept(result);
         setSecret('');
+        setQrCodeDataUrl('');
         setChallenge('');
         router.push('/');
       } else {
         setEnrollment(result.enrollmentRequired);
         if (result.enrollmentRequired) {
-          const setup = await authRequest<{ challenge: string; secret: string }>('mfa/enroll', {
+          const setup = await authRequest<{
+            challenge: string;
+            secret: string;
+            qrCodeDataUrl: string;
+          }>('mfa/enroll', {
             challenge: result.challenge,
           });
           setChallenge(setup.challenge);
           setSecret(setup.secret);
+          setQrCodeDataUrl(setup.qrCodeDataUrl);
         } else setChallenge(result.challenge);
       }
     } catch (failure) {
@@ -208,16 +215,34 @@ export function LoginPage() {
             {challenge ? (
               <>
                 {secret ? (
-                  <p className="rounded-lg bg-muted p-3 text-sm">
-                    <span className="block">{iam('mfaSecret')}</span>
-                    <code
-                      data-testid="mfa-secret"
-                      className="mt-2 block break-all font-mono"
-                      dir="ltr"
-                    >
-                      {secret}
-                    </code>
-                  </p>
+                  <div className="space-y-3 rounded-lg bg-muted p-4 text-sm">
+                    {qrCodeDataUrl ? (
+                      <div className="text-center">
+                        <p className="mb-3 font-semibold">{iam('mfaScan')}</p>
+                        <img
+                          alt={iam('mfaQrAlt')}
+                          className="mx-auto size-52 rounded-lg bg-white p-2"
+                          data-testid="mfa-qr"
+                          height={208}
+                          src={qrCodeDataUrl}
+                          width={208}
+                        />
+                      </div>
+                    ) : null}
+                    <div>
+                      <span className="block font-medium">{iam('mfaManual')}</span>
+                      <span className="mt-1 block text-xs text-muted-foreground">
+                        {iam('mfaSecret')}
+                      </span>
+                      <code
+                        data-testid="mfa-secret"
+                        className="mt-2 block break-all font-mono"
+                        dir="ltr"
+                      >
+                        {secret}
+                      </code>
+                    </div>
+                  </div>
                 ) : null}
                 <div className="space-y-2">
                   <Label htmlFor="totp">{iam('mfaCode')}</Label>
@@ -274,6 +299,7 @@ export function LoginPage() {
                 onClick={() => {
                   setChallenge('');
                   setSecret('');
+                  setQrCodeDataUrl('');
                   setError('');
                 }}
               >
