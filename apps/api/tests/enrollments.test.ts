@@ -165,6 +165,18 @@ async function transfer(row: EnrollmentView, classId: string, date = '2026-09-02
     'POST',
   );
 }
+async function reopen(
+  row: EnrollmentView,
+  date: string,
+  who = admin,
+  reason = 'Administrative correction',
+) {
+  return who.browser.send(
+    `enrollments/${row.id}/reopen`,
+    { reason, effectiveDate: date },
+    'POST',
+  );
+}
 let tenantA: string;
 let tenantB: string;
 let admin: Account;
@@ -414,7 +426,7 @@ describe('LOT 7 real enrollment HTTP workflow', () => {
       expect((await admin.browser.send(`enrollments/${row.id}`)).status).toBe(200);
     },
   );
-  it('completes ACTIVE but never revives a terminal enrollment', async () => {
+  it('completes ACTIVE and reopens it through an explicit audited correction', async () => {
     const g = await graph(tenantA);
     const row = await active(g);
     const reply = await admin.browser.send(
@@ -423,11 +435,49 @@ describe('LOT 7 real enrollment HTTP workflow', () => {
       'POST',
     );
     expect(reply.status).toBe(200);
-    expect(reply.body.status).toBe('COMPLETED');
+    expect(reply.body).toMatchObject({ status: 'COMPLETED', endedOn: '2027-06-30' });
     expect((await transfer(row, g.b.id)).status).toBe(409);
     expect((await admin.browser.send(`enrollments/${row.id}/confirm`, {}, 'POST')).status).toBe(
       409,
     );
+    const reopened = await reopen(row, '2027-06-30', admin, 'Completion entered by mistake');
+    expect(reopened.status).toBe(200);
+    expect(reopened.body).toMatchObject({ status: 'ACTIVE', endedOn: null });
+    const history = (
+      await admin.browser.send<PageResult<EnrollmentEventView>>(`enrollments/${row.id}/events`)
+    ).body;
+    expect(history.items.at(-1)).toMatchObject({
+      kind: 'REOPENED',
+      fromStatus: 'COMPLETED',
+      toStatus: 'ACTIVE',
+      reason: 'Completion entered by mistake',
+      actorMembershipId: admin.membershipId,
+    });
+  });
+  it('restores PENDING when an unconfirmed enrollment was cancelled', async () => {
+    const g = await graph(tenantA);
+    const row = await pending(g);
+    await admin.browser.send(
+      `enrollments/${row.id}/cancel`,
+      { reason: 'Premature cancellation', effectiveDate: dateOf(g) },
+      'POST',
+    );
+    const reopened = await reopen(row, dateOf(g), director);
+    expect(reopened.status).toBe(200);
+    expect(reopened.body).toMatchObject({ status: 'PENDING', endedOn: null });
+  });
+  it('blocks reopening once the academic year is closed', async () => {
+    const g = await graph(tenantA);
+    const row = await active(g);
+    await admin.browser.send(
+      `enrollments/${row.id}/cancel`,
+      { reason: 'Temporary withdrawal', effectiveDate: dateOf(g) },
+      'POST',
+    );
+    await db.academicYear.update({ where: { id: g.year.id }, data: { status: 'CLOSED' } });
+    const reply = await reopen(row, dateOf(g));
+    expect(reply.status).toBe(409);
+    expect((reply.body as { code: string }).code).toBe('ENROLLMENT_YEAR_CLOSED');
   });
 });
 describe('capacity and append-only enrollment history', () => {
@@ -469,6 +519,10 @@ describe('capacity and append-only enrollment history', () => {
     expect((await admin.browser.send(`enrollments/${row.id}/confirm`, {}, 'POST')).status).toBe(
       409,
     );
+    const blocked = await reopen(row, dateOf(g));
+    expect(blocked.status).toBe(409);
+    expect((blocked.body as { code: string }).code).toBe('ENROLLMENT_CLASS_FULL');
+    expect((await admin.browser.send(`enrollments/${row.id}`)).body.status).toBe('WITHDRAWN');
   });
   it('rejects capacity reduction below occupied or reserved places through Academics', async () => {
     const g = await graph(tenantA, 2026, 2);
@@ -743,9 +797,22 @@ describe('tenant and scope boundaries', () => {
     for (const who of forbidden)
       expect((await who.browser.send('enrollments', {}, 'POST')).status).toBe(403);
   });
-  it('grants tenant-scoped administration to director and academic staff', async () => {
+  it('grants ordinary tenant enrollment administration to director and academic staff', async () => {
     for (const who of [director, staff])
       expect((await pending(await graph(tenantA), who)).status).toBe('PENDING');
+  });
+  it('reserves terminal reopening to SCHOOL_ADMIN and DIRECTOR', async () => {
+    const g = await graph(tenantA);
+    const row = await active(g);
+    await admin.browser.send(
+      `enrollments/${row.id}/cancel`,
+      { reason: 'Role boundary fixture', effectiveDate: dateOf(g) },
+      'POST',
+    );
+    expect((await reopen(row, dateOf(g), staff)).status).toBe(403);
+    const reply = await reopen(row, dateOf(g), director, 'Director correction');
+    expect(reply.status).toBe(200);
+    expect(reply.body.status).toBe('ACTIVE');
   });
   it('enforces OWN for list, detail, student history and event history', async () => {
     const s = await student(tenantA, pupil.userId);
@@ -823,7 +890,7 @@ describe('tenant and scope boundaries', () => {
       ).toEqual([row.id]);
     expect((await admin.browser.send('enrollments?pageSize=101')).status).toBe(400);
   });
-  it('records all six requested audit actions with context and transfer metadata', async () => {
+  it('records all enrollment audit actions with context and transition metadata', async () => {
     const rows = await db.auditLog.findMany({
       where: { tenantId: tenantA, action: { startsWith: 'enrollment.' } },
     });
@@ -835,6 +902,7 @@ describe('tenant and scope boundaries', () => {
         'enrollment.cancelled',
         'enrollment.transferred',
         'enrollment.completed',
+        'enrollment.reopened',
       ]),
     );
     for (const row of rows) {
