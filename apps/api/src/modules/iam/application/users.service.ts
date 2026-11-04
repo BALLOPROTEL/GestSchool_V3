@@ -1,7 +1,7 @@
 import type {
   AccessScope,
-  type AvatarMimeType,
-  type AvatarUpload,
+  AvatarMimeType,
+  AvatarUpload,
   ProfileNotificationPreferences,
   ProfileUpdate,
   ProfileView,
