@@ -118,16 +118,19 @@ export function TeachingAssignmentsPage() {
     canCreateAssignment &&
     Boolean(schoolClass.data) &&
     !classSubjects.loading &&
+    !classSubjects.error &&
     (classSubjects.data?.total ?? 0) === 0;
   const missingPeriods =
     canCreateAssignment &&
     Boolean(schoolClass.data) &&
     !periods.loading &&
+    !periods.error &&
     (periods.data?.total ?? 0) === 0;
   const missingTeachers =
     canCreateAssignment &&
     Boolean(schoolClass.data) &&
     !teachers.loading &&
+    !teachers.error &&
     (teachers.data?.total ?? 0) === 0;
   const prerequisiteError =
     canCreateAssignment &&
