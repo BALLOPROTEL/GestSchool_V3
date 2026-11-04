@@ -36,28 +36,45 @@ Les documents officiels, PDF privés, QR et leur exploitation sont décrits dans
 Le correctif de distribution MinIO/mc pour les runners CI vierges est décrit
 dans [`lot10-ci-storage.md`](lot10-ci-storage.md).
 
-## Limites volontaires
+## État fonctionnel courant
 
-Le LOT 1 fournit le contrat visuel. Le LOT 2 ajoute PostgreSQL, Redis et MinIO. Le LOT 3 ajoute
-Prisma et le socle de données multi-tenant. Le LOT 4 branche l'authentification réelle
-et protège l'entrée du portail. Le LOT 5 fournit uniquement les annuaires élèves, parents,
-enseignants et les relations parent/enfant. Le LOT 6 fournit le référentiel académique et les
-affectations enseignants. Le LOT 7 fournit le cycle d'inscription et ses historiques. Le LOT 8
-connecte les frais, factures, paiements, reçus métier et sessions de caisse. Le LOT 9 branche les
-évaluations, notes, moyennes, rangs et bulletins historiques. Le LOT 10 ajoute six types de
-documents officiels, des PDF privés, une file documentaire et la vérification publique par QR.
-Le LOT 11 ajoute messagerie/notifications, capture privée DEV/TEST et adapter Brevo ; le LOT 12 fournit dashboards et exports CSV/XLSX/PDF. Le LOT 13 durcit ces composants. Les autres écrans restent en mocks et aucun paiement en ligne n’est implémenté. Consultez
-[`infrastructure/local-development.md`](infrastructure/local-development.md) pour le workflow local.
+Les LOTS 0 à 17 ont remplacé les principaux mocks métier visibles par des parcours réels.
+Le portail comprend aujourd'hui les domaines IAM, annuaires, académique, inscriptions,
+finance, résultats/bulletins, documents, communications, dashboards, rapports, paramètres,
+audit, profil, recherche globale et présences.
+
+Cette couverture technique ne signifie pas que tous les parcours sont ergonomiquement ou
+fonctionnellement parfaits. La recette propriétaire post-LOT17 a identifié plusieurs écarts
+réels : onboarding MFA sans QR, absence de photos élève, référentiel académique difficile à
+comprendre, réouverture d'inscriptions, persistance/validation des présences, pipeline
+évaluation → note → bulletin, cartes scolaires, communications, rapports et certains réglages.
+
+Ces écarts sont la source du LOT18. Ils sont suivis dans
+[functional-roadmap.md](functional-roadmap.md).
+
+## Limites et roadmap
+
+- **LOT18 — Stabilisation fonctionnelle & UX** : corriger les parcours existants avant d'ajouter
+  de nouveaux grands domaines.
+- **LOT19 — Exploitation quotidienne** : emploi du temps, créneaux/salles/conflits, calendrier,
+  devoirs/agenda, vie scolaire et admissions.
+- **LOT20 — Extensions de gestion** : RH, bibliothèque, cantine, transport, inventaire et
+  paiement bancaire/en ligne.
+
+Le paiement en ligne n'est pas implémenté. La production réelle et le cutover V2 → V3 restent
+interdits sans autorisation explicite. V2 reste la référence opérationnelle tant qu'une décision
+de production n'est pas prise.
 
 ## Sécurité LOT13
 
 Le [rapport de certification locale](lot13-certification.md) détaille les 88 points de revue, résultats, premiers échecs et risques résiduels. Voir l’[audit](security-audit-lot13.md), le [modèle de menace](security-threat-model.md), les [contrôles de durcissement](security-hardening.md) et la [checklist de production future](security-production-checklist.md). Ces preuves LOT13 sont locales ; la certification staging acquise ensuite est décrite ci-dessous.
 
-## Certification LOT14
+## Certification staging et exploitation
 
-Le [rapport final](lot14-certification.md) conclut **GO STAGING FONCTIONNEL**, en
-attente de merge final. L'[architecture](lot14-staging.md), le [runbook](deployment/staging.md)
-et le [manifeste sûr](lot14-final-evidence.json) consolident 49 smoke distants,
-la stabilité worker, 14/14 Tenant A/B et le workflow report réel. Les flags sont OFF.
-Le [plan de cutover V2→V3](deployment/cutover-v2-v3.md) reste non exécuté ; V2 est
-intacte. Les prérequis d'exploitation restent au backlog LOT15 / Not started.
+Le [LOT14](lot14-certification.md) a établi le GO staging fonctionnel. LOT15 a ensuite préparé
+les prérequis d'exploitation technique et le rollback sans autoriser de production réelle.
+LOT16 a préparé la continuité d'identité V2 → V3 sans migration réelle, puis LOT17 a certifié
+les parcours visibles sans mocks métier sur le staging fixe.
+
+Le [plan de cutover V2→V3](deployment/cutover-v2-v3.md) reste non exécuté ; V2 est intacte.
+La stabilisation fonctionnelle continue au LOT18 avant tout nouveau GO produit.
