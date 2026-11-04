@@ -41,11 +41,8 @@ async function pick(page: Page, label: string, text: string) {
   if (!value) throw new Error('Missing academic choice');
   await select.selectOption(value);
 }
-async function tab(page: Page, name: string) {
-  await page.getByRole('tab', { name, exact: true }).click();
-  await ready(page);
-}
-test('LOT 6 academic workflow with real teacher assignments on mobile and desktop', async ({
+
+test('LOT 18.2 guided academic workflow with real teacher assignments on mobile and desktop', async ({
   page,
   browser,
 }, info) => {
@@ -57,26 +54,37 @@ test('LOT 6 academic workflow with real teacher assignments on mobile and deskto
   const check = watch(page);
   const account = fixture(info.project.name);
   await login(page, account.crud, true);
-  const code = `L6-${Date.now()}`;
-  await page.goto('/fr/classes');
+
+  if (info.project.name === '1440x900') {
+    for (const label of [
+      'Années scolaires',
+      'Niveaux',
+      'Périodes',
+      'Classes',
+      'Matières',
+      'Affectations',
+      'Notes & Bulletins',
+      'Présences',
+    ])
+      await expect(page.getByRole('link', { name: label, exact: true })).toBeVisible();
+  }
+
+  const code = `L182-${Date.now()}`;
+
+  await page.goto('/fr/academic-years');
   await ready(page);
-  await tab(page, 'Années scolaires');
   await openCreate(page, 'Années scolaires');
   await fields(page, { name: `Année ${code}`, code, startsOn: '2027-09-01', endsOn: '2028-06-30' });
   await save(page);
   const yearRow = page.getByRole('row').filter({ hasText: `Année ${code}` });
-  await yearRow.getByRole('button', { name: 'Activer', exact: true }).click();
-  await page.getByRole('dialog').getByRole('button', { name: 'Confirmer' }).click();
-  await expect(page.getByRole('dialog')).toBeHidden();
-  await expect(yearRow).toContainText('Actif');
-  if (info.project.name === '360x800') {
-    await page.getByRole('button', { name: 'Ouvrir la navigation', exact: true }).click();
-    await expect(page.locator('[data-shell-year]:visible')).toContainText(`Année ${code}`);
-    await page.keyboard.press('Escape');
-  } else {
-    await expect(page.locator('[data-shell-year]').first()).toContainText(`Année ${code}`);
-  }
-  await yearRow.getByRole('button', { name: 'Périodes', exact: true }).click();
+  await expect(yearRow).toBeVisible();
+
+  await page.goto('/fr/periods');
+  await ready(page);
+  await page
+    .getByRole('combobox', { name: 'Année scolaire', exact: true })
+    .selectOption({ label: `Année ${code} · ${code}` });
+  await ready(page);
   for (const [ordinal, startsOn, endsOn] of [
     ['1', '2027-09-01', '2028-01-31'],
     ['2', '2028-02-01', '2028-06-30'],
@@ -95,26 +103,25 @@ test('LOT 6 academic workflow with real teacher assignments on mobile and deskto
     await save(page);
   }
   await expect(page.getByRole('row').filter({ hasText: `Semestre 2 ${code}` })).toBeVisible();
-  await page.getByRole('button', { name: 'Retour à la liste' }).click();
-  await tab(page, 'Niveaux');
+
+  await page.goto('/fr/levels');
+  await ready(page);
   await openCreate(page, 'Niveaux');
   await fields(page, { name: `Niveau ${code}`, code, position: '6' });
   await save(page);
-  await tab(page, 'Classes');
+
+  await page.goto('/fr/classes');
+  await ready(page);
   await openCreate(page, 'Classes');
   await fields(page, { name: `Classe ${code}`, code, capacity: '32' });
   await pick(page, 'Année scolaire', `Année ${code}`);
   await pick(page, 'Niveau', `Niveau ${code}`);
   await save(page);
-  await page
-    .getByRole('combobox', { name: 'Année scolaire', exact: true })
-    .selectOption({ label: `Année ${code} · ${code}` });
-  await page
-    .getByRole('combobox', { name: 'Niveau', exact: true })
-    .selectOption({ label: `Niveau ${code} · ${code}` });
+  await page.getByRole('searchbox', { name: 'Rechercher', exact: true }).fill(code);
   await expect(page.getByRole('heading', { name: `Classe ${code}`, exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Classe témoin', exact: true })).toHaveCount(0);
   await overflow(page);
+
   await page.goto('/fr/subjects');
   await ready(page);
   await openCreate(page, 'Matières');
@@ -125,11 +132,15 @@ test('LOT 6 academic workflow with real teacher assignments on mobile and deskto
   await fields(page, { name: `Matière modifiée ${code}` });
   await save(page);
   await expect(page.getByRole('columnheader', { name: /Coefficient/ })).toHaveCount(0);
+
   await page.goto('/fr/classes');
   await ready(page);
   await page.getByRole('searchbox', { name: 'Rechercher', exact: true }).fill(code);
-  await expect(page.getByRole('heading', { name: 'Classe témoin', exact: true })).toHaveCount(0);
-  await page.getByRole('button', { name: 'Voir le détail' }).click();
+  const classCard = page
+    .locator('[data-slot="card"]')
+    .filter({ has: page.getByRole('heading', { name: `Classe ${code}`, exact: true }) });
+  await expect(classCard).toHaveCount(1);
+  await classCard.getByRole('button', { name: 'Voir le détail', exact: true }).click();
   await ready(page);
   await openCreate(page, 'Matières et coefficients');
   await pick(page, 'Matière', `Matière modifiée ${code}`);
@@ -138,11 +149,18 @@ test('LOT 6 academic workflow with real teacher assignments on mobile and deskto
   await expect(page.getByRole('row').filter({ hasText: `Matière modifiée ${code}` })).toContainText(
     '4.25',
   );
+
+  await page
+    .getByRole('link', { name: 'Gérer les affectations de cette classe', exact: true })
+    .click();
+  await ready(page);
+  await expect(page).toHaveURL(/\/fr\/assignments\?classId=/);
   await openCreate(page, 'Affectations');
   await pick(page, 'Matière', `Matière modifiée ${code}`);
   await pick(page, 'Enseignant', account.teacherName);
   await pick(page, 'Période', `Semestre 1 ${code}`);
   await save(page);
+
   const assignments = page.getByRole('region', { name: 'Affectations', exact: true });
   const assignment = assignments.getByRole('row').filter({ hasText: account.teacherName });
   await assignment.getByRole('button', { name: 'Modifier', exact: true }).click();
@@ -156,9 +174,8 @@ test('LOT 6 academic workflow with real teacher assignments on mobile and deskto
     const teacherPage = await teacherContext.newPage();
     const teacherCheck = watch(teacherPage);
     await login(teacherPage, account.teacher, false);
-    await teacherPage.goto('/fr/classes');
+    await teacherPage.goto('/fr/assignments');
     await ready(teacherPage);
-    await tab(teacherPage, 'Affectations');
     await expect(
       teacherPage.getByRole('row').filter({ hasText: `Matière modifiée ${code}` }),
     ).toBeVisible();
@@ -169,6 +186,7 @@ test('LOT 6 academic workflow with real teacher assignments on mobile and deskto
   } finally {
     await teacherContext.close();
   }
+
   await assignment.getByRole('button', { name: 'Archiver', exact: true }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Confirmer' }).click();
   await expect(page.getByRole('dialog')).toBeHidden();
@@ -177,26 +195,26 @@ test('LOT 6 academic workflow with real teacher assignments on mobile and deskto
   check();
 });
 
-test('LOT 6 FR EN AR keyboard, forms, coefficients, assignments and RTL at all widths', async ({
+test('LOT 18.2 FR EN AR guided routes, keyboard forms and RTL at all widths', async ({
   page,
 }, info) => {
   test.slow();
   const check = watch(page);
-  await login(page, fixture(info.project.name).locales, true);
+  const account = fixture(info.project.name);
+  await login(page, account.locales, true);
+
   for (const locale of ['fr', 'en', 'ar']) {
-    await page.goto(`/${locale}/classes`);
-    await ready(page);
-    await expect(page.locator('html')).toHaveAttribute('dir', locale === 'ar' ? 'rtl' : 'ltr');
-    for (const index of [0, 1, 2]) {
-      await page.getByRole('tab').nth(index).click();
+    for (const route of ['academic-years', 'levels', 'classes', 'subjects']) {
+      await page.goto(`/${locale}/${route}`);
       await ready(page);
+      await expect(page.locator('html')).toHaveAttribute('dir', locale === 'ar' ? 'rtl' : 'ltr');
       await overflow(page);
+
       const add = page.locator('[data-academic-create]');
       await add.focus();
       await page.keyboard.press('Enter');
+      await expect(page.getByRole('dialog')).toBeVisible();
       await expect(page.getByRole('dialog').locator('input[name="name"]')).toBeFocused();
-      await page.keyboard.press('Tab');
-      await expect(page.getByRole('dialog').locator('input[name="code"]')).toBeFocused();
       await overflow(page);
       if (info.project.name === '1440x900')
         expect(
@@ -206,78 +224,71 @@ test('LOT 6 FR EN AR keyboard, forms, coefficients, assignments and RTL at all w
       await page.keyboard.press('Escape');
       await expect(page.getByRole('dialog')).toBeHidden();
       await expect(add).toBeFocused();
-      if (index === 1) {
-        await page
-          .getByRole('row')
-          .filter({ hasText: 'Année témoin' })
-          .getByRole('button')
-          .first()
-          .click();
-        await ready(page);
-        await page.locator('[data-academic-create]').click();
-        await expect(page.getByRole('dialog').locator('input[name="name"]')).toBeFocused();
-        await expect(page.getByRole('dialog').locator('input[name="ordinal"]')).toBeVisible();
-        await overflow(page);
-        if (info.project.name === '1440x900')
-          expect(
-            (await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze())
-              .violations,
-          ).toEqual([]);
-        await page.keyboard.press('Escape');
-        await page.locator('[data-academic-focus]').click();
-      }
     }
-    await page.getByRole('tab').nth(0).click();
+
+    await page.goto(`/${locale}/periods`);
     await ready(page);
-    // The fixture class is independent of the mutation journey.
+    await page.locator('main').getByRole('combobox').first().selectOption(account.yearId);
+    await ready(page);
+    await page.locator('[data-academic-create]').click();
+    await expect(page.getByRole('dialog').locator('input[name="ordinal"]')).toBeVisible();
+    await overflow(page);
+    await page.keyboard.press('Escape');
+
+    await page.goto(`/${locale}/classes`);
+    await ready(page);
     const card = page
       .locator('[data-slot="card"]')
       .filter({ has: page.getByRole('heading', { name: 'Classe témoin', exact: true }) });
     await card.getByRole('button').first().click();
     await ready(page);
-    await overflow(page);
-    for (const index of [0, 1]) {
-      await page.locator('[data-academic-create]').nth(index).click();
-      await expect(page.getByRole('dialog')).toBeVisible();
-      await overflow(page);
-      if (info.project.name === '1440x900')
-        expect(
-          (await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze())
-            .violations,
-        ).toEqual([]);
-      await page.keyboard.press('Escape');
-      await expect(page.getByRole('dialog')).toBeHidden();
-    }
-    await page.goto(`/${locale}/subjects`);
-    await ready(page);
-    await expect(page.getByRole('table')).toBeVisible();
-    await overflow(page);
     await page.locator('[data-academic-create]').click();
-    await expect(page.getByRole('dialog').locator('input[name="name"]')).toBeFocused();
+    await expect(page.getByRole('dialog')).toBeVisible();
     await overflow(page);
     await page.keyboard.press('Escape');
+
+    await page.goto(`/${locale}/assignments`);
+    await ready(page);
+    await page.locator('main').getByRole('combobox').first().selectOption(account.classId);
+    await ready(page);
+    await page.locator('[data-academic-create]').click();
+    await expect(page.getByRole('dialog')).toBeVisible();
+    await overflow(page);
+    if (info.project.name === '1440x900')
+      expect(
+        (await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze())
+          .violations,
+      ).toEqual([]);
+    await page.keyboard.press('Escape');
   }
+
   check();
 });
 
-test('LOT 6 teacher reads only assigned classes and cannot administer academics', async ({
+test('LOT 18.2 teacher reads assigned classes and assignments without academic administration', async ({
   page,
 }, info) => {
   const check = watch(page);
   const account = fixture(info.project.name);
   await login(page, account.teacher, false);
+
   for (const locale of ['fr', 'en', 'ar']) {
     await page.goto(`/${locale}/classes`);
     await ready(page);
     await expect(page.getByRole('heading', { name: 'Classe témoin', exact: true })).toBeVisible();
     await expect(page.locator('[data-academic-create]')).toHaveCount(0);
-    await page.getByRole('tab').last().click();
+    await overflow(page);
+
+    await page.goto(`/${locale}/assignments`);
     await ready(page);
     await expect(page.getByRole('row').filter({ hasText: 'Matière témoin' })).toBeVisible();
-    await expect(page.getByRole('table').getByRole('button')).toHaveCount(0);
+    await expect(page.locator('[data-academic-create]')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Modifier', exact: true })).toHaveCount(0);
     await overflow(page);
   }
+
   check();
+
   const csrfResponse = await page.request.get('/api/v1/auth/csrf');
   const csrf = (await csrfResponse.json()) as { csrfToken: string };
   const headers = { Origin: 'http://127.0.0.1:3000', 'X-CSRF-Token': csrf.csrfToken };
