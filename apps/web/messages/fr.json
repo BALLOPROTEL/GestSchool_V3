@@ -388,7 +388,7 @@
     "immutableYear": "Année non modifiable",
     "description": "Référentiel académique de votre établissement.",
     "subjectsHint": "Les coefficients sont définis pour chaque classe, dans son détail.",
-    "assignmentHint": "Ouvrez le détail d’une classe pour créer ou modifier ses affectations.",
+    "assignmentHint": "Sélectionnez une classe ci-dessus pour créer ou modifier ses affectations. Sans sélection, la liste globale reste consultable.",
     "navigation": "Gestion académique",
     "back": "Retour à la liste",
     "details": "Voir le détail",
@@ -428,7 +428,22 @@
     "assignmentYear": "La classe et la période doivent appartenir à la même année.",
     "invalid": "Vérifiez les champs obligatoires et les valeurs saisies.",
     "forbidden": "Vous n’avez pas accès à cette gestion académique.",
-    "expired": "Votre session a expiré. Reconnectez-vous."
+    "expired": "Votre session a expiré. Reconnectez-vous.",
+    "setupGuideTitle": "Parcours de configuration",
+    "setupGuideDescription": "Ordre conseillé pour construire le référentiel académique sans dépendance manquante.",
+    "setupStep": "Étape {step}",
+    "yearsDescription": "Créez les années scolaires, puis activez celle qui sert de contexte courant.",
+    "levelsDescription": "Définissez les niveaux de l’établissement avant de créer les classes.",
+    "periodsDescription": "Choisissez une année scolaire puis définissez ses trimestres ou semestres.",
+    "classesDescription": "Créez les classes après avoir défini une année scolaire et au moins un niveau.",
+    "assignmentsDescription": "Consultez toutes les affectations ou sélectionnez une classe pour en créer et modifier.",
+    "selectYearFirst": "Sélectionnez une année scolaire pour afficher et gérer ses périodes.",
+    "selectClassFirst": "Pour créer ou modifier une affectation, sélectionnez d’abord une classe. Sans sélection, la liste globale reste consultable.",
+    "classSubjectsHint": "Ajoutez d’abord les matières et leurs coefficients dans cette classe. Les affectations professeur/période se gèrent ensuite dans la page Affectations.",
+    "manageAssignments": "Gérer les affectations de cette classe",
+    "missingClassPrerequisites": "Impossible de créer une classe tant que les prérequis suivants ne sont pas disponibles :",
+    "missingAssignmentPrerequisites": "Impossible de créer une affectation tant que les éléments suivants manquent :",
+    "prerequisiteUnavailable": "Impossible de vérifier les prérequis pour le moment. Réessayez avant de créer cette donnée."
   },
   "People": {
     "firstName": "Prénom",
@@ -564,7 +579,11 @@
     "subjects": "Matières",
     "system": "Système",
     "teachers": "Enseignants",
-    "users": "Utilisateurs & Rôles"
+    "users": "Utilisateurs & Rôles",
+    "years": "Années scolaires",
+    "levels": "Niveaux",
+    "periods": "Périodes",
+    "assignments": "Affectations"
   },
   "Shell": {
     "account": "Compte",

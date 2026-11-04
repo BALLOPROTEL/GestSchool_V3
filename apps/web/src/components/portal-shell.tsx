@@ -86,6 +86,7 @@ type NavItem = {
   icon: LucideIcon;
   key: string;
   permission?: string;
+  scopes?: readonly string[];
 };
 
 type NavGroup = {
@@ -126,8 +127,48 @@ const navigation: readonly NavGroup[] = [
   {
     key: 'academic',
     items: [
-      { href: '/classes', icon: School, key: 'classes' },
-      { href: '/subjects', icon: BookOpenCheck, key: 'subjects' },
+      {
+        href: '/academic-years',
+        icon: CalendarCheck,
+        key: 'years',
+        permission: 'academic-years.read',
+        scopes: ['TENANT', 'PLATFORM', 'ASSIGNED'],
+      },
+      {
+        href: '/levels',
+        icon: Building2,
+        key: 'levels',
+        permission: 'levels.read',
+        scopes: ['TENANT', 'PLATFORM', 'ASSIGNED'],
+      },
+      {
+        href: '/periods',
+        icon: ClipboardList,
+        key: 'periods',
+        permission: 'academic-periods.read',
+        scopes: ['TENANT', 'PLATFORM', 'ASSIGNED'],
+      },
+      {
+        href: '/classes',
+        icon: School,
+        key: 'classes',
+        permission: 'classes.read',
+        scopes: ['TENANT', 'PLATFORM', 'ASSIGNED'],
+      },
+      {
+        href: '/subjects',
+        icon: BookOpenCheck,
+        key: 'subjects',
+        permission: 'subjects.read',
+        scopes: ['TENANT', 'PLATFORM', 'ASSIGNED'],
+      },
+      {
+        href: '/assignments',
+        icon: UserRoundCheck,
+        key: 'assignments',
+        permission: 'teaching-assignments.read',
+        scopes: ['TENANT', 'PLATFORM', 'ASSIGNED'],
+      },
       { href: '/grades', icon: Medal, key: 'grades' },
       { href: '/attendance', icon: CalendarCheck, key: 'attendance' },
     ],
@@ -184,7 +225,7 @@ function NavigationList({
                   session?.session.grants.some(
                     (grant) =>
                       grant.permission === item.permission &&
-                      ['TENANT', 'PLATFORM'].includes(grant.scope),
+                      (item.scopes ?? ['TENANT', 'PLATFORM']).includes(grant.scope),
                   ),
               )
               .map((item) => {
