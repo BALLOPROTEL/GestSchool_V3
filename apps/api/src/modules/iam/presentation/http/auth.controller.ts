@@ -10,10 +10,12 @@ import {
   Query,
   Req,
   Res,
+  StreamableFile,
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { z } from 'zod';
 import {
+  avatarUpload,
   scopes,
   profileNotificationPreferences,
   profilePasswordChange,
@@ -131,6 +133,35 @@ export class AuthController {
   @Put('profile')
   async updateProfile(@Body() body: unknown, @Req() request: IamRequest) {
     await this.iam.users.updateOwnProfile(requestContext(request), profileUpdate.parse(body));
+    return { ok: true };
+  }
+
+  @RequirePermission('session.read')
+  @Get('profile/avatar')
+  async profileAvatar(
+    @Req() request: IamRequest,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const avatar = await this.iam.users.avatar(requestContext(request));
+    response.setHeader('Cache-Control', 'private, no-store');
+    return new StreamableFile(Buffer.from(avatar.bytes), {
+      type: avatar.mimeType,
+      disposition: 'inline',
+      length: avatar.bytes.length,
+    });
+  }
+
+  @RequirePermission('session.read')
+  @Put('profile/avatar')
+  async updateProfileAvatar(@Body() body: unknown, @Req() request: IamRequest) {
+    await this.iam.users.updateAvatar(requestContext(request), avatarUpload.parse(body));
+    return { ok: true };
+  }
+
+  @RequirePermission('session.read')
+  @Delete('profile/avatar')
+  async deleteProfileAvatar(@Req() request: IamRequest) {
+    await this.iam.users.deleteAvatar(requestContext(request));
     return { ok: true };
   }
 
