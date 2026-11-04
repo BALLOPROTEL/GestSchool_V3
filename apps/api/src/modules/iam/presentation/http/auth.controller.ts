@@ -24,6 +24,7 @@ import {
   userAdminRoleUpdate,
   userAdminStatusUpdate,
 } from '@gestschool/contracts';
+import { totpQrDataUrl } from '@gestschool/infrastructure';
 import { IamRuntime } from '../../infrastructure/iam-runtime.js';
 import type { SessionResult } from '../../application/sessions.service.js';
 import {
@@ -252,8 +253,14 @@ export class AuthController {
   }
   @Public()
   @Post('mfa/enroll')
-  enroll(@Body() body: unknown) {
-    return this.iam.mfa.enroll(z.strictObject({ challenge: token }).parse(body).challenge);
+  async enroll(@Body() body: unknown) {
+    const enrollment = await this.iam.mfa.enroll(
+      z.strictObject({ challenge: token }).parse(body).challenge,
+    );
+    return {
+      ...enrollment,
+      qrCodeDataUrl: await totpQrDataUrl(enrollment.uri),
+    };
   }
   @Public()
   @Post('mfa/confirm')
