@@ -233,7 +233,7 @@ test('LOT 18.2 FR EN AR guided routes, keyboard forms and RTL at all widths', as
 
     await page.goto(`/${locale}/periods`);
     await ready(page);
-    await page.getByRole('combobox').first().selectOption(account.yearId);
+    await page.locator('main').getByRole('combobox').first().selectOption(account.yearId);
     await ready(page);
     await page.locator('[data-academic-create]').click();
     await expect(page.getByRole('dialog').locator('input[name="ordinal"]')).toBeVisible();
@@ -254,7 +254,7 @@ test('LOT 18.2 FR EN AR guided routes, keyboard forms and RTL at all widths', as
 
     await page.goto(`/${locale}/assignments`);
     await ready(page);
-    await page.getByRole('combobox').first().selectOption(account.classId);
+    await page.locator('main').getByRole('combobox').first().selectOption(account.classId);
     await ready(page);
     await page.locator('[data-academic-create]').click();
     await expect(page.getByRole('dialog')).toBeVisible();
