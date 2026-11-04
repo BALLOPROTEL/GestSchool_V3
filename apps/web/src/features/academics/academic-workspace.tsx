@@ -1,40 +1,36 @@
 'use client';
-import { Button, Tabs, TabsContent, TabsList, TabsTrigger } from '@gestschool/ui';
-import type { AcademicEntity, AcademicView } from '@gestschool/contracts';
-import { useLocale, useTranslations } from 'next-intl';
+
+import { Button, Card, CardContent } from '@gestschool/ui';
+import type { AcademicView } from '@gestschool/contracts';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { Link } from '../../i18n/navigation';
 import { PageHeader } from '../shared/page-header';
 import { useAuth } from '../auth/auth-provider';
-import { academicLabels, canAcademic } from './academic-client';
+import { AcademicSetupGuide } from './academic-guide';
 import { AcademicList } from './academic-list';
 import { AcademicStatus } from './academic-components';
 
 export function ClassesPage() {
   const { session } = useAuth();
   return (
-    <AcademicWorkspace key={`${session?.session.tenant.id}:${session?.session.membershipId}`} />
+    <ClassesWorkspace key={`${session?.session.tenant.id}:${session?.session.membershipId}`} />
   );
 }
-function AcademicWorkspace() {
+
+function ClassesWorkspace() {
   const t = useTranslations('Academics');
   const nav = useTranslations('Nav');
-  const locale = useLocale();
-  const { session } = useAuth();
-  const [tab, setTab] = useState('classes');
-  const [detail, setDetail] = useState<{
-    kind: 'classes' | 'academic-years';
-    row: AcademicView;
-  } | null>(null);
-  const entities: AcademicEntity[] = [
-    'classes',
-    'academic-years',
-    'levels',
-    'teaching-assignments',
-  ];
-  const tabs = entities.filter((kind) => canAcademic(session?.session, kind));
+  const [detail, setDetail] = useState<AcademicView | null>(null);
+
   return (
-    <div className="page-shell">
-      <PageHeader eyebrow={nav('academic')} title={t('classes')} description={t('description')} />
+    <div className="page-shell space-y-5">
+      <PageHeader
+        eyebrow={nav('academic')}
+        title={t('classes')}
+        description={t('classesDescription')}
+      />
+      <AcademicSetupGuide current="classes" />
       {detail ? (
         <div className="space-y-5">
           <Button
@@ -43,7 +39,7 @@ function AcademicWorkspace() {
             onClick={() => {
               setDetail(null);
               requestAnimationFrame(() =>
-                document.querySelector<HTMLElement>('[role="tab"][data-state="active"]')?.focus(),
+                document.querySelector<HTMLElement>('[data-academic-create]')?.focus(),
               );
             }}
           >
@@ -51,64 +47,51 @@ function AcademicWorkspace() {
           </Button>
           <div className="flex flex-wrap items-center gap-3">
             <h2 className="min-w-0 max-w-full break-words text-xl font-semibold">
-              {detail.row.name}
+              {detail.name}
             </h2>
-            <AcademicStatus row={detail.row} />
+            <AcademicStatus row={detail} />
           </div>
-          {detail.kind === 'academic-years' ? (
-            <AcademicList kind="academic-periods" parent={detail.row} />
-          ) : (
-            <>
-              <AcademicList kind="class-subjects" parent={detail.row} />
-              <AcademicList kind="teaching-assignments" parent={detail.row} />
-            </>
-          )}
+          <Card>
+            <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-muted-foreground">{t('classSubjectsHint')}</p>
+              <Link
+                className="inline-flex min-h-9 items-center justify-center rounded-md border border-input bg-background px-3 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground"
+                href={`/assignments?classId=${encodeURIComponent(detail.id)}`}
+              >
+                {t('manageAssignments')}
+              </Link>
+            </CardContent>
+          </Card>
+          <AcademicList kind="class-subjects" parent={detail} />
         </div>
-      ) : tabs.length ? (
-        <Tabs value={tab} onValueChange={setTab} dir={locale === 'ar' ? 'rtl' : 'ltr'}>
-          <TabsList
-            aria-label={t('navigation')}
-            className="h-auto max-w-full flex-wrap justify-start"
-          >
-            {tabs.map((kind) => (
-              <TabsTrigger key={kind} value={kind}>
-                {t(academicLabels[kind])}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-          {tabs.map((kind) => (
-            <TabsContent key={kind} value={kind}>
-              <AcademicList
-                kind={kind}
-                select={
-                  kind === 'classes' || kind === 'academic-years'
-                    ? (row) => {
-                        setDetail({ kind, row });
-                        requestAnimationFrame(() =>
-                          document.querySelector<HTMLElement>('[data-academic-focus]')?.focus(),
-                        );
-                      }
-                    : undefined
-                }
-              />
-            </TabsContent>
-          ))}
-        </Tabs>
       ) : (
-        <p role="status" className="rounded-xl border border-border p-5">
-          {t('forbidden')}
-        </p>
+        <AcademicList
+          kind="classes"
+          select={(row) => {
+            setDetail(row);
+            requestAnimationFrame(() =>
+              document.querySelector<HTMLElement>('[data-academic-focus]')?.focus(),
+            );
+          }}
+        />
       )}
     </div>
   );
 }
+
 export function SubjectsPage() {
   const t = useTranslations('Academics');
   const nav = useTranslations('Nav');
   const { session } = useAuth();
+
   return (
-    <div className="page-shell">
-      <PageHeader eyebrow={nav('academic')} title={t('subjects')} description={t('subjectsHint')} />
+    <div className="page-shell space-y-5">
+      <PageHeader
+        eyebrow={nav('academic')}
+        title={t('subjects')}
+        description={t('subjectsHint')}
+      />
+      <AcademicSetupGuide current="subjects" />
       <AcademicList
         key={`${session?.session.tenant.id}:${session?.session.membershipId}`}
         kind="subjects"
