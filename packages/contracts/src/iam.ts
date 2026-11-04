@@ -151,7 +151,10 @@ export const roleGrants: Readonly<Record<SystemRole, readonly Grant[]>> = {
       ),
       'TENANT',
     ),
-    ...grants(enrollmentPermissionCodes, 'TENANT'),
+    ...grants(
+      enrollmentPermissionCodes.filter((permission) => permission !== 'enrollments.reopen'),
+      'TENANT',
+    ),
     ...grants(attendancePermissionCodes, 'TENANT'),
     ...grants(academicPermissionCodes, 'TENANT'),
     ...grants(['teachers.read'], 'TENANT'),
