@@ -59,7 +59,7 @@ export function StudentProfilePage() {
   const [avatarBusy, setAvatarBusy] = useState(false);
   const avatarPath =
     allowed && valid.success ? `/api/v1/students/${valid.data}/avatar` : null;
-  const avatarUrl = usePrivateAvatar(avatarPath);
+  const avatarUrl = usePrivateAvatar(avatarPath, valid.success ? valid.data : null);
   const result = usePeopleData<PersonView>(
     allowed && valid.success ? `students/${valid.data}` : null,
     revision,
