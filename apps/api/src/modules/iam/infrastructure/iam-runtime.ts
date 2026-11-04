@@ -29,7 +29,7 @@ export class IamRuntime implements OnModuleInit, OnModuleDestroy {
     readonly config: IamConfig,
     databaseUrl: string,
     redisUrl: string,
-    avatars: AvatarStorageService,
+    avatars?: AvatarStorageService,
   ) {
     if (process.env['NODE_ENV'] === 'production') loadMessagingConfig();
     this.repository = IamRepository.connect(databaseUrl);
