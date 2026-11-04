@@ -11,6 +11,7 @@ import {
   enrollmentAccess,
   enrollmentCapacity,
   enrollmentEffectiveDate,
+  enrollmentReopenTransition,
   enrollmentTransition,
   enrollmentWritableYear,
 } from './policy.js';
@@ -54,6 +55,42 @@ describe('enrollment workflow policies', () => {
     expect(enrollmentTransition('PENDING', 'cancel')).toBe('WITHDRAWN');
     expect(enrollmentTransition('ACTIVE', 'transfer')).toBe('ACTIVE');
     expect(enrollmentTransition('ACTIVE', 'complete')).toBe('COMPLETED');
+  });
+  it('restores only the state recorded immediately before a terminal event', () => {
+    expect(
+      enrollmentReopenTransition('WITHDRAWN', {
+        kind: 'CANCELLED',
+        fromStatus: 'PENDING',
+        toStatus: 'WITHDRAWN',
+      }),
+    ).toBe('PENDING');
+    expect(
+      enrollmentReopenTransition('WITHDRAWN', {
+        kind: 'CANCELLED',
+        fromStatus: 'ACTIVE',
+        toStatus: 'WITHDRAWN',
+      }),
+    ).toBe('ACTIVE');
+    expect(
+      enrollmentReopenTransition('COMPLETED', {
+        kind: 'COMPLETED',
+        fromStatus: 'ACTIVE',
+        toStatus: 'COMPLETED',
+      }),
+    ).toBe('ACTIVE');
+    expect(() => enrollmentReopenTransition('ACTIVE', null)).toThrow(
+      'ENROLLMENT_INVALID_TRANSITION',
+    );
+    expect(() => enrollmentReopenTransition('WITHDRAWN', null)).toThrow(
+      'ENROLLMENT_REOPEN_HISTORY_REQUIRED',
+    );
+    expect(() =>
+      enrollmentReopenTransition('WITHDRAWN', {
+        kind: 'COMPLETED',
+        fromStatus: 'ACTIVE',
+        toStatus: 'WITHDRAWN',
+      }),
+    ).toThrow('ENROLLMENT_REOPEN_HISTORY_REQUIRED');
   });
   it.each(['CLOSED', 'ARCHIVED'])('freezes %s academic years', (status) => {
     expect(() => enrollmentWritableYear(status)).toThrow('ENROLLMENT_YEAR_CLOSED');
