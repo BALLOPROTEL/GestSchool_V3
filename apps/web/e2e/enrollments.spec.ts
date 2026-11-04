@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { readFileSync } from 'node:fs';
-import { expect, test, type Page } from './fixtures';
+import { expect, test, type Locator, type Page } from './fixtures';
 import { login, overflow, watch, type Credentials } from './academic-helpers';
 
 interface Fixture {
@@ -75,6 +75,10 @@ async function confirmDialog(page: Page) {
   await expect(page.getByRole('dialog')).toBeHidden();
   await ready(page);
 }
+async function enrollmentAction(page: Page, row: Locator, name: string) {
+  await row.getByRole('button').first().click();
+  await page.getByRole('menuitem', { name, exact: true }).click();
+}
 test('LOT 7 real new and re-enrollment, full capacity, duplicate, transfer, cancellation and profile', async ({
   page,
 }, info) => {
@@ -104,10 +108,12 @@ test('LOT 7 real new and re-enrollment, full capacity, duplicate, transfer, canc
   await expect(page.getByRole('dialog')).toBeHidden();
   const row = page.getByRole('row').filter({ hasText: 'ENR-NEW' });
   await expect(row).toContainText('En attente');
-  await row.getByRole('button', { name: 'Confirmer l’inscription', exact: true }).click();
+  await enrollmentAction(page, row, 'Confirmer l’inscription');
   await confirmDialog(page);
   await expect(row).toContainText('Active');
-  await expect(row.getByRole('button', { name: 'Modifier l’inscription' })).toHaveCount(0);
+  await row.getByRole('button').first().click();
+  await expect(page.getByRole('menuitem', { name: 'Modifier l’inscription' })).toHaveCount(0);
+  await page.keyboard.press('Escape');
 
   // Deliberate negative UI case isolated from the zero-error happy-path page.
   const negative = await page.context().newPage();
@@ -146,7 +152,7 @@ test('LOT 7 real new and re-enrollment, full capacity, duplicate, transfer, canc
     await negative.close();
   }
 
-  await row.getByRole('button', { name: 'Transférer de classe', exact: true }).click();
+  await enrollmentAction(page, row, 'Transférer de classe');
   await pick(page, 'Classe', data.targetClassId);
   await page.getByRole('dialog').getByLabel('Date d’effet', { exact: true }).fill('2026-09-03');
   await page
@@ -155,7 +161,7 @@ test('LOT 7 real new and re-enrollment, full capacity, duplicate, transfer, canc
     .fill('Transfert de certification navigateur');
   await confirmDialog(page);
   await expect(row).toContainText('Classe Bêta');
-  await row.getByRole('button', { name: 'Historique des inscriptions', exact: true }).click();
+  await enrollmentAction(page, row, 'Historique des inscriptions');
   await ready(page);
   await expect(page.locator('[data-enrollment-history]')).toContainText(
     'Classe Alpha → Classe Bêta',
@@ -166,7 +172,7 @@ test('LOT 7 real new and re-enrollment, full capacity, duplicate, transfer, canc
   await expect(page.locator('[data-enrollment-history]')).toContainText('2026-09-03');
   await overflow(page);
   await page.keyboard.press('Escape');
-  await row.getByRole('button', { name: 'Annuler l’inscription', exact: true }).click();
+  await enrollmentAction(page, row, 'Annuler l’inscription');
   await page.getByRole('dialog').getByLabel('Date d’effet', { exact: true }).fill('2026-09-04');
   await page
     .getByRole('dialog')
@@ -174,7 +180,24 @@ test('LOT 7 real new and re-enrollment, full capacity, duplicate, transfer, canc
     .fill('Annulation de certification navigateur');
   await confirmDialog(page);
   await expect(row).toContainText('Annulée');
-  await expect(row.getByRole('button')).toHaveCount(1);
+  await row.getByRole('button').first().click();
+  await expect(page.getByRole('menuitem', { name: 'Réouvrir l’inscription', exact: true })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await enrollmentAction(page, row, 'Réouvrir l’inscription');
+  await page
+    .getByRole('dialog')
+    .getByLabel('Motif', { exact: true })
+    .fill('Correction administrative de certification navigateur');
+  await confirmDialog(page);
+  await expect(row).toContainText('Active');
+  await enrollmentAction(page, row, 'Historique des inscriptions');
+  await ready(page);
+  await expect(page.locator('[data-enrollment-history]')).toContainText('Inscription annulée');
+  await expect(page.locator('[data-enrollment-history]')).toContainText('Inscription réouverte');
+  await expect(page.locator('[data-enrollment-history]')).toContainText(
+    'Correction administrative de certification navigateur',
+  );
+  await page.keyboard.press('Escape');
   await wizard(page, data, data.eligibleStudentId, 'RE_ENROLLMENT');
   await savePending(page);
   await expect(page.getByRole('dialog')).toBeHidden();
@@ -184,10 +207,13 @@ test('LOT 7 real new and re-enrollment, full capacity, duplicate, transfer, canc
   await page.goto(`/fr/students/${data.studentId}`);
   await page.getByRole('tab', { name: 'Historique des inscriptions', exact: true }).click();
   await ready(page);
-  await expect(page.getByRole('row').filter({ hasText: 'ENR-NEW' })).toContainText('Annulée');
-  await page.getByRole('button', { name: 'Historique des inscriptions', exact: true }).click();
+  const profileEnrollment = page.getByRole('row').filter({ hasText: 'ENR-NEW' });
+  await expect(profileEnrollment).toContainText('Active');
+  await profileEnrollment.getByRole('button').first().click();
+  await page.getByRole('menuitem').first().click();
   await ready(page);
   await expect(page.locator('[data-enrollment-history]')).toContainText('Inscription annulée');
+  await expect(page.locator('[data-enrollment-history]')).toContainText('Inscription réouverte');
   await overflow(page);
   check();
 });
@@ -236,6 +262,7 @@ test('LOT 7 FR EN AR wizard steps, dialogs, keyboard, labels and RTL at all widt
     await expect(add).toBeFocused();
     const owned = page.getByRole('row').filter({ hasText: 'ENR-OWN' });
     await owned.getByRole('button').first().click();
+    await page.getByRole('menuitem').first().click();
     await ready(page);
     await expect(page.locator('[data-enrollment-history]')).toContainText(
       'Classe Alpha → Classe Bêta',
@@ -243,7 +270,8 @@ test('LOT 7 FR EN AR wizard steps, dialogs, keyboard, labels and RTL at all widt
     await overflow(page);
     await page.keyboard.press('Escape');
     // Transfer dialog retains date/reason labels and keyboard focus in every locale.
-    await owned.getByRole('button').nth(1).click();
+    await owned.getByRole('button').first().click();
+    await page.getByRole('menuitem').nth(1).click();
     await expect(dialog.locator('textarea')).toBeVisible();
     await expect(dialog.locator('input[type="date"]')).toHaveAccessibleName(/.+/);
     await expect(dialog.locator('textarea')).toHaveAccessibleName(/.+/);
@@ -278,11 +306,9 @@ test('LOT 7 real parent CHILDREN, student OWN and denied administration at all w
         await expect(scoped.getByText('Vous n’avez pas accès à ces inscriptions.')).toBeVisible();
         expect((await scoped.request.get('/api/v1/enrollments', { headers })).status()).toBe(403);
       } else {
-        await expect(scoped.getByRole('row').filter({ hasText: 'ENR-OWN' })).toBeVisible();
+        const ownRow = scoped.getByRole('row').filter({ hasText: 'ENR-OWN' });
+        await expect(ownRow).toBeVisible();
         await expect(scoped.getByRole('row').filter({ hasText: 'ENR-OTHER' })).toHaveCount(0);
-        await expect(scoped.getByRole('button', { name: 'Confirmer l’inscription' })).toHaveCount(
-          0,
-        );
         expect(
           (
             await scoped.request.get(`/api/v1/enrollments/${data.otherEnrollmentId}`, { headers })
@@ -295,9 +321,9 @@ test('LOT 7 real parent CHILDREN, student OWN and denied administration at all w
             })
           ).status(),
         ).toBe(404);
-        await scoped
-          .getByRole('button', { name: 'Historique des inscriptions', exact: true })
-          .click();
+        await ownRow.getByRole('button').first().click();
+        await expect(scoped.getByRole('menuitem')).toHaveCount(1);
+        await scoped.getByRole('menuitem').first().click();
         await ready(scoped);
         await expect(scoped.locator('[data-enrollment-history]')).toContainText(
           'Classe Alpha → Classe Bêta',
