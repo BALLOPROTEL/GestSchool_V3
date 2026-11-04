@@ -4,7 +4,7 @@ import type {
   PageResult,
   PeopleQuery,
   PersonView,
-  type AvatarMimeType,
+  AvatarMimeType,
 } from '@gestschool/contracts';
 import type { RequestContext } from '../../iam/domain/context.js';
 export abstract class StudentRepository {
