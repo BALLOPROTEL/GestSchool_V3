@@ -740,6 +740,30 @@ describe('capacity and append-only enrollment history', () => {
       actorMembershipId: admin.membershipId,
     });
   });
+  it('enforces a reopen reason at the PostgreSQL history boundary', async () => {
+    const row = await active(await graph(tenantA));
+    await expect(
+      db.enrollmentEvent.create({
+        data: {
+          tenantId: tenantA,
+          enrollmentId: row.id,
+          academicYearId: row.academicYearId,
+          kind: 'REOPENED',
+          fromClassId: row.classId,
+          toClassId: row.classId,
+          fromClassName: row.className,
+          toClassName: row.className,
+          fromStatus: 'WITHDRAWN',
+          toStatus: 'ACTIVE',
+          type: row.type,
+          effectiveDate: new Date(row.enrolledOn),
+          actorMembershipId: admin.membershipId,
+          actorName: 'Enrollment test administrator',
+          requestId: randomUUID(),
+        },
+      }),
+    ).rejects.toThrow();
+  });
   it('has no hard-delete endpoint and PostgreSQL rejects history mutation/deletion', async () => {
     const row = await pending(await graph(tenantA));
     expect((await admin.browser.send(`enrollments/${row.id}`, {}, 'DELETE')).status).toBe(404);
