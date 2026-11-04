@@ -182,7 +182,9 @@ test('LOT 7 real new and re-enrollment, full capacity, duplicate, transfer, canc
   await confirmDialog(page);
   await expect(row).toContainText('Annulée');
   await row.getByRole('button').first().click();
-  await expect(page.getByRole('menuitem', { name: 'Réouvrir l’inscription', exact: true })).toBeVisible();
+  await expect(
+    page.getByRole('menuitem', { name: 'Réouvrir l’inscription', exact: true }),
+  ).toBeVisible();
   await page.keyboard.press('Escape');
   await enrollmentAction(page, row, 'Réouvrir l’inscription');
   await page
