@@ -388,7 +388,7 @@
     "immutableYear": "The year cannot be changed",
     "description": "Your school’s academic reference data.",
     "subjectsHint": "Coefficients are set per class in its details.",
-    "assignmentHint": "Open a class to create or edit its teaching assignments.",
+    "assignmentHint": "Select a class above to create or edit its assignments. Without a selection, the global list remains available.",
     "navigation": "Academic management",
     "back": "Back to the list",
     "details": "View details",
@@ -440,7 +440,9 @@
     "selectYearFirst": "Select an academic year to view and manage its periods.",
     "selectClassFirst": "To create or edit an assignment, select a class first. Without a selection, the global list remains available.",
     "classSubjectsHint": "First add the subjects and coefficients for this class. Teacher/period assignments are then managed from the Teaching assignments page.",
-    "manageAssignments": "Manage this class's assignments"
+    "manageAssignments": "Manage this class's assignments",
+    "missingClassPrerequisites": "A class cannot be created until the following prerequisites are available:",
+    "missingAssignmentPrerequisites": "An assignment cannot be created until the following items are available:"
   },
   "People": {
     "firstName": "First name",
