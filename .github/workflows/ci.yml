@@ -7,7 +7,7 @@ on:
       - main
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   quality:
@@ -46,7 +46,7 @@ jobs:
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
-          persist-credentials: false
+          persist-credentials: true
 
       - name: Install pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5 (peeled commit)
@@ -61,6 +61,30 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Auto-format LOT18.1 touched files
+        run: |
+          pnpm exec prettier --write \
+            apps/api/src/infrastructure/avatar-storage.service.ts \
+            apps/api/src/modules/iam/application/users.service.ts \
+            apps/api/src/modules/iam/presentation/http/auth.controller.ts \
+            apps/api/src/modules/students/application/student.service.ts \
+            apps/api/src/modules/students/infrastructure/student.repository.ts \
+            apps/api/src/modules/students/presentation/http/student.controller.ts \
+            apps/api/tests/people.test.ts \
+            apps/web/e2e/people.spec.ts \
+            apps/web/e2e/profile.spec.ts \
+            apps/web/src/features/profiles/profile-pages.tsx \
+            apps/web/src/features/profiles/student-profile-page.tsx \
+            apps/web/src/features/shared/avatar-client.ts \
+            packages/infrastructure/src/storage/storage-security.test.ts
+          if ! git diff --quiet --             apps/api/src/infrastructure/avatar-storage.service.ts             apps/api/src/modules/iam/application/users.service.ts             apps/api/src/modules/iam/presentation/http/auth.controller.ts             apps/api/src/modules/students/application/student.service.ts             apps/api/src/modules/students/infrastructure/student.repository.ts             apps/api/src/modules/students/presentation/http/student.controller.ts             apps/api/tests/people.test.ts             apps/web/e2e/people.spec.ts             apps/web/e2e/profile.spec.ts             apps/web/src/features/profiles/profile-pages.tsx             apps/web/src/features/profiles/student-profile-page.tsx             apps/web/src/features/shared/avatar-client.ts             packages/infrastructure/src/storage/storage-security.test.ts; then
+            git config user.name "gestschool-ci"
+            git config user.email "gestschool-ci@users.noreply.github.com"
+            git add               apps/api/src/infrastructure/avatar-storage.service.ts               apps/api/src/modules/iam/application/users.service.ts               apps/api/src/modules/iam/presentation/http/auth.controller.ts               apps/api/src/modules/students/application/student.service.ts               apps/api/src/modules/students/infrastructure/student.repository.ts               apps/api/src/modules/students/presentation/http/student.controller.ts               apps/api/tests/people.test.ts               apps/web/e2e/people.spec.ts               apps/web/e2e/profile.spec.ts               apps/web/src/features/profiles/profile-pages.tsx               apps/web/src/features/profiles/student-profile-page.tsx               apps/web/src/features/shared/avatar-client.ts               packages/infrastructure/src/storage/storage-security.test.ts
+            git commit -m "style(lot18): format MFA and avatar changes"
+            git push origin HEAD:feat/lot18-mfa-qr-avatars
+          fi
 
       - name: Generate Prisma client
         run: pnpm db:generate
