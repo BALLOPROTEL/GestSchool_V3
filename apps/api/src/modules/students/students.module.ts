@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { InfrastructureModule } from '../../infrastructure/infrastructure.module.js';
 import { StudentRepository } from './domain/student.repository.js';
 import { PrismaStudentRepository } from './infrastructure/student.repository.js';
 import { StudentService } from './application/student.service.js';
@@ -8,6 +9,7 @@ import { GuardianLinksService } from './application/guardian-links.service.js';
 import { GuardianLinksRepository } from './domain/guardian-links.repository.js';
 import { PrismaGuardianLinksRepository } from './infrastructure/guardian-links.repository.js';
 @Module({
+  imports: [InfrastructureModule],
   controllers: [StudentController, GuardianLinksController],
   providers: [
     StudentService,
