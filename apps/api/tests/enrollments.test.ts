@@ -171,11 +171,7 @@ async function reopen(
   who = admin,
   reason = 'Administrative correction',
 ) {
-  return who.browser.send(
-    `enrollments/${row.id}/reopen`,
-    { reason, effectiveDate: date },
-    'POST',
-  );
+  return who.browser.send(`enrollments/${row.id}/reopen`, { reason, effectiveDate: date }, 'POST');
 }
 let tenantA: string;
 let tenantB: string;
@@ -559,13 +555,10 @@ describe('LOT 7 real enrollment HTTP workflow', () => {
       'POST',
     );
     expect(
-      (await reopen(row, '2026-09-05', admin, 'Restore preparation before class correction')).status,
+      (await reopen(row, '2026-09-05', admin, 'Restore preparation before class correction'))
+        .status,
     ).toBe(200);
-    const edited = await admin.browser.send(
-      `enrollments/${row.id}`,
-      { classId: g.b.id },
-      'PATCH',
-    );
+    const edited = await admin.browser.send(`enrollments/${row.id}`, { classId: g.b.id }, 'PATCH');
     expect(edited.status).toBe(200);
     expect(edited.body).toMatchObject({
       status: 'PENDING',
