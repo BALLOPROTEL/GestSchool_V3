@@ -144,6 +144,10 @@ export class AuthController {
   ) {
     const avatar = await this.iam.users.avatar(requestContext(request));
     response.setHeader('Cache-Control', 'private, no-store');
+    if (!avatar) {
+      response.status(204);
+      return;
+    }
     return new StreamableFile(Buffer.from(avatar.bytes), {
       type: avatar.mimeType,
       disposition: 'inline',
