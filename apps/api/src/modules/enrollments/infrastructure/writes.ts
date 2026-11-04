@@ -217,6 +217,7 @@ export async function writeEnrollment(
     if (command.input.type !== undefined) data.type = command.input.type;
     kind = 'UPDATED';
   } else if (command.action === 'confirm') {
+    effectiveDate = latest ? civilDate(latest.effectiveDate) : effectiveDate;
     const { classroom } = await target(
       db,
       tenantId,
