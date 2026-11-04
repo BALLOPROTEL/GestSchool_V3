@@ -1,19 +1,22 @@
 # GestSchool
 
-Monorepo SaaS GestSchool : fondation technique, interface visuelle, infrastructure locale et socle
-de données multi-tenant des LOTS 0 à 3. Le LOT 4 ajoute l'identité, l'authentification réelle,
-les sessions, le RBAC et le MFA. Le LOT 5 branche les annuaires élèves, parents et enseignants
-sur PostgreSQL, avec validation, scopes et audit. Le LOT 6 connecte le référentiel académique,
-les coefficients par classe et les affectations enseignants. Le LOT 7 branche les inscriptions,
-réinscriptions, transferts, capacités et historiques scolaires. Le LOT 8 connecte les frais,
-factures, paiements, reçus métier et sessions de caisse. Le LOT 9 ajoute les évaluations,
-notes, moyennes, rangs et bulletins historiques. Le LOT 10 ajoute les documents PDF privés et QR,
-le LOT 11 la messagerie/notifications et l'outbox, et le LOT 12 les dashboards, rapports et exports
-CSV/XLSX/PDF. Le LOT 13 durcit la configuration, HTTP/IAM, les workers, le stockage et la supply chain ;
-sa validation est détaillée dans les documents sécurité. Le [LOT14](docs/lot14-certification.md)
-est **GO STAGING FONCTIONNEL**, en attente de merge final, avec 49 smoke, 14/14 Tenant A/B
-et worker report E2E réels. LOT15 reste Backlog / Not started ; aucun établissement réel
-ne doit être onboardé dans cet état et V2 reste intacte.
+GestSchool V3 est un SaaS scolaire multi-tenant en staging avancé. Les LOTS 0 à 17 couvrent
+le socle technique, IAM/MFA/RBAC, annuaires élèves/parents/enseignants, référentiel académique,
+inscriptions/réinscriptions/transferts, finance, évaluations/notes/moyennes/rangs/bulletins,
+documents PDF/QR, messagerie/notifications, dashboards/rapports/exports, sécurité,
+préparation d'exploitation, continuité d'identité V2 → V3 et finalisation des parcours visibles
+sans mocks métier.
+
+Le LOT17 est clôturé avec CI, sécurité, Codex et recette staging PASS. Le chantier courant est
+le [LOT18](https://github.com/BALLOPROTEL/GestSchool_V3/issues/118) : **stabilisation fonctionnelle
+et UX du cœur existant**, fondé sur la recette réelle du propriétaire. Les nouveaux grands domaines
+(emploi du temps, calendrier, devoirs, vie scolaire, admissions) sont planifiés au LOT19 ; RH,
+bibliothèque, cantine, transport, inventaire et paiement en ligne au LOT20.
+
+GestSchool V3 reste **staging uniquement** : aucune mise en production réelle, aucun cutover V2 → V3
+et aucun onboarding d'établissement réel ne sont autorisés sans décision explicite du propriétaire.
+La source de vérité fonctionnelle courante est
+[docs/functional-roadmap.md](docs/functional-roadmap.md).
 
 ## Prérequis
 
