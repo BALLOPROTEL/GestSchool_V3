@@ -246,7 +246,10 @@ function SidebarIdentity({ collapsed = false }: { collapsed?: boolean }) {
   const { session } = useAuth();
   const { currentTenant } = useShellContext();
   const displayName = session?.session.user.displayName ?? '—';
-  const avatarUrl = usePrivateAvatar(session ? '/api/v1/auth/profile/avatar' : null);
+  const avatarUrl = usePrivateAvatar(
+    session ? '/api/v1/auth/profile/avatar' : null,
+    session?.session.membershipId,
+  );
   const tenantName = currentTenant?.name ?? session?.session.tenant.name ?? '—';
   const primaryRole = session?.session.roles[0];
   return (
@@ -798,7 +801,10 @@ function ProfileMenu() {
   const iam = useTranslations('Iam');
   const shell = useTranslations('Shell');
   const nav = useTranslations('Nav');
-  const avatarUrl = usePrivateAvatar(session ? '/api/v1/auth/profile/avatar' : null);
+  const avatarUrl = usePrivateAvatar(
+    session ? '/api/v1/auth/profile/avatar' : null,
+    session?.session.membershipId,
+  );
   return (
     <Dropdown>
       <DropdownTrigger asChild>
