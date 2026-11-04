@@ -72,7 +72,6 @@ describe('UI foundation components', () => {
     );
 
     expect(markup).toContain('<caption class="sr-only">Students</caption>');
-    expect(markup).toContain('style="contain:inline-size"');
     expect(markup).toContain('Aminata Diallo');
     expect(renderToStaticMarkup(<StatusBadge tone="success">Active</StatusBadge>)).toContain(
       'Active',

@@ -30,10 +30,9 @@ export function DataTable<Row>({
   return (
     <div
       aria-label={caption}
-      className="w-full max-w-full overflow-x-auto focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/40"
+      className="w-full overflow-x-auto focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/40"
       data-slot="data-table-scroll"
       role="region"
-      style={{ contain: 'inline-size' }}
       tabIndex={0}
     >
       <table className="w-full border-collapse text-sm" style={{ minWidth }}>
