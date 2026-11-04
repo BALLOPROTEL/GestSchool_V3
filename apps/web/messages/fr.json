@@ -442,7 +442,8 @@
     "classSubjectsHint": "Ajoutez d’abord les matières et leurs coefficients dans cette classe. Les affectations professeur/période se gèrent ensuite dans la page Affectations.",
     "manageAssignments": "Gérer les affectations de cette classe",
     "missingClassPrerequisites": "Impossible de créer une classe tant que les prérequis suivants ne sont pas disponibles :",
-    "missingAssignmentPrerequisites": "Impossible de créer une affectation tant que les éléments suivants manquent :"
+    "missingAssignmentPrerequisites": "Impossible de créer une affectation tant que les éléments suivants manquent :",
+    "prerequisiteUnavailable": "Impossible de vérifier les prérequis pour le moment. Réessayez avant de créer cette donnée."
   },
   "People": {
     "firstName": "Prénom",
