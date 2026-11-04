@@ -7,6 +7,8 @@ import { useState } from 'react';
 import { Link } from '../../i18n/navigation';
 import { PageHeader } from '../shared/page-header';
 import { useAuth } from '../auth/auth-provider';
+import { usePeopleData } from '../directory/people-hooks';
+import { canAcademic } from './academic-client';
 import { AcademicSetupGuide } from './academic-guide';
 import { AcademicList } from './academic-list';
 import { AcademicStatus } from './academic-components';
@@ -21,7 +23,25 @@ export function ClassesPage() {
 function ClassesWorkspace() {
   const t = useTranslations('Academics');
   const nav = useTranslations('Nav');
+  const { session } = useAuth();
   const [detail, setDetail] = useState<AcademicView | null>(null);
+  const canCreateClass = canAcademic(session?.session, 'classes', 'create');
+  const years = usePeopleData<{ total: number }>(
+    canCreateClass ? 'academic-years?status=ALL&pageSize=1' : null,
+  );
+  const levels = usePeopleData<{ total: number }>(
+    canCreateClass ? 'levels?status=ACTIVE&pageSize=1' : null,
+  );
+  const missingYears = canCreateClass && !years.loading && (years.data?.total ?? 0) === 0;
+  const missingLevels = canCreateClass && !levels.loading && (levels.data?.total ?? 0) === 0;
+  const creationBlocked =
+    canCreateClass &&
+    (years.loading ||
+      levels.loading ||
+      Boolean(years.error) ||
+      Boolean(levels.error) ||
+      missingYears ||
+      missingLevels);
 
   return (
     <div className="page-shell space-y-5">
@@ -31,6 +51,31 @@ function ClassesWorkspace() {
         description={t('classesDescription')}
       />
       <AcademicSetupGuide current="classes" />
+      {!detail && (missingYears || missingLevels) ? (
+        <Card>
+          <CardContent className="space-y-3 p-4">
+            <p className="text-sm font-medium">{t('missingClassPrerequisites')}</p>
+            <div className="flex flex-wrap gap-2">
+              {missingYears ? (
+                <Link
+                  className="inline-flex min-h-9 items-center rounded-md border border-input px-3 text-sm font-medium hover:bg-accent"
+                  href="/academic-years"
+                >
+                  {t('years')}
+                </Link>
+              ) : null}
+              {missingLevels ? (
+                <Link
+                  className="inline-flex min-h-9 items-center rounded-md border border-input px-3 text-sm font-medium hover:bg-accent"
+                  href="/levels"
+                >
+                  {t('levels')}
+                </Link>
+              ) : null}
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
       {detail ? (
         <div className="space-y-5">
           <Button
@@ -67,6 +112,7 @@ function ClassesWorkspace() {
       ) : (
         <AcademicList
           kind="classes"
+          creationBlocked={creationBlocked}
           select={(row) => {
             setDetail(row);
             requestAnimationFrame(() =>
