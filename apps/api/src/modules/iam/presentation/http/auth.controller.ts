@@ -257,9 +257,10 @@ export class AuthController {
     const enrollment = await this.iam.mfa.enroll(
       z.strictObject({ challenge: token }).parse(body).challenge,
     );
+    const { uri, ...publicEnrollment } = enrollment;
     return {
-      ...enrollment,
-      qrCodeDataUrl: await totpQrDataUrl(enrollment.uri),
+      ...publicEnrollment,
+      qrCodeDataUrl: await totpQrDataUrl(uri),
     };
   }
   @Public()
