@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, type OnModuleDestroy } from '@nestjs/common';
 import { S3StorageAdapter, validateAvatarImage } from '@gestschool/infrastructure';
 import type { AvatarMimeType, AvatarUpload } from '@gestschool/contracts';
 import {
@@ -16,7 +16,7 @@ export class AvatarInputError extends Error {
 }
 
 @Injectable()
-export class AvatarStorageService {
+export class AvatarStorageService implements OnModuleDestroy {
   private readonly storage: S3StorageAdapter;
 
   constructor(
@@ -66,5 +66,9 @@ export class AvatarStorageService {
 
   remove(key: string): Promise<void> {
     return this.storage.deleteAvatar(key);
+  }
+
+  onModuleDestroy(): void {
+    this.storage.close();
   }
 }
