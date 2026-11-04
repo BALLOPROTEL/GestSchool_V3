@@ -741,7 +741,15 @@
     "schoolYear": "Année scolaire",
     "summary": "Synthèse par matière",
     "upToDate": "Aucun solde dû",
-    "title": "Aminata Diallo"
+    "title": "Aminata Diallo",
+    "addPhoto": "Ajouter une photo",
+    "changePhoto": "Changer la photo",
+    "removePhoto": "Supprimer la photo",
+    "photoInput": "Choisir la photo de l’élève",
+    "photoAlt": "Photo de {name}",
+    "photoSaved": "Photo de l’élève enregistrée.",
+    "photoDeleted": "Photo de l’élève supprimée.",
+    "photoError": "Impossible de mettre à jour la photo. Utilisez un PNG ou JPEG valide de 2 Mo maximum."
   },
   "Parents": {
     "add": "Ajouter un parent",
@@ -1144,7 +1152,16 @@
     "hidePassword": "Masquer le mot de passe",
     "mfaScan": "Scannez ce QR code avec votre application d’authentification.",
     "mfaManual": "Ou saisissez la clé manuellement",
-    "mfaQrAlt": "QR code de configuration de l’authentification à deux facteurs"
+    "mfaQrAlt": "QR code de configuration de l’authentification à deux facteurs",
+    "addPhoto": "Ajouter une photo",
+    "changePhoto": "Changer la photo",
+    "removePhoto": "Supprimer la photo",
+    "photoHint": "PNG ou JPEG, 2 Mo maximum.",
+    "photoAlt": "Photo de profil",
+    "photoInput": "Choisir une photo de profil",
+    "photoSaved": "Photo de profil enregistrée.",
+    "photoDeleted": "Photo de profil supprimée.",
+    "photoError": "Impossible de mettre à jour la photo. Utilisez un PNG ou JPEG valide de 2 Mo maximum."
   },
   "DesignSystem": {
     "alerts": "Alertes",
