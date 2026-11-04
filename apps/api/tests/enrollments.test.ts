@@ -354,6 +354,59 @@ describe('LOT 7 real enrollment HTTP workflow', () => {
       (await admin.browser.send(`enrollments/${row.id}`, { classId: g.c.id }, 'PATCH')).status,
     ).toBe(409);
   });
+  it('preserves an earlier start-date correction for an ordinary preparation', async () => {
+    const g = await graph(tenantA);
+    const learner = await student(tenantA);
+    const created = await admin.browser.send<EnrollmentView>(
+      'enrollments',
+      {
+        studentId: learner.id,
+        academicYearId: g.year.id,
+        classId: g.a.id,
+        type: 'NEW',
+        enrolledOn: '2026-09-10',
+      },
+      'POST',
+    );
+    expect(created.status).toBe(201);
+    const row = created.body;
+    const edited = await admin.browser.send(
+      `enrollments/${row.id}`,
+      { enrolledOn: '2026-09-01' },
+      'PATCH',
+    );
+    expect(edited.status).toBe(200);
+    expect(edited.body.enrolledOn).toBe('2026-09-01');
+    const confirmed = await admin.browser.send(`enrollments/${row.id}/confirm`, {}, 'POST');
+    expect(confirmed.status).toBe(200);
+    expect(confirmed.body.status).toBe('ACTIVE');
+    const history = (
+      await admin.browser.send<PageResult<EnrollmentEventView>>(`enrollments/${row.id}/events`)
+    ).body;
+    expect(history.items.slice(-2)).toEqual([
+      expect.objectContaining({ kind: 'UPDATED', effectiveDate: '2026-09-01' }),
+      expect.objectContaining({
+        kind: 'CONFIRMED',
+        effectiveDate: '2026-09-01',
+        toStatus: 'ACTIVE',
+      }),
+    ]);
+    const eligibility = await db.$queryRaw<Array<{ day: string; classId: string | null }>>`
+      SELECT d.day::text AS "day",
+             gestschool_result_class_at(
+               ${tenantA}::uuid,
+               ${row.studentId}::uuid,
+               ${g.year.id}::uuid,
+               d.day
+             ) AS "classId"
+      FROM (VALUES (DATE '2026-09-05'), (DATE '2026-09-10')) AS d(day)
+      ORDER BY d.day
+    `;
+    expect(eligibility).toEqual([
+      { day: '2026-09-05', classId: g.a.id },
+      { day: '2026-09-10', classId: g.a.id },
+    ]);
+  });
   it.each(['student', 'class', 'level'] as const)(
     'rejects archived %s references',
     async (kind) => {
