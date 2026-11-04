@@ -2,6 +2,8 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from './fixtures';
 import { readFileSync } from 'node:fs';
 import { login, type Credentials } from './academic-helpers';
+const avatarPng = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAY0lEQVR4nO3PQQ3AIADAQEA1cpCDrIngcVnSU9DOfe74s6UDXjWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgfboqAmAfHjuUAAAAAElFTkSuQmCC', 'base64');
+
 interface Fixtures {
   studentId: string;
   people: Record<string, { crud: Credentials; locales: Credentials; denied: Credentials }>;
@@ -121,6 +123,34 @@ test('LOT 5 real CRUD, relationships and archive restore on mobile and desktop',
   await row.getByRole('link').click();
   await ready(page);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(`Élève Modifié ${suffix}`);
+  const studentAvatarPut = page.waitForResponse(
+    (response) =>
+      new URL(response.url()).pathname.endsWith('/avatar') &&
+      response.url().includes('/api/v1/students/') &&
+      response.request().method() === 'PUT',
+  );
+  await page.getByLabel('Choisir la photo de l’élève', { exact: true }).setInputFiles({
+    name: 'student-avatar.png',
+    mimeType: 'image/png',
+    buffer: avatarPng,
+  });
+  expect((await studentAvatarPut).status()).toBe(200);
+  await expect(page.getByRole('img', { name: `Photo de Élève Modifié ${suffix}` })).toBeVisible();
+
+  await page.reload();
+  await ready(page);
+  await expect(page.getByRole('img', { name: `Photo de Élève Modifié ${suffix}` })).toBeVisible();
+
+  const studentAvatarDelete = page.waitForResponse(
+    (response) =>
+      new URL(response.url()).pathname.endsWith('/avatar') &&
+      response.url().includes('/api/v1/students/') &&
+      response.request().method() === 'DELETE',
+  );
+  await page.getByRole('button', { name: 'Supprimer la photo', exact: true }).click();
+  expect((await studentAvatarDelete).status()).toBe(200);
+  await expect(page.getByRole('img', { name: `Photo de Élève Modifié ${suffix}` })).toHaveCount(0);
+
   const studentPath = new URL(page.url()).pathname;
   await overflow(page);
   await page.getByRole('link', { name: 'Retour aux élèves', exact: true }).click();
