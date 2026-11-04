@@ -27,6 +27,7 @@ import {
 import { useTranslations } from 'next-intl';
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { StudentFinance } from '../finance/finance-page';
 import { StudentResults } from '../grades/grades-page';
 import { DocumentsPanel } from '../documents/documents-page';
@@ -69,6 +70,9 @@ export function StudentProfilePage() {
     setAvatarBusy(true);
     try {
       await uploadPrivateAvatar(avatarPath, file);
+      toast.success(profile('photoSaved'));
+    } catch {
+      toast.error(profile('photoError'));
     } finally {
       setAvatarBusy(false);
     }
@@ -79,6 +83,9 @@ export function StudentProfilePage() {
     setAvatarBusy(true);
     try {
       await deletePrivateAvatar(avatarPath);
+      toast.success(profile('photoDeleted'));
+    } catch {
+      toast.error(profile('photoError'));
     } finally {
       setAvatarBusy(false);
     }
