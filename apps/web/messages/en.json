@@ -428,7 +428,19 @@
     "assignmentYear": "The class and period must belong to the same year.",
     "invalid": "Check required fields and entered values.",
     "forbidden": "You do not have access to this academic management.",
-    "expired": "Your session has expired. Sign in again."
+    "expired": "Your session has expired. Sign in again.",
+    "setupGuideTitle": "Setup path",
+    "setupGuideDescription": "Recommended order for building the academic reference data without missing dependencies.",
+    "setupStep": "Step {step}",
+    "yearsDescription": "Create academic years, then activate the one used as the current school context.",
+    "levelsDescription": "Define the school's levels before creating classes.",
+    "periodsDescription": "Select an academic year, then define its trimesters or semesters.",
+    "classesDescription": "Create classes after defining an academic year and at least one level.",
+    "assignmentsDescription": "Review all assignments or select a class to create and edit its assignments.",
+    "selectYearFirst": "Select an academic year to view and manage its periods.",
+    "selectClassFirst": "To create or edit an assignment, select a class first. Without a selection, the global list remains available.",
+    "classSubjectsHint": "First add the subjects and coefficients for this class. Teacher/period assignments are then managed from the Teaching assignments page.",
+    "manageAssignments": "Manage this class's assignments"
   },
   "People": {
     "firstName": "First name",
@@ -564,7 +576,11 @@
     "subjects": "Subjects",
     "system": "System",
     "teachers": "Teachers",
-    "users": "Users & Roles"
+    "users": "Users & Roles",
+    "years": "Academic years",
+    "levels": "Levels",
+    "periods": "Periods",
+    "assignments": "Teaching assignments"
   },
   "Shell": {
     "account": "Account",
