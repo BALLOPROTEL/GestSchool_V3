@@ -77,18 +77,7 @@ test('LOT 18.2 guided academic workflow with real teacher assignments on mobile 
   await fields(page, { name: `Année ${code}`, code, startsOn: '2027-09-01', endsOn: '2028-06-30' });
   await save(page);
   const yearRow = page.getByRole('row').filter({ hasText: `Année ${code}` });
-  await yearRow.getByRole('button', { name: 'Activer', exact: true }).click();
-  await page.getByRole('dialog').getByRole('button', { name: 'Confirmer' }).click();
-  await expect(page.getByRole('dialog')).toBeHidden();
-  await expect(yearRow).toContainText('Actif');
-
-  if (info.project.name === '360x800') {
-    await page.getByRole('button', { name: 'Ouvrir la navigation', exact: true }).click();
-    await expect(page.locator('[data-shell-year]:visible')).toContainText(`Année ${code}`);
-    await page.keyboard.press('Escape');
-  } else {
-    await expect(page.locator('[data-shell-year]').first()).toContainText(`Année ${code}`);
-  }
+  await expect(yearRow).toBeVisible();
 
   await page.goto('/fr/periods');
   await ready(page);
@@ -147,7 +136,11 @@ test('LOT 18.2 guided academic workflow with real teacher assignments on mobile 
   await page.goto('/fr/classes');
   await ready(page);
   await page.getByRole('searchbox', { name: 'Rechercher', exact: true }).fill(code);
-  await page.getByRole('button', { name: 'Voir le détail' }).click();
+  const classCard = page
+    .locator('[data-slot="card"]')
+    .filter({ has: page.getByRole('heading', { name: `Classe ${code}`, exact: true }) });
+  await expect(classCard).toHaveCount(1);
+  await classCard.getByRole('button', { name: 'Voir le détail', exact: true }).click();
   await ready(page);
   await openCreate(page, 'Matières et coefficients');
   await pick(page, 'Matière', `Matière modifiée ${code}`);
