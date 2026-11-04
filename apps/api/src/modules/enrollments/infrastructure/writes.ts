@@ -186,15 +186,24 @@ export async function writeEnrollment(
     await db.academicYear.findFirst({ where: { tenantId, id: before.academicYearId } }),
   );
   enrollmentWritableYear(year.status);
-  const latest = await db.enrollmentEvent.findFirst({
-    where: { tenantId, enrollmentId: before.id },
-    orderBy: [{ recordedAt: 'desc' }, { id: 'desc' }],
-  });
+  const [latest, latestEffective] = await Promise.all([
+    db.enrollmentEvent.findFirst({
+      where: { tenantId, enrollmentId: before.id },
+      orderBy: [{ recordedAt: 'desc' }, { id: 'desc' }],
+    }),
+    db.enrollmentEvent.findFirst({
+      where: { tenantId, enrollmentId: before.id },
+      orderBy: [{ effectiveDate: 'desc' }, { recordedAt: 'desc' }, { id: 'desc' }],
+    }),
+  ]);
   const status =
     command.action === 'reopen'
       ? enrollmentReopenTransition(before.status, latest)
       : enrollmentTransition(before.status, command.action);
-  let effectiveDate = civilDate(before.enrolledOn);
+  const chronologyFloor = latestEffective
+    ? civilDate(latestEffective.effectiveDate)
+    : civilDate(before.enrolledOn);
+  let effectiveDate = chronologyFloor;
   let reason: string | null = null;
   let kind: EnrollmentEventKind;
   const data: Prisma.EnrollmentUpdateInput = { status };
@@ -203,21 +212,21 @@ export async function writeEnrollment(
     const { classroom } = await target(db, tenantId, before.studentId, year.id, classroomId);
     await available(db, tenantId, classroom, before.id);
     await reenrollment(db, tenantId, before.studentId, year, command.input.type ?? before.type);
-    effectiveDate = command.input.enrolledOn ?? effectiveDate;
-    enrollmentEffectiveDate(effectiveDate, {
+    const enrolledOn = command.input.enrolledOn ?? civilDate(before.enrolledOn);
+    enrollmentEffectiveDate(enrolledOn, {
       startsOn: civilDate(year.startsOn),
       endsOn: civilDate(year.endsOn),
     });
+    effectiveDate = enrolledOn < chronologyFloor ? chronologyFloor : enrolledOn;
     data.schoolClass = {
       connect: {
         tenantId_id_academicYearId: { tenantId, id: classroom.id, academicYearId: year.id },
       },
     };
-    data.enrolledOn = new Date(effectiveDate);
+    data.enrolledOn = new Date(enrolledOn);
     if (command.input.type !== undefined) data.type = command.input.type;
     kind = 'UPDATED';
   } else if (command.action === 'confirm') {
-    effectiveDate = latest ? civilDate(latest.effectiveDate) : effectiveDate;
     const { classroom } = await target(
       db,
       tenantId,
@@ -238,7 +247,7 @@ export async function writeEnrollment(
     enrollmentEffectiveDate(
       effectiveDate,
       { startsOn: civilDate(year.startsOn), endsOn: civilDate(year.endsOn) },
-      latest ? civilDate(latest.effectiveDate) : civilDate(before.enrolledOn),
+      chronologyFloor,
     );
     if (command.action === 'reopen') {
       const { classroom } = await target(
