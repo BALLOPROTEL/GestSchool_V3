@@ -4,9 +4,12 @@ import { Card, CardContent } from '@gestschool/ui';
 import type { AcademicView } from '@gestschool/contracts';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState, type ReactNode } from 'react';
+import { Link } from '../../i18n/navigation';
 import { usePeopleData } from '../directory/people-hooks';
+import { useAuth } from '../auth/auth-provider';
 import { PageHeader } from '../shared/page-header';
 import { AcademicPicker } from './academic-components';
+import { canAcademic } from './academic-client';
 import { AcademicSetupGuide } from './academic-guide';
 import { AcademicList } from './academic-list';
 
@@ -71,7 +74,19 @@ export function PeriodsPage() {
           />
         </CardContent>
       </Card>
-      {!yearId ? <SelectionNotice>{t('selectYearFirst')}</SelectionNotice> : null}
+      {!yearId ? (
+        <SelectionNotice>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <span>{t('selectYearFirst')}</span>
+            <Link
+              className="font-medium text-primary underline-offset-4 hover:underline"
+              href="/academic-years"
+            >
+              {t('years')}
+            </Link>
+          </div>
+        </SelectionNotice>
+      ) : null}
       {year.loading ? <SelectionNotice>{t('loading')}</SelectionNotice> : null}
       {year.error ? <SelectionNotice>{t('unavailable')}</SelectionNotice> : null}
       {year.data ? <AcademicList kind="academic-periods" parent={year.data} /> : null}
@@ -82,8 +97,52 @@ export function PeriodsPage() {
 export function TeachingAssignmentsPage() {
   const t = useTranslations('Academics');
   const nav = useTranslations('Nav');
+  const { session } = useAuth();
   const [classId, setClassId] = useState('');
   const schoolClass = usePeopleData<AcademicView>(classId ? `classes/${classId}` : null);
+  const canCreateAssignment = canAcademic(session?.session, 'teaching-assignments', 'create');
+  const classSubjects = usePeopleData<{ total: number }>(
+    canCreateAssignment && schoolClass.data
+      ? `classes/${schoolClass.data.id}/subjects?status=ACTIVE&pageSize=1`
+      : null,
+  );
+  const periods = usePeopleData<{ total: number }>(
+    canCreateAssignment && schoolClass.data?.academicYearId
+      ? `academic-years/${schoolClass.data.academicYearId}/periods?status=ACTIVE&pageSize=1`
+      : null,
+  );
+  const teachers = usePeopleData<{ total: number }>(
+    canCreateAssignment && classId ? 'teachers?status=ACTIVE&pageSize=1' : null,
+  );
+  const missingClassSubjects =
+    canCreateAssignment &&
+    Boolean(schoolClass.data) &&
+    !classSubjects.loading &&
+    (classSubjects.data?.total ?? 0) === 0;
+  const missingPeriods =
+    canCreateAssignment &&
+    Boolean(schoolClass.data) &&
+    !periods.loading &&
+    (periods.data?.total ?? 0) === 0;
+  const missingTeachers =
+    canCreateAssignment &&
+    Boolean(schoolClass.data) &&
+    !teachers.loading &&
+    (teachers.data?.total ?? 0) === 0;
+  const assignmentCreationBlocked =
+    canCreateAssignment &&
+    Boolean(classId) &&
+    (schoolClass.loading ||
+      classSubjects.loading ||
+      periods.loading ||
+      teachers.loading ||
+      Boolean(schoolClass.error) ||
+      Boolean(classSubjects.error) ||
+      Boolean(periods.error) ||
+      Boolean(teachers.error) ||
+      missingClassSubjects ||
+      missingPeriods ||
+      missingTeachers);
 
   useEffect(() => {
     setClassId(new URLSearchParams(window.location.search).get('classId') ?? '');
@@ -110,11 +169,45 @@ export function TeachingAssignmentsPage() {
       </Card>
       {schoolClass.loading ? <SelectionNotice>{t('loading')}</SelectionNotice> : null}
       {schoolClass.error ? <SelectionNotice>{t('unavailable')}</SelectionNotice> : null}
+      {schoolClass.data && (missingClassSubjects || missingPeriods || missingTeachers) ? (
+        <Card>
+          <CardContent className="space-y-3 p-4">
+            <p className="text-sm font-medium">{t('missingAssignmentPrerequisites')}</p>
+            <div className="flex flex-wrap gap-2 text-sm">
+              {missingClassSubjects ? (
+                <Link
+                  className="rounded-md border border-input px-3 py-2 font-medium hover:bg-accent"
+                  href={`/classes?search=${encodeURIComponent(schoolClass.data.code ?? schoolClass.data.name)}`}
+                >
+                  {t('classSubjects')}
+                </Link>
+              ) : null}
+              {missingPeriods && schoolClass.data.academicYearId ? (
+                <Link
+                  className="rounded-md border border-input px-3 py-2 font-medium hover:bg-accent"
+                  href={`/periods?yearId=${encodeURIComponent(schoolClass.data.academicYearId)}`}
+                >
+                  {t('periods')}
+                </Link>
+              ) : null}
+              {missingTeachers ? (
+                <Link
+                  className="rounded-md border border-input px-3 py-2 font-medium hover:bg-accent"
+                  href="/teachers"
+                >
+                  {t('teacher')}
+                </Link>
+              ) : null}
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
       {!classId || schoolClass.data ? (
         <AcademicList
           key={schoolClass.data?.id ?? 'all-assignments'}
           kind="teaching-assignments"
           parent={schoolClass.data}
+          creationBlocked={assignmentCreationBlocked}
         />
       ) : null}
     </div>
