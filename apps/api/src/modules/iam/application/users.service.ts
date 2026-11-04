@@ -78,17 +78,16 @@ export class UsersService {
 
   async avatar(
     context: RequestContext,
-  ): Promise<{ bytes: Uint8Array; mimeType: AvatarMimeType }> {
+  ): Promise<{ bytes: Uint8Array; mimeType: AvatarMimeType } | null> {
     const avatar = await this.repository.membershipAvatar(
       context.membershipId,
       context.userId,
       context.tenantId,
     );
-    if (
-      !avatar?.avatarKey ||
-      (avatar.avatarMime !== 'image/jpeg' && avatar.avatarMime !== 'image/png')
-    )
-      deny('NOT_FOUND', 404);
+    if (!avatar) deny();
+    if (!avatar.avatarKey || !avatar.avatarMime) return null;
+    if (avatar.avatarMime !== 'image/jpeg' && avatar.avatarMime !== 'image/png')
+      deny('AUTH_UNAVAILABLE', 500);
     return {
       bytes: await this.avatarStorage().read(avatar.avatarKey, avatar.avatarMime),
       mimeType: avatar.avatarMime,
