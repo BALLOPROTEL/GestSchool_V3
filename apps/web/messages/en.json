@@ -741,7 +741,15 @@
     "schoolYear": "Academic year",
     "summary": "Subject summary",
     "upToDate": "No balance due",
-    "title": "Aminata Diallo"
+    "title": "Aminata Diallo",
+    "addPhoto": "Add photo",
+    "changePhoto": "Change photo",
+    "removePhoto": "Remove photo",
+    "photoInput": "Choose the student photo",
+    "photoAlt": "Photo of {name}",
+    "photoSaved": "Student photo saved.",
+    "photoDeleted": "Student photo removed.",
+    "photoError": "Unable to update the photo. Use a valid PNG or JPEG up to 2 MB."
   },
   "Parents": {
     "add": "Add parent",
@@ -1144,7 +1152,16 @@
     "hidePassword": "Hide password",
     "mfaScan": "Scan this QR code with your authenticator app.",
     "mfaManual": "Or enter the setup key manually",
-    "mfaQrAlt": "Two-factor authentication setup QR code"
+    "mfaQrAlt": "Two-factor authentication setup QR code",
+    "addPhoto": "Add photo",
+    "changePhoto": "Change photo",
+    "removePhoto": "Remove photo",
+    "photoHint": "PNG or JPEG, up to 2 MB.",
+    "photoAlt": "Profile photo",
+    "photoInput": "Choose a profile photo",
+    "photoSaved": "Profile photo saved.",
+    "photoDeleted": "Profile photo removed.",
+    "photoError": "Unable to update the photo. Use a valid PNG or JPEG up to 2 MB."
   },
   "DesignSystem": {
     "alerts": "Alerts",
