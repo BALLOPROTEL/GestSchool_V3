@@ -244,7 +244,7 @@ export function UserProfilePage() {
   const [mfaCode, setMfaCode] = useState('');
   const [enrollment, setEnrollment] = useState<MfaEnrollment | null>(null);
   const [avatarBusy, setAvatarBusy] = useState(false);
-  const avatarUrl = usePrivateAvatar('/api/v1/auth/profile/avatar');
+  const avatarUrl = usePrivateAvatar('/api/v1/auth/profile/avatar', session?.session.membershipId);
 
   useEffect(() => {
     let active = true;
