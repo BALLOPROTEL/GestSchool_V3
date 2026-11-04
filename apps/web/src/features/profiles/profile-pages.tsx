@@ -54,7 +54,6 @@ type Authenticated = Extract<LoginResult, { kind: 'session' }>;
 interface MfaEnrollment {
   challenge: string;
   secret: string;
-  uri: string;
   qrCodeDataUrl: string;
 }
 
