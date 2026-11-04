@@ -2,6 +2,16 @@
 
 ALTER TYPE "enrollment_event_kind" ADD VALUE IF NOT EXISTS 'REOPENED';
 
+ALTER TABLE "enrollment_events"
+  DROP CONSTRAINT "enrollment_events_reason_check";
+
+ALTER TABLE "enrollment_events"
+  ADD CONSTRAINT "enrollment_events_reason_check"
+  CHECK (
+    kind NOT IN ('TRANSFERRED', 'CANCELLED', 'COMPLETED', 'REOPENED')
+    OR (reason IS NOT NULL AND length(btrim(reason)) >= 3)
+  );
+
 INSERT INTO "permissions" ("id", "code", "description")
 VALUES (uuidv7(), 'enrollments.reopen', 'enrollments.reopen')
 ON CONFLICT ("code") DO NOTHING;
