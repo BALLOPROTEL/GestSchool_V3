@@ -129,6 +129,10 @@ export function TeachingAssignmentsPage() {
     Boolean(schoolClass.data) &&
     !teachers.loading &&
     (teachers.data?.total ?? 0) === 0;
+  const prerequisiteError =
+    canCreateAssignment &&
+    Boolean(schoolClass.data) &&
+    (Boolean(classSubjects.error) || Boolean(periods.error) || Boolean(teachers.error));
   const assignmentCreationBlocked =
     canCreateAssignment &&
     Boolean(classId) &&
@@ -137,9 +141,7 @@ export function TeachingAssignmentsPage() {
       periods.loading ||
       teachers.loading ||
       Boolean(schoolClass.error) ||
-      Boolean(classSubjects.error) ||
-      Boolean(periods.error) ||
-      Boolean(teachers.error) ||
+      prerequisiteError ||
       missingClassSubjects ||
       missingPeriods ||
       missingTeachers);
@@ -169,6 +171,7 @@ export function TeachingAssignmentsPage() {
       </Card>
       {schoolClass.loading ? <SelectionNotice>{t('loading')}</SelectionNotice> : null}
       {schoolClass.error ? <SelectionNotice>{t('unavailable')}</SelectionNotice> : null}
+      {prerequisiteError ? <SelectionNotice>{t('prerequisiteUnavailable')}</SelectionNotice> : null}
       {schoolClass.data && (missingClassSubjects || missingPeriods || missingTeachers) ? (
         <Card>
           <CardContent className="space-y-3 p-4">
