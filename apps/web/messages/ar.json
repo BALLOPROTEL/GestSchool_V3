@@ -442,7 +442,8 @@
     "classSubjectsHint": "أضف أولاً المواد ومعاملاتها إلى هذا الفصل، ثم أدر تكليفات الأستاذ والفترة من صفحة التكليفات.",
     "manageAssignments": "إدارة تكليفات هذا الفصل",
     "missingClassPrerequisites": "لا يمكن إنشاء فصل قبل توفر المتطلبات التالية:",
-    "missingAssignmentPrerequisites": "لا يمكن إنشاء تكليف قبل توفر العناصر التالية:"
+    "missingAssignmentPrerequisites": "لا يمكن إنشاء تكليف قبل توفر العناصر التالية:",
+    "prerequisiteUnavailable": "تعذر التحقق من المتطلبات حالياً. أعد المحاولة قبل إنشاء هذه البيانات."
   },
   "People": {
     "firstName": "الاسم الأول",
