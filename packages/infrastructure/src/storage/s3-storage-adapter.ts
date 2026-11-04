@@ -11,10 +11,109 @@ import type { StorageHealth } from './storage-health.js';
 
 const uuid = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
 const pdfKey = new RegExp(`^tenants/${uuid}/documents/${uuid}/[0-9a-f]{64}\\.pdf$`);
-const reportKey = new RegExp(`^tenants/${uuid}/reports/${uuid}/[0-9a-f]{64}\\.(csv|xlsx|pdf)$`);
+const reportKey = new RegExp(`^tenants/${uuid}/reports/${uuid}/[0-9a-f]{64}\\.(csv|xlsx|pdf)import {
+  GetObjectCommand,
+  DeleteObjectCommand,
+  PutObjectCommand,
+  HeadBucketCommand,
+  S3Client,
+} from '@aws-sdk/client-s3';
+import type { InfrastructureConfig } from '@gestschool/config/environment';
+
+import type { StorageHealth } from './storage-health.js';
+
+const uuid = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
+const pdfKey = new RegExp(`^tenants/${uuid}/documents/${uuid}/[0-9a-f]{64}\\.pdf$`);
+);
+const avatarKey = new RegExp(
+  `^tenants/${uuid}/avatars/(memberships|students)/${uuid}/${uuid}\\.(jpg|png)import {
+  GetObjectCommand,
+  DeleteObjectCommand,
+  PutObjectCommand,
+  HeadBucketCommand,
+  S3Client,
+} from '@aws-sdk/client-s3';
+import type { InfrastructureConfig } from '@gestschool/config/environment';
+
+import type { StorageHealth } from './storage-health.js';
+
+const uuid = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
+const pdfKey = new RegExp(`^tenants/${uuid}/documents/${uuid}/[0-9a-f]{64}\\.pdf$`);
+,
+);
 export function validateStorageKey(key: string, kind: 'document' | 'report'): void {
   if (!(kind === 'document' ? pdfKey : reportKey).test(key))
     throw new Error('STORAGE_OBJECT_KEY_INVALID');
+}
+export function validateAvatarStorageKey(key: string): void {
+  if (!avatarKey.test(key)) throw new Error('STORAGE_OBJECT_KEY_INVALID');
+}
+
+function jpegDimensions(bytes: Uint8Array): { width: number; height: number } | null {
+  if (bytes.length < 4 || bytes[0] !== 0xff || bytes[1] !== 0xd8) return null;
+  let offset = 2;
+  while (offset + 8 < bytes.length) {
+    if (bytes[offset] !== 0xff) {
+      offset += 1;
+      continue;
+    }
+    const marker = bytes[offset + 1] ?? 0;
+    offset += 2;
+    if (marker === 0xd8 || marker === 0xd9) continue;
+    if (offset + 2 > bytes.length) return null;
+    const length = ((bytes[offset] ?? 0) << 8) | (bytes[offset + 1] ?? 0);
+    if (length < 2 || offset + length > bytes.length) return null;
+    if (
+      [0xc0, 0xc1, 0xc2, 0xc3, 0xc5, 0xc6, 0xc7, 0xc9, 0xca, 0xcb, 0xcd, 0xce, 0xcf].includes(
+        marker,
+      )
+    ) {
+      if (length < 7) return null;
+      return {
+        height: ((bytes[offset + 3] ?? 0) << 8) | (bytes[offset + 4] ?? 0),
+        width: ((bytes[offset + 5] ?? 0) << 8) | (bytes[offset + 6] ?? 0),
+      };
+    }
+    offset += length;
+  }
+  return null;
+}
+
+export function validateAvatarImage(
+  bytes: Uint8Array,
+  contentType: 'image/jpeg' | 'image/png',
+): void {
+  if (!bytes.length || bytes.length > 2_000_000) throw new Error('AVATAR_OBJECT_INVALID');
+  let dimensions: { width: number; height: number } | null = null;
+  if (contentType === 'image/png') {
+    const signature = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+    if (bytes.length < 24 || signature.some((value, index) => bytes[index] !== value))
+      throw new Error('AVATAR_OBJECT_INVALID');
+    dimensions = {
+      width:
+        ((bytes[16] ?? 0) << 24) |
+        ((bytes[17] ?? 0) << 16) |
+        ((bytes[18] ?? 0) << 8) |
+        (bytes[19] ?? 0),
+      height:
+        ((bytes[20] ?? 0) << 24) |
+        ((bytes[21] ?? 0) << 16) |
+        ((bytes[22] ?? 0) << 8) |
+        (bytes[23] ?? 0),
+    };
+    dimensions.width >>>= 0;
+    dimensions.height >>>= 0;
+  } else {
+    dimensions = jpegDimensions(bytes);
+  }
+  if (
+    !dimensions ||
+    dimensions.width < 32 ||
+    dimensions.height < 32 ||
+    dimensions.width > 4096 ||
+    dimensions.height > 4096
+  )
+    throw new Error('AVATAR_OBJECT_INVALID');
 }
 
 export class S3StorageAdapter implements StorageHealth {
@@ -58,6 +157,52 @@ export class S3StorageAdapter implements StorageHealth {
       }),
       { abortSignal: AbortSignal.timeout(10_000) },
     );
+  }
+
+  async putAvatar(
+    key: string,
+    bytes: Uint8Array,
+    contentType: 'image/jpeg' | 'image/png',
+  ): Promise<void> {
+    validateAvatarStorageKey(key);
+    validateAvatarImage(bytes, contentType);
+    await this.client.send(
+      new PutObjectCommand({
+        Bucket: this.bucket,
+        Key: key,
+        Body: bytes,
+        ContentType: contentType,
+        CacheControl: 'private, no-store',
+      }),
+      { abortSignal: AbortSignal.timeout(10_000) },
+    );
+  }
+
+  async getAvatar(
+    key: string,
+    expectedContentType: 'image/jpeg' | 'image/png',
+  ): Promise<Uint8Array> {
+    validateAvatarStorageKey(key);
+    const result = await this.client.send(new GetObjectCommand({ Bucket: this.bucket, Key: key }), {
+      abortSignal: AbortSignal.timeout(10_000),
+    });
+    if (
+      !result.Body ||
+      result.ContentType !== expectedContentType ||
+      !result.ContentLength ||
+      result.ContentLength > 2_000_000
+    )
+      throw new Error('AVATAR_OBJECT_INVALID');
+    const bytes = await result.Body.transformToByteArray();
+    validateAvatarImage(bytes, expectedContentType);
+    return bytes;
+  }
+
+  async deleteAvatar(key: string): Promise<void> {
+    validateAvatarStorageKey(key);
+    await this.client.send(new DeleteObjectCommand({ Bucket: this.bucket, Key: key }), {
+      abortSignal: AbortSignal.timeout(10_000),
+    });
   }
 
   async putReport(key: string, bytes: Uint8Array, contentType: string): Promise<void> {
