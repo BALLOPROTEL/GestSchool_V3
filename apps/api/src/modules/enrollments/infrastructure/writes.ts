@@ -7,6 +7,7 @@ import {
   enrollmentConflict,
   enrollmentEffectiveDate,
   enrollmentFound,
+  enrollmentReopenTransition,
   enrollmentTransition,
   enrollmentWritableYear,
 } from '../domain/policy.js';
@@ -185,7 +186,14 @@ export async function writeEnrollment(
     await db.academicYear.findFirst({ where: { tenantId, id: before.academicYearId } }),
   );
   enrollmentWritableYear(year.status);
-  const status = enrollmentTransition(before.status, command.action);
+  const latest = await db.enrollmentEvent.findFirst({
+    where: { tenantId, enrollmentId: before.id },
+    orderBy: [{ recordedAt: 'desc' }, { id: 'desc' }],
+  });
+  const status =
+    command.action === 'reopen'
+      ? enrollmentReopenTransition(before.status, latest)
+      : enrollmentTransition(before.status, command.action);
   let effectiveDate = civilDate(before.enrolledOn);
   let reason: string | null = null;
   let kind: EnrollmentEventKind;
@@ -226,16 +234,23 @@ export async function writeEnrollment(
   } else {
     effectiveDate = command.input.effectiveDate;
     reason = command.input.reason;
-    const latest = await db.enrollmentEvent.findFirst({
-      where: { tenantId, enrollmentId: before.id },
-      orderBy: [{ recordedAt: 'desc' }, { id: 'desc' }],
-    });
     enrollmentEffectiveDate(
       effectiveDate,
       { startsOn: civilDate(year.startsOn), endsOn: civilDate(year.endsOn) },
       latest ? civilDate(latest.effectiveDate) : civilDate(before.enrolledOn),
     );
-    if (command.action === 'transfer') {
+    if (command.action === 'reopen') {
+      const { classroom } = await target(
+        db,
+        tenantId,
+        before.studentId,
+        year.id,
+        before.schoolClassId,
+      );
+      await available(db, tenantId, classroom, before.id);
+      data.endedOn = null;
+      kind = 'REOPENED';
+    } else if (command.action === 'transfer') {
       if (command.input.targetClassId === before.schoolClassId)
         enrollmentConflict('ENROLLMENT_SAME_CLASS');
       const { classroom } = await target(
@@ -270,6 +285,7 @@ export async function writeEnrollment(
     cancel: 'cancelled',
     transfer: 'transferred',
     complete: 'completed',
+    reopen: 'reopened',
   }[command.action];
   await audit(db, context, `enrollment.${action}`, before.id, previousView, {
     ...nextView,
