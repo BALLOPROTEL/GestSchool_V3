@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { readFileSync } from 'node:fs';
-import { expect, test, type Locator, type Page } from './fixtures';
+import type { Locator } from '@playwright/test';
+import { expect, test, type Page } from './fixtures';
 import { login, overflow, watch, type Credentials } from './academic-helpers';
 
 interface Fixture {
