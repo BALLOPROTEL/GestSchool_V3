@@ -1,0 +1,5 @@
+import { AcademicYearsPage } from '../../../../features/academics/academic-navigation-pages';
+
+export default function Page() {
+  return <AcademicYearsPage />;
+}
