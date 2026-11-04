@@ -16,7 +16,7 @@ export class UsersService {
   constructor(
     private readonly repository: IamRepository,
     private readonly credentials: CredentialsService,
-    private readonly avatars: AvatarStorageService,
+    private readonly avatars?: AvatarStorageService,
   ) {}
   async profile(context: RequestContext) {
     const user = await this.repository.user(context.userId);
@@ -71,6 +71,11 @@ export class UsersService {
     };
   }
 
+  private avatarStorage(): AvatarStorageService {
+    if (!this.avatars) deny('AUTH_UNAVAILABLE', 503);
+    return this.avatars;
+  }
+
   async avatar(
     context: RequestContext,
   ): Promise<{ bytes: Uint8Array; mimeType: AvatarMimeType }> {
@@ -85,7 +90,7 @@ export class UsersService {
     )
       deny('NOT_FOUND', 404);
     return {
-      bytes: await this.avatars.read(avatar.avatarKey, avatar.avatarMime),
+      bytes: await this.avatarStorage().read(avatar.avatarKey, avatar.avatarMime),
       mimeType: avatar.avatarMime,
     };
   }
@@ -93,7 +98,7 @@ export class UsersService {
   async updateAvatar(context: RequestContext, input: AvatarUpload): Promise<void> {
     let nextKey: string;
     try {
-      nextKey = await this.avatars.upload(
+      nextKey = await this.avatarStorage().upload(
         context.tenantId,
         'memberships',
         context.membershipId,
@@ -131,12 +136,12 @@ export class UsersService {
         return oldKey;
       });
     } catch (error) {
-      await this.avatars.remove(nextKey).catch(() => undefined);
+      await this.avatarStorage().remove(nextKey).catch(() => undefined);
       throw error;
     }
 
     if (previousKey && previousKey !== nextKey)
-      await this.avatars.remove(previousKey).catch(() => undefined);
+      await this.avatarStorage().remove(previousKey).catch(() => undefined);
   }
 
   async deleteAvatar(context: RequestContext): Promise<void> {
@@ -163,7 +168,7 @@ export class UsersService {
       );
       return current.avatarKey;
     });
-    if (previousKey) await this.avatars.remove(previousKey).catch(() => undefined);
+    if (previousKey) await this.avatarStorage().remove(previousKey).catch(() => undefined);
   }
 
   async updateOwnProfile(context: RequestContext, input: ProfileUpdate): Promise<void> {
