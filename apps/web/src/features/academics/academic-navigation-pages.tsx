@@ -26,7 +26,11 @@ export function AcademicYearsPage() {
   const nav = useTranslations('Nav');
   return (
     <div className="page-shell space-y-5">
-      <PageHeader eyebrow={nav('academic')} title={t('years')} description={t('yearsDescription')} />
+      <PageHeader
+        eyebrow={nav('academic')}
+        title={t('years')}
+        description={t('yearsDescription')}
+      />
       <AcademicSetupGuide current="years" />
       <AcademicList kind="academic-years" />
     </div>
@@ -38,7 +42,11 @@ export function LevelsPage() {
   const nav = useTranslations('Nav');
   return (
     <div className="page-shell space-y-5">
-      <PageHeader eyebrow={nav('academic')} title={t('levels')} description={t('levelsDescription')} />
+      <PageHeader
+        eyebrow={nav('academic')}
+        title={t('levels')}
+        description={t('levelsDescription')}
+      />
       <AcademicSetupGuide current="levels" />
       <AcademicList kind="levels" />
     </div>

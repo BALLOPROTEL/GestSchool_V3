@@ -157,7 +157,9 @@ test('LOT 18.2 guided academic workflow with real teacher assignments on mobile 
     '4.25',
   );
 
-  await page.getByRole('link', { name: 'Gérer les affectations de cette classe', exact: true }).click();
+  await page
+    .getByRole('link', { name: 'Gérer les affectations de cette classe', exact: true })
+    .click();
   await ready(page);
   await expect(page).toHaveURL(/\/fr\/assignments\?classId=/);
   await openCreate(page, 'Affectations');

@@ -8,12 +8,7 @@ import { useAuth } from '../auth/auth-provider';
 import { canAcademic } from './academic-client';
 
 export type AcademicSetupStep =
-  | 'years'
-  | 'levels'
-  | 'periods'
-  | 'subjects'
-  | 'classes'
-  | 'assignments';
+  'years' | 'levels' | 'periods' | 'subjects' | 'classes' | 'assignments';
 
 const steps: readonly { href: string; key: AcademicSetupStep; entity: AcademicEntity }[] = [
   { href: '/academic-years', key: 'years', entity: 'academic-years' },

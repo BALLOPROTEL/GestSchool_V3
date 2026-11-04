@@ -101,9 +101,7 @@ function ClassesWorkspace() {
             {t('back')}
           </Button>
           <div className="flex flex-wrap items-center gap-3">
-            <h2 className="min-w-0 max-w-full break-words text-xl font-semibold">
-              {detail.name}
-            </h2>
+            <h2 className="min-w-0 max-w-full break-words text-xl font-semibold">{detail.name}</h2>
             <AcademicStatus row={detail} />
           </div>
           <Card>
@@ -144,11 +142,7 @@ export function SubjectsPage() {
 
   return (
     <div className="page-shell space-y-5">
-      <PageHeader
-        eyebrow={nav('academic')}
-        title={t('subjects')}
-        description={t('subjectsHint')}
-      />
+      <PageHeader eyebrow={nav('academic')} title={t('subjects')} description={t('subjectsHint')} />
       <AcademicSetupGuide current="subjects" />
       <AcademicList
         key={`${session?.session.tenant.id}:${session?.session.membershipId}`}
