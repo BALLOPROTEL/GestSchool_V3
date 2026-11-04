@@ -1,6 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { Prisma } from '@gestschool/database';
-import type { AvatarMimeType, StudentCreate, StudentUpdate, PeopleQuery } from '@gestschool/contracts';
+import type {
+  AvatarMimeType,
+  StudentCreate,
+  StudentUpdate,
+  PeopleQuery,
+} from '@gestschool/contracts';
 import { StudentRepository } from '../domain/student.repository.js';
 import type { RequestContext } from '../../iam/domain/context.js';
 import { hasScope, tenantPermission } from '../../people/domain/policy.js';

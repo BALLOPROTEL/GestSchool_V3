@@ -1,8 +1,17 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { avatarUpload, peopleQuery, personId, studentCreate, studentUpdate } from '@gestschool/contracts';
+import {
+  avatarUpload,
+  peopleQuery,
+  personId,
+  studentCreate,
+  studentUpdate,
+} from '@gestschool/contracts';
 import { deny, type RequestContext } from '../../iam/domain/context.js';
 import { requireWrite, readScopes } from '../../people/domain/policy.js';
-import { AvatarInputError, AvatarStorageService } from '../../../infrastructure/avatar-storage.service.js';
+import {
+  AvatarInputError,
+  AvatarStorageService,
+} from '../../../infrastructure/avatar-storage.service.js';
 import { StudentRepository } from '../domain/student.repository.js';
 
 @Injectable()
@@ -59,12 +68,7 @@ export class StudentService {
     const payload = avatarUpload.parse(input);
     let nextKey: string;
     try {
-      nextKey = await this.avatars.upload(
-        context.tenantId,
-        'students',
-        studentId,
-        payload,
-      );
+      nextKey = await this.avatars.upload(context.tenantId, 'students', studentId, payload);
     } catch (error) {
       if (error instanceof AvatarInputError) deny('AUTH_INVALID_REQUEST', 400);
       throw error;
@@ -72,12 +76,7 @@ export class StudentService {
 
     let previousKey: string | null;
     try {
-      previousKey = await this.repository.setAvatar(
-        context,
-        studentId,
-        nextKey,
-        payload.mimeType,
-      );
+      previousKey = await this.repository.setAvatar(context, studentId, nextKey, payload.mimeType);
     } catch (error) {
       await this.avatars.remove(nextKey).catch(() => undefined);
       throw error;

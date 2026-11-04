@@ -22,7 +22,8 @@ const db = createPrismaClient(loadInfrastructureConfig().databaseUrl);
 const password = opaqueToken();
 const avatarPayload = {
   mimeType: 'image/png',
-  base64: 'iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAY0lEQVR4nO3PQQ3AIADAQEA1cpCDrIngcVnSU9DOfe74s6UDXjWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgfboqAmAfHjuUAAAAAElFTkSuQmCC',
+  base64:
+    'iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAY0lEQVR4nO3PQQ3AIADAQEA1cpCDrIngcVnSU9DOfe74s6UDXjWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgfboqAmAfHjuUAAAAAElFTkSuQmCC',
 } as const;
 const errors: string[] = [];
 let app: INestApplication;

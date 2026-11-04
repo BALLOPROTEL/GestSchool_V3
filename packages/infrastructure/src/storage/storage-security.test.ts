@@ -1,6 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
-import { validateAvatarImage, validateAvatarStorageKey, validateStorageKey } from './s3-storage-adapter.js';
+import {
+  validateAvatarImage,
+  validateAvatarStorageKey,
+  validateStorageKey,
+} from './s3-storage-adapter.js';
 
 describe('LOT13 object key traversal boundary', () => {
   const prefix = `tenants/${randomUUID()}/documents/${randomUUID()}/`;
@@ -28,7 +32,6 @@ describe('LOT13 object key traversal boundary', () => {
     ).not.toThrow();
   });
 });
-
 
 describe('LOT18 private avatar boundary', () => {
   const tenantId = randomUUID();
@@ -71,14 +74,8 @@ describe('LOT18 private avatar boundary', () => {
 
   it('validates JPEG SOF dimensions instead of trusting the declared MIME', () => {
     const jpeg = Uint8Array.from([
-      0xff, 0xd8,
-      0xff, 0xc0,
-      0x00, 0x11,
-      0x08,
-      0x01, 0x00,
-      0x01, 0x00,
-      0x03, 0x01, 0x11, 0x00, 0x02, 0x11, 0x00, 0x03, 0x11, 0x00,
-      0xff, 0xd9,
+      0xff, 0xd8, 0xff, 0xc0, 0x00, 0x11, 0x08, 0x01, 0x00, 0x01, 0x00, 0x03, 0x01, 0x11, 0x00,
+      0x02, 0x11, 0x00, 0x03, 0x11, 0x00, 0xff, 0xd9,
     ]);
     expect(() => validateAvatarImage(jpeg, 'image/jpeg')).not.toThrow();
     expect(() => validateAvatarImage(jpeg, 'image/png')).toThrow('AVATAR_OBJECT_INVALID');

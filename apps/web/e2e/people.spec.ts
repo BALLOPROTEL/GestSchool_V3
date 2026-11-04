@@ -2,7 +2,10 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from './fixtures';
 import { readFileSync } from 'node:fs';
 import { login, type Credentials } from './academic-helpers';
-const avatarPng = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAY0lEQVR4nO3PQQ3AIADAQEA1cpCDrIngcVnSU9DOfe74s6UDXjWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgfboqAmAfHjuUAAAAAElFTkSuQmCC', 'base64');
+const avatarPng = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAY0lEQVR4nO3PQQ3AIADAQEA1cpCDrIngcVnSU9DOfe74s6UDXjWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgNaA1oDWgfboqAmAfHjuUAAAAAElFTkSuQmCC',
+  'base64',
+);
 
 interface Fixtures {
   studentId: string;

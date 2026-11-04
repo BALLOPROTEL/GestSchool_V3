@@ -9,7 +9,10 @@ import type {
 } from '@gestschool/contracts';
 import { deny, type RequestContext } from '../domain/context.js';
 import type { IamRepository } from '../infrastructure/iam.repository.js';
-import { AvatarInputError, AvatarStorageService } from '../../../infrastructure/avatar-storage.service.js';
+import {
+  AvatarInputError,
+  AvatarStorageService,
+} from '../../../infrastructure/avatar-storage.service.js';
 import { CredentialsService } from './credentials.service.js';
 
 export class UsersService {
@@ -135,12 +138,16 @@ export class UsersService {
         return oldKey;
       });
     } catch (error) {
-      await this.avatarStorage().remove(nextKey).catch(() => undefined);
+      await this.avatarStorage()
+        .remove(nextKey)
+        .catch(() => undefined);
       throw error;
     }
 
     if (previousKey && previousKey !== nextKey)
-      await this.avatarStorage().remove(previousKey).catch(() => undefined);
+      await this.avatarStorage()
+        .remove(previousKey)
+        .catch(() => undefined);
   }
 
   async deleteAvatar(context: RequestContext): Promise<void> {
@@ -167,7 +174,10 @@ export class UsersService {
       );
       return current.avatarKey;
     });
-    if (previousKey) await this.avatarStorage().remove(previousKey).catch(() => undefined);
+    if (previousKey)
+      await this.avatarStorage()
+        .remove(previousKey)
+        .catch(() => undefined);
   }
 
   async updateOwnProfile(context: RequestContext, input: ProfileUpdate): Promise<void> {

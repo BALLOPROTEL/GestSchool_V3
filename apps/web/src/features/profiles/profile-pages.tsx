@@ -48,7 +48,11 @@ import { toast } from 'sonner';
 
 import { authRequest, AuthClientError } from '../auth/auth-client';
 import { useAuth } from '../auth/auth-provider';
-import { deletePrivateAvatar, uploadPrivateAvatar, usePrivateAvatar } from '../shared/avatar-client';
+import {
+  deletePrivateAvatar,
+  uploadPrivateAvatar,
+  usePrivateAvatar,
+} from '../shared/avatar-client';
 import { getInitials } from '../shared/format';
 import { PageHeader } from '../shared/page-header';
 
@@ -519,9 +523,7 @@ export function UserProfilePage() {
         <Card className="h-fit min-w-0">
           <CardContent className="flex flex-col items-center p-6 text-center">
             <Avatar className="size-24 ring-4 ring-primary/10">
-              {avatarUrl ? (
-                <AvatarImage alt={translate('photoAlt')} src={avatarUrl} />
-              ) : null}
+              {avatarUrl ? <AvatarImage alt={translate('photoAlt')} src={avatarUrl} /> : null}
               <AvatarFallback className="bg-blue-600 text-2xl text-white">
                 {getInitials(profile.user.displayName)}
               </AvatarFallback>

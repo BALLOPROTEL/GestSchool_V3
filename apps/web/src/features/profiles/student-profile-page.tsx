@@ -35,7 +35,11 @@ import { useDocumentCopy } from '../documents/document-copy';
 import { personId, type PersonView } from '@gestschool/contracts';
 import { Link } from '../../i18n/navigation';
 import { useAuth } from '../auth/auth-provider';
-import { deletePrivateAvatar, uploadPrivateAvatar, usePrivateAvatar } from '../shared/avatar-client';
+import {
+  deletePrivateAvatar,
+  uploadPrivateAvatar,
+  usePrivateAvatar,
+} from '../shared/avatar-client';
 import { getInitials } from '../shared/format';
 import { canRead, canWrite, PeopleError } from '../directory/people-client';
 import { usePeopleData } from '../directory/people-hooks';
@@ -57,8 +61,7 @@ export function StudentProfilePage() {
   const [revision, setRevision] = useState(0);
   const [editing, setEditing] = useState(false);
   const [avatarBusy, setAvatarBusy] = useState(false);
-  const avatarPath =
-    allowed && valid.success ? `/api/v1/students/${valid.data}/avatar` : null;
+  const avatarPath = allowed && valid.success ? `/api/v1/students/${valid.data}/avatar` : null;
   const avatarUrl = usePrivateAvatar(avatarPath, valid.success ? valid.data : null);
   const result = usePeopleData<PersonView>(
     allowed && valid.success ? `students/${valid.data}` : null,

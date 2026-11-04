@@ -2,10 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { Inject, Injectable, type OnModuleDestroy } from '@nestjs/common';
 import { S3StorageAdapter, validateAvatarImage } from '@gestschool/infrastructure';
 import type { AvatarMimeType, AvatarUpload } from '@gestschool/contracts';
-import {
-  INFRASTRUCTURE_CONFIGURATION,
-  type InfrastructureConfiguration,
-} from './tokens.js';
+import { INFRASTRUCTURE_CONFIGURATION, type InfrastructureConfiguration } from './tokens.js';
 
 type AvatarOwnerKind = 'memberships' | 'students';
 

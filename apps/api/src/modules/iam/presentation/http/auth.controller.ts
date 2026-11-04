@@ -138,10 +138,7 @@ export class AuthController {
 
   @RequirePermission('session.read')
   @Get('profile/avatar')
-  async profileAvatar(
-    @Req() request: IamRequest,
-    @Res({ passthrough: true }) response: Response,
-  ) {
+  async profileAvatar(@Req() request: IamRequest, @Res({ passthrough: true }) response: Response) {
     const avatar = await this.iam.users.avatar(requestContext(request));
     response.setHeader('Cache-Control', 'private, no-store');
     if (!avatar) {

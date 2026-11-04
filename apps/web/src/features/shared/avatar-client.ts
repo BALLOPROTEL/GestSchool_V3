@@ -44,7 +44,9 @@ async function authorizedFetch(
   return response;
 }
 
-async function avatarPayload(file: File): Promise<{ mimeType: 'image/jpeg' | 'image/png'; base64: string }> {
+async function avatarPayload(
+  file: File,
+): Promise<{ mimeType: 'image/jpeg' | 'image/png'; base64: string }> {
   if (
     (file.type !== 'image/jpeg' && file.type !== 'image/png') ||
     file.size === 0 ||

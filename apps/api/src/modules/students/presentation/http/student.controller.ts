@@ -59,11 +59,7 @@ export class StudentController {
 
   @Put(':id/avatar')
   @RequirePermission('students.update', writeScopes)
-  async updateAvatar(
-    @Req() request: IamRequest,
-    @Param('id') id: string,
-    @Body() body: unknown,
-  ) {
+  async updateAvatar(@Req() request: IamRequest, @Param('id') id: string, @Body() body: unknown) {
     await this.service.updateAvatar(requestContext(request), id, body);
     return { ok: true };
   }
