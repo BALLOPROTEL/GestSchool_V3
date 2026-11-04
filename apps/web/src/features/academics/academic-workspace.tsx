@@ -26,6 +26,7 @@ function ClassesWorkspace() {
   const { session } = useAuth();
   const [detail, setDetail] = useState<AcademicView | null>(null);
   const canCreateClass = canAcademic(session?.session, 'classes', 'create');
+  const canReadAssignments = canAcademic(session?.session, 'teaching-assignments');
   const years = usePeopleData<{ total: number }>(
     canCreateClass ? 'academic-years?status=ALL&pageSize=1' : null,
   );
@@ -51,6 +52,13 @@ function ClassesWorkspace() {
         description={t('classesDescription')}
       />
       <AcademicSetupGuide current="classes" />
+      {!detail && canCreateClass && (years.error || levels.error) ? (
+        <Card>
+          <CardContent className="p-4 text-sm text-muted-foreground">
+            {t('prerequisiteUnavailable')}
+          </CardContent>
+        </Card>
+      ) : null}
       {!detail && (missingYears || missingLevels) ? (
         <Card>
           <CardContent className="space-y-3 p-4">
@@ -99,12 +107,14 @@ function ClassesWorkspace() {
           <Card>
             <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-sm text-muted-foreground">{t('classSubjectsHint')}</p>
-              <Link
-                className="inline-flex min-h-9 items-center justify-center rounded-md border border-input bg-background px-3 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground"
-                href={`/assignments?classId=${encodeURIComponent(detail.id)}`}
-              >
-                {t('manageAssignments')}
-              </Link>
+              {canReadAssignments ? (
+                <Link
+                  className="inline-flex min-h-9 items-center justify-center rounded-md border border-input bg-background px-3 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground"
+                  href={`/assignments?classId=${encodeURIComponent(detail.id)}`}
+                >
+                  {t('manageAssignments')}
+                </Link>
+              ) : null}
             </CardContent>
           </Card>
           <AcademicList kind="class-subjects" parent={detail} />
