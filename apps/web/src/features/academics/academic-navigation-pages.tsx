@@ -110,11 +110,13 @@ export function TeachingAssignmentsPage() {
       </Card>
       {schoolClass.loading ? <SelectionNotice>{t('loading')}</SelectionNotice> : null}
       {schoolClass.error ? <SelectionNotice>{t('unavailable')}</SelectionNotice> : null}
-      <AcademicList
-        key={schoolClass.data?.id ?? 'all-assignments'}
-        kind="teaching-assignments"
-        parent={schoolClass.data}
-      />
+      {!classId || schoolClass.data ? (
+        <AcademicList
+          key={schoolClass.data?.id ?? 'all-assignments'}
+          kind="teaching-assignments"
+          parent={schoolClass.data}
+        />
+      ) : null}
     </div>
   );
 }
