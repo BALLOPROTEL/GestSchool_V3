@@ -186,24 +186,24 @@ export async function writeEnrollment(
     await db.academicYear.findFirst({ where: { tenantId, id: before.academicYearId } }),
   );
   enrollmentWritableYear(year.status);
-  const [latest, latestEffective] = await Promise.all([
+  const [latest, latestReopen] = await Promise.all([
     db.enrollmentEvent.findFirst({
       where: { tenantId, enrollmentId: before.id },
       orderBy: [{ recordedAt: 'desc' }, { id: 'desc' }],
     }),
     db.enrollmentEvent.findFirst({
-      where: { tenantId, enrollmentId: before.id },
-      orderBy: [{ effectiveDate: 'desc' }, { recordedAt: 'desc' }, { id: 'desc' }],
+      where: { tenantId, enrollmentId: before.id, kind: 'REOPENED' },
+      orderBy: [{ recordedAt: 'desc' }, { id: 'desc' }],
     }),
   ]);
   const status =
     command.action === 'reopen'
       ? enrollmentReopenTransition(before.status, latest)
       : enrollmentTransition(before.status, command.action);
-  const chronologyFloor = latestEffective
-    ? civilDate(latestEffective.effectiveDate)
-    : civilDate(before.enrolledOn);
-  let effectiveDate = chronologyFloor;
+  const recordedFloor = latest ? civilDate(latest.effectiveDate) : civilDate(before.enrolledOn);
+  const reopenFloor =
+    before.status === 'PENDING' && latestReopen ? civilDate(latestReopen.effectiveDate) : null;
+  let effectiveDate = recordedFloor;
   let reason: string | null = null;
   let kind: EnrollmentEventKind;
   const data: Prisma.EnrollmentUpdateInput = { status };
@@ -217,7 +217,7 @@ export async function writeEnrollment(
       startsOn: civilDate(year.startsOn),
       endsOn: civilDate(year.endsOn),
     });
-    effectiveDate = enrolledOn < chronologyFloor ? chronologyFloor : enrolledOn;
+    effectiveDate = reopenFloor && enrolledOn < reopenFloor ? reopenFloor : enrolledOn;
     data.schoolClass = {
       connect: {
         tenantId_id_academicYearId: { tenantId, id: classroom.id, academicYearId: year.id },
@@ -247,7 +247,7 @@ export async function writeEnrollment(
     enrollmentEffectiveDate(
       effectiveDate,
       { startsOn: civilDate(year.startsOn), endsOn: civilDate(year.endsOn) },
-      chronologyFloor,
+      recordedFloor,
     );
     if (command.action === 'reopen') {
       const { classroom } = await target(
