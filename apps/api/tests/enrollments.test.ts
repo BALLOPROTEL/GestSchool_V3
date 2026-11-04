@@ -497,6 +497,55 @@ describe('LOT 7 real enrollment HTTP workflow', () => {
       }),
     ]);
   });
+  it('keeps reopen chronology through a PENDING edit before confirmation', async () => {
+    const g = await graph(tenantA);
+    const row = await pending(g);
+    await admin.browser.send(
+      `enrollments/${row.id}/cancel`,
+      { reason: 'Premature cancellation', effectiveDate: '2026-09-04' },
+      'POST',
+    );
+    expect(
+      (await reopen(row, '2026-09-05', admin, 'Restore preparation before class correction')).status,
+    ).toBe(200);
+    const edited = await admin.browser.send(
+      `enrollments/${row.id}`,
+      { classId: g.b.id },
+      'PATCH',
+    );
+    expect(edited.status).toBe(200);
+    expect(edited.body).toMatchObject({
+      status: 'PENDING',
+      classId: g.b.id,
+      enrolledOn: row.enrolledOn,
+    });
+    const confirmed = await admin.browser.send(`enrollments/${row.id}/confirm`, {}, 'POST');
+    expect(confirmed.status).toBe(200);
+    expect(confirmed.body).toMatchObject({ status: 'ACTIVE', classId: g.b.id });
+    const history = (
+      await admin.browser.send<PageResult<EnrollmentEventView>>(`enrollments/${row.id}/events`)
+    ).body;
+    expect(history.items.slice(-3)).toEqual([
+      expect.objectContaining({
+        kind: 'REOPENED',
+        effectiveDate: '2026-09-05',
+        toStatus: 'PENDING',
+      }),
+      expect.objectContaining({
+        kind: 'UPDATED',
+        effectiveDate: '2026-09-05',
+        toStatus: 'PENDING',
+        toClassId: g.b.id,
+      }),
+      expect.objectContaining({
+        kind: 'CONFIRMED',
+        effectiveDate: '2026-09-05',
+        fromStatus: 'PENDING',
+        toStatus: 'ACTIVE',
+        toClassId: g.b.id,
+      }),
+    ]);
+  });
   it('blocks reopening once the academic year is closed', async () => {
     const g = await graph(tenantA);
     const row = await active(g);
