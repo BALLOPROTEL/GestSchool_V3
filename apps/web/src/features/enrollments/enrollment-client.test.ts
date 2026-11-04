@@ -77,6 +77,12 @@ describe('LOT 7 presentation rules', () => {
         expect(canEnrollment(session(role), action)).toBe(true);
     },
   );
+  it.each(['SCHOOL_ADMIN', 'DIRECTOR'] as const)('%s can reopen terminal enrollments', (role) => {
+    expect(canEnrollment(session(role), 'reopen')).toBe(true);
+  });
+  it('does not grant reopen to academic staff', () => {
+    expect(canEnrollment(session('ACADEMIC_STAFF'), 'reopen')).toBe(false);
+  });
   it.each(['PARENT', 'STUDENT', 'ACCOUNTANT'] as const)(
     '%s can read but cannot administer',
     (role) => {
@@ -103,7 +109,7 @@ describe('LOT 7 presentation rules', () => {
   it.each(['CLOSED', 'ARCHIVED'] as const)(
     'freezes %s years for every action',
     (academicYearStatus) => {
-      for (const action of ['update', 'confirm', 'cancel', 'transfer', 'complete'] as const)
+      for (const action of ['update', 'confirm', 'cancel', 'transfer', 'complete', 'reopen'] as const)
         expect(canEnrollmentAction({ ...row, academicYearStatus }, action)).toBe(false);
     },
   );
@@ -112,9 +118,13 @@ describe('LOT 7 presentation rules', () => {
     expect(canEnrollmentAction(row, 'transfer')).toBe(false);
     expect(canEnrollmentAction({ ...row, status: 'ACTIVE' }, 'update')).toBe(false);
     expect(canEnrollmentAction({ ...row, status: 'ACTIVE' }, 'transfer')).toBe(true);
-    for (const status of ['WITHDRAWN', 'COMPLETED', 'TRANSFERRED'] as const)
+    for (const status of ['WITHDRAWN', 'COMPLETED'] as const) {
       for (const action of ['update', 'confirm', 'cancel', 'transfer', 'complete'] as const)
         expect(canEnrollmentAction({ ...row, status }, action)).toBe(false);
+      expect(canEnrollmentAction({ ...row, status }, 'reopen')).toBe(true);
+    }
+    for (const action of ['update', 'confirm', 'cancel', 'transfer', 'complete', 'reopen'] as const)
+      expect(canEnrollmentAction({ ...row, status: 'TRANSFERRED' }, action)).toBe(false);
   });
   it('credits an existing reservation, not another student or class, and supports unlimited capacity', () => {
     expect(hasEnrollmentPlace(classroom)).toBe(false);
@@ -128,6 +138,7 @@ describe('LOT 7 presentation rules', () => {
     ['ENROLLMENT_CLASS_FULL', 'classFull'],
     ['ENROLLMENT_YEAR_CLOSED', 'yearClosed'],
     ['ENROLLMENT_HISTORY_REQUIRED', 'historyRequired'],
+    ['ENROLLMENT_REOPEN_HISTORY_REQUIRED', 'reopenHistoryRequired'],
     ['ENROLLMENT_INVALID_TRANSITION', 'invalidTransition'],
     ['ENROLLMENT_NOT_FOUND', 'notFound'],
     ['ENROLLMENT_CONFLICT', 'conflict'],
