@@ -3,6 +3,8 @@ import {
   resultPositiveDecimal,
   type ClassPeriodInput,
   type ClassResults,
+  type ResultBlocker,
+  type ResultStatus,
   type StudentResult,
   type SubjectResult,
 } from '@gestschool/contracts';
@@ -65,7 +67,7 @@ export async function calculateClass(
       classSubject: { schoolClassId: schoolClass.id },
       archivedAt: null,
     },
-    select: { id: true, status: true },
+    select: { id: true, title: true, status: true, classSubjectId: true },
   });
   const warnings: string[] = [];
   if (!roster.length) warnings.push('RESULT_NO_STUDENTS');
@@ -75,22 +77,93 @@ export async function calculateClass(
   type Cell = CalculationGrade & {
     studentId: string;
     classSubjectId: string;
+    assessmentId: string;
+    assessmentStatus: ResultStatus;
     comment: string | null;
   };
   const cells = roster.length
     ? await db.$queryRaw<Cell[]>(Prisma.sql`
-    SELECT s.id AS "studentId",a.class_subject_id AS "classSubjectId",g.score::text score,
-      a.max_score::text AS "maxScore",a.weight::text weight,coalesce(g.outcome,'NOT_GRADED') AS outcome,g.comment
+    SELECT s.id AS "studentId",a.class_subject_id AS "classSubjectId",a.id AS "assessmentId",
+      a.status AS "assessmentStatus",g.score::text score,a.max_score::text AS "maxScore",
+      a.weight::text weight,coalesce(g.outcome,'NOT_GRADED') AS outcome,g.comment
     FROM assessments a JOIN class_subjects cs ON (cs.tenant_id,cs.id)=(a.tenant_id,a.class_subject_id)
     JOIN students s ON s.tenant_id=a.tenant_id AND s.id IN (${Prisma.join(roster.map((row) => Prisma.sql`${row.studentId}::uuid`))})
     LEFT JOIN grades g ON (g.tenant_id,g.assessment_id,g.student_id)=(a.tenant_id,a.id,s.id)
     WHERE a.tenant_id=${context.tenantId}::uuid AND a.academic_period_id=${period.id}::uuid AND cs.school_class_id=${schoolClass.id}::uuid
-      AND a.archived_at IS NULL AND a.status IN ('PUBLISHED','LOCKED')
+      AND a.archived_at IS NULL
       AND gestschool_result_class_at(s.tenant_id,s.id,${period.academicYearId}::uuid,a.assessed_on)=${schoolClass.id}::uuid
     ORDER BY a.assessed_on,a.id`)
     : [];
+  const coverage = new Map<string, { eligibleStudents: number; missingGrades: number }>();
+  for (const cell of cells) {
+    const current = coverage.get(cell.assessmentId) ?? { eligibleStudents: 0, missingGrades: 0 };
+    current.eligibleStudents += 1;
+    if (['NOT_GRADED', 'ABSENT'].includes(cell.outcome)) current.missingGrades += 1;
+    coverage.set(cell.assessmentId, current);
+  }
+
+  const assessmentsBySubject = new Map<string, typeof assessments>();
+  for (const assessment of assessments) {
+    const subjectAssessments = assessmentsBySubject.get(assessment.classSubjectId) ?? [];
+    subjectAssessments.push(assessment);
+    assessmentsBySubject.set(assessment.classSubjectId, subjectAssessments);
+  }
+
+  const blockers: ResultBlocker[] = [];
+  for (const link of schoolClass.subjects) {
+    const subjectAssessments = assessmentsBySubject.get(link.id) ?? [];
+    if (!subjectAssessments.length) {
+      blockers.push({
+        code: 'SUBJECT_WITHOUT_ASSESSMENT',
+        classSubjectId: link.id,
+        subjectId: link.subjectId,
+        subjectName: link.subject.name,
+        assessmentId: null,
+        assessmentTitle: null,
+        assessmentStatus: null,
+        missingGrades: 0,
+        eligibleStudents: roster.length,
+      });
+      continue;
+    }
+
+    for (const assessment of subjectAssessments) {
+      const assessmentCoverage = coverage.get(assessment.id) ?? {
+        eligibleStudents: 0,
+        missingGrades: 0,
+      };
+      if (!['PUBLISHED', 'LOCKED'].includes(assessment.status)) {
+        blockers.push({
+          code: 'ASSESSMENT_NOT_PUBLISHED',
+          classSubjectId: link.id,
+          subjectId: link.subjectId,
+          subjectName: link.subject.name,
+          assessmentId: assessment.id,
+          assessmentTitle: assessment.title,
+          assessmentStatus: assessment.status,
+          missingGrades: assessmentCoverage.missingGrades,
+          eligibleStudents: assessmentCoverage.eligibleStudents,
+        });
+      }
+      if (assessmentCoverage.missingGrades > 0) {
+        blockers.push({
+          code: 'GRADES_MISSING',
+          classSubjectId: link.id,
+          subjectId: link.subjectId,
+          subjectName: link.subject.name,
+          assessmentId: assessment.id,
+          assessmentTitle: assessment.title,
+          assessmentStatus: assessment.status,
+          missingGrades: assessmentCoverage.missingGrades,
+          eligibleStudents: assessmentCoverage.eligibleStudents,
+        });
+      }
+    }
+  }
+
   const buckets = new Map<string, Cell[]>();
   for (const cell of cells) {
+    if (!['PUBLISHED', 'LOCKED'].includes(cell.assessmentStatus)) continue;
     const key = `${cell.studentId}:${cell.classSubjectId}`;
     const rows = buckets.get(key) ?? [];
     rows.push(cell);
@@ -153,6 +226,7 @@ export async function calculateClass(
     population: roster.length,
     rankedPopulation: students.filter((row) => row.rank !== null).length,
     warnings,
+    blockers,
     students,
   };
 }

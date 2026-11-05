@@ -139,6 +139,13 @@ export function GradeEntrySheet({
             </div>
           ))}
         </dl>
+        <p
+          role="status"
+          data-assessment-workflow={assessment.status}
+          className="rounded-lg bg-muted p-3 text-sm"
+        >
+          {t(`workflow${assessment.status}`)}
+        </p>
         {assessment.status === 'LOCKED' ? <p role="status">{t('locked')}</p> : null}
         <div className="flex flex-wrap items-center gap-2">
           {editable ? (

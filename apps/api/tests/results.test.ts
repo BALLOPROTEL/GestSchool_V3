@@ -510,6 +510,21 @@ describe('LOT 9 submission, independent validation and publication', () => {
   });
 });
 describe('LOT 9 rankings, snapshots, corrections and irreversible locks', () => {
+  it('explains the exact blockers before report publication', async () => {
+    const response = await director.browser.send<ClassResults>(
+      `results/class?classId=${a.classroom.id}&academicPeriodId=${periodId}`,
+    );
+    expect(response.status).toBe(200);
+    expect(response.body.blockers).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: 'SUBJECT_WITHOUT_ASSESSMENT',
+          classSubjectId: frenchId,
+          assessmentId: null,
+        }),
+      ]),
+    );
+  });
   it('refuses publishing an incomplete period', async () =>
     failure(
       director.browser.send(
@@ -536,6 +551,7 @@ describe('LOT 9 rankings, snapshots, corrections and irreversible locks', () => 
     );
     expect(reply.status).toBe(200);
     expect(reply.body.population).toBe(3);
+    expect(reply.body.blockers).toEqual([]);
     expect(reply.body.students.find((row) => row.studentId === a.student.id)).toMatchObject({
       overallAverage: '13.29',
       rank: 3,

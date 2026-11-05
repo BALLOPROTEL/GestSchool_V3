@@ -59,7 +59,9 @@ async function open(page: Page, id: string) {
   const button = page.locator(`button[data-assessment-open="${id}"]`);
   await button.click();
   expect((await response).ok()).toBe(true);
-  await expect(page.locator(`[data-grade-sheet="${id}"]`)).toBeVisible();
+  const gradeSheet = page.locator(`[data-grade-sheet="${id}"]`);
+  await expect(gradeSheet).toBeVisible();
+  await expect(gradeSheet).toBeInViewport();
 }
 async function transition(page: Page, name: string, id: string, verb: string) {
   await page.locator('[data-grade-sheet]').getByRole('button', { name, exact: true }).click();
