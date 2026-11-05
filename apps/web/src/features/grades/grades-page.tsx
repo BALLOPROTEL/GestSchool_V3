@@ -143,7 +143,8 @@ function ResultsWorkspace({ studentId }: { studentId?: string }) {
           size="sm"
           variant="outline"
           disabled={dirty}
-          aria-controls={`assessment-detail-${row.id}`}
+          aria-controls="assessment-detail"
+          aria-expanded={selected === row.id}
           onClick={() => openAssessment(row.id)}
         >
           {t('open')}
@@ -307,7 +308,7 @@ function ResultsWorkspace({ studentId }: { studentId?: string }) {
               </Card>
               <div
                 ref={detailRef}
-                id={selected ? `assessment-detail-${selected}` : undefined}
+                id="assessment-detail"
                 data-assessment-detail={selected}
                 tabIndex={-1}
                 className="scroll-mt-4 outline-none"
