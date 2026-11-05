@@ -348,10 +348,18 @@ export class PrismaAttendanceRepository extends AttendanceRepository {
           studentId: { in: studentIds },
           date: targetDate,
         },
-        select: { studentId: true, schoolClassId: true },
+        select: { studentId: true, schoolClassId: true, updatedAt: true },
       });
       if (existing.some((record) => record.schoolClassId !== input.classId))
         attendanceError('ATTENDANCE_CLASS_CONFLICT');
+
+      const existingByStudent = new Map(existing.map((record) => [record.studentId, record]));
+      for (const entry of input.entries) {
+        if (!Object.hasOwn(entry, 'expectedUpdatedAt')) continue;
+        const actual = existingByStudent.get(entry.studentId)?.updatedAt.toISOString() ?? null;
+        if (actual !== (entry.expectedUpdatedAt ?? null))
+          attendanceError('ATTENDANCE_CONCURRENT_UPDATE');
+      }
 
       for (const entry of input.entries) {
         if (entry.status === null) {

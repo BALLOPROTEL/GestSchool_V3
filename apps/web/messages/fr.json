@@ -501,9 +501,7 @@
     "studentProfile": "Fiche élève",
     "laterLot": "Non disponible dans ce lot."
   },
-  "Meta": {
-    "description": "Plateforme de gestion scolaire pour les établissements francophones"
-  },
+  "Meta": { "description": "Plateforme de gestion scolaire pour les établissements francophones" },
   "Common": {
     "actions": "Actions",
     "add": "Ajouter",
@@ -881,7 +879,14 @@
     "historyError": "Impossible de charger l’historique des présences.",
     "historyEmpty": "Aucune présence enregistrée pour cet élève.",
     "excused": "Justifiées",
-    "historyPage": "Page {page} sur {pages}"
+    "historyPage": "Page {page} sur {pages}",
+    "saveSheet": "Valider / Enregistrer la feuille",
+    "unsavedChanges": "Modifications non enregistrées. Validez la feuille avant de changer de contexte.",
+    "allSaved": "Toutes les modifications sont enregistrées.",
+    "discardChangesConfirm": "Des modifications ne sont pas enregistrées. Les abandonner et continuer ?",
+    "concurrentUpdate": "Cette feuille a été modifiée par un autre utilisateur. Rechargez-la avant d’enregistrer à nouveau.",
+    "exportCsv": "Exporter CSV",
+    "exportPdf": "Exporter PDF"
   },
   "Finance": {
     "caption": "Factures récentes",

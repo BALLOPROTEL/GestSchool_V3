@@ -4,13 +4,15 @@ import { PeopleError } from '../directory/people-client';
 export async function downloadAttendance(
   classId: string,
   date: string,
+  format: 'csv' | 'pdf' = 'csv',
+  locale: 'fr' | 'en' | 'ar' = 'fr',
   retry = true,
 ): Promise<void> {
   const session = currentSession();
   if (!session) throw new PeopleError('AUTH_SESSION_EXPIRED');
   const { csrfToken } = await csrfState();
   const response = await fetch(
-    `/api/v1/attendance/export?classId=${encodeURIComponent(classId)}&date=${encodeURIComponent(date)}`,
+    `/api/v1/attendance/export?classId=${encodeURIComponent(classId)}&date=${encodeURIComponent(date)}&format=${format}&locale=${locale}`,
     {
       credentials: 'include',
       cache: 'no-store',
@@ -23,7 +25,7 @@ export async function downloadAttendance(
   if (response.status === 401 && retry) {
     const renewed = await restoreSession();
     window.dispatchEvent(new Event('gestschool:session'));
-    if (renewed) return downloadAttendance(classId, date, false);
+    if (renewed) return downloadAttendance(classId, date, format, locale, false);
   }
   if (!response.ok) {
     const error = (await response.json()) as { code?: string };
@@ -35,7 +37,7 @@ export async function downloadAttendance(
   anchor.href = url;
   anchor.download =
     response.headers.get('content-disposition')?.match(/filename="([^"]+)"/)?.[1] ??
-    `gestschool-attendance-${date}.csv`;
+    `gestschool-attendance-${date}.${format}`;
   anchor.click();
   URL.revokeObjectURL(url);
 }

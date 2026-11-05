@@ -403,4 +403,61 @@ describe('LOT17 attendance repository', () => {
       }),
     ).rejects.toMatchObject({ code: 'ATTENDANCE_NOT_FOUND', status: 404 });
   });
+
+  it('rejects a stale concurrent attendance update instead of silently overwriting it', async () => {
+    const data = await fixture();
+    const stale = await repository.sheet(data.context, {
+      classId: data.schoolClass.id,
+      date: '2026-10-30',
+    });
+    expect(stale.students[0]?.updatedAt).toBeNull();
+
+    const first = await repository.write(data.context, {
+      classId: data.schoolClass.id,
+      date: '2026-10-30',
+      entries: [
+        {
+          studentId: data.student.id,
+          status: 'PRESENT',
+          note: null,
+          expectedUpdatedAt: stale.students[0]?.updatedAt ?? null,
+        },
+      ],
+    });
+    expect(first.students[0]?.status).toBe('PRESENT');
+    expect(first.students[0]?.updatedAt).toBeTruthy();
+
+    await expect(
+      repository.write(data.context, {
+        classId: data.schoolClass.id,
+        date: '2026-10-30',
+        entries: [
+          {
+            studentId: data.student.id,
+            status: 'ABSENT',
+            note: 'Stale writer',
+            expectedUpdatedAt: stale.students[0]?.updatedAt ?? null,
+          },
+        ],
+      }),
+    ).rejects.toMatchObject({ code: 'ATTENDANCE_CONCURRENT_UPDATE', status: 409 });
+
+    const fresh = await repository.sheet(data.context, {
+      classId: data.schoolClass.id,
+      date: '2026-10-30',
+    });
+    const saved = await repository.write(data.context, {
+      classId: data.schoolClass.id,
+      date: '2026-10-30',
+      entries: [
+        {
+          studentId: data.student.id,
+          status: 'ABSENT',
+          note: 'Fresh writer',
+          expectedUpdatedAt: fresh.students[0]?.updatedAt ?? null,
+        },
+      ],
+    });
+    expect(saved.students[0]).toMatchObject({ status: 'ABSENT', note: 'Fresh writer' });
+  });
 });
