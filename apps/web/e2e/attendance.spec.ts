@@ -48,7 +48,6 @@ test('LOT18.4 certifies explicit attendance save, reload persistence, PDF export
   const auth = (await (await sessionResponse).json()) as LoginResult;
   if (auth.kind !== 'session') throw new Error('Expected attendance admin session');
 
-  await page.goto('/fr/students');
   await page.goto('/fr/attendance');
   await expect(page.getByRole('heading', { level: 1, name: 'Suivi des présences' })).toBeVisible();
 
