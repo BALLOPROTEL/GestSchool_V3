@@ -312,9 +312,7 @@ export function StudentProfilePage() {
                             type="button"
                             variant="outline"
                             disabled={attendancePage <= 1 || attendance.loading}
-                            onClick={() =>
-                              setAttendancePage((value) => Math.max(1, value - 1))
-                            }
+                            onClick={() => setAttendancePage((value) => Math.max(1, value - 1))}
                           >
                             {common('previous')}
                           </Button>
@@ -327,9 +325,7 @@ export function StudentProfilePage() {
                             variant="outline"
                             disabled={attendancePage >= attendancePages || attendance.loading}
                             onClick={() =>
-                              setAttendancePage((value) =>
-                                Math.min(attendancePages, value + 1),
-                              )
+                              setAttendancePage((value) => Math.min(attendancePages, value + 1))
                             }
                           >
                             {common('next')}

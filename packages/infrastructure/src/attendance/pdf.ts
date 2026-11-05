@@ -120,7 +120,12 @@ function drawText(
   x: number,
   y: number,
   width: number,
-  options: { bold?: boolean; size?: number; align?: 'left' | 'right' | 'center'; height?: number } = {},
+  options: {
+    bold?: boolean;
+    size?: number;
+    align?: 'left' | 'right' | 'center';
+    height?: number;
+  } = {},
 ): void {
   const content = safeText(value);
   doc
