@@ -53,7 +53,7 @@ export class EnrollmentService {
   }
   transition(
     context: RequestContext,
-    action: 'confirm' | 'cancel' | 'transfer' | 'complete',
+    action: 'confirm' | 'cancel' | 'transfer' | 'complete' | 'reopen',
     identifier: string,
     input: unknown,
   ) {

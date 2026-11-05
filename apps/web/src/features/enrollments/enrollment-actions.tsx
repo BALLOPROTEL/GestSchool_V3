@@ -17,7 +17,7 @@ import {
   EnrollmentClassPicker,
   EnrollmentError,
 } from './enrollment-components';
-export type EnrollmentAction = 'confirm' | 'cancel' | 'transfer' | 'complete';
+export type EnrollmentAction = 'confirm' | 'cancel' | 'transfer' | 'complete' | 'reopen';
 export function EnrollmentActionDialog({
   row,
   action,
@@ -34,7 +34,9 @@ export function EnrollmentActionDialog({
   const id = useId();
   const [classId, setClassId] = useState('');
   const [reason, setReason] = useState('');
-  const [date, setDate] = useState(row.enrolledOn);
+  const [date, setDate] = useState(
+    action === 'reopen' ? (row.endedOn ?? row.enrolledOn) : row.enrolledOn,
+  );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>();
   const capacity = usePeopleData<PageResult<EnrollmentClassView>>(
@@ -79,6 +81,9 @@ export function EnrollmentActionDialog({
         <p className="text-sm [overflow-wrap:anywhere]">
           {row.academicYearName} · {row.className}
         </p>
+        {action === 'reopen' ? (
+          <p className="text-sm text-muted-foreground">{t('reopenHint')}</p>
+        ) : null}
         {action === 'transfer' ? (
           <>
             <EnrollmentClassPicker
@@ -104,7 +109,7 @@ export function EnrollmentActionDialog({
                 id={`${id}-date`}
                 type="date"
                 required
-                min={row.enrolledOn}
+                min={action === 'reopen' ? (row.endedOn ?? row.enrolledOn) : row.enrolledOn}
                 value={date}
                 onChange={(event) => setDate(event.target.value)}
               />

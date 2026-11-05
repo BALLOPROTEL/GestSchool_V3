@@ -15,6 +15,10 @@ const lot181Migration = {
   name: '20261104093000_private_profile_avatars',
   checksum: '4008e5d60030b56f2d1565c76f87ba72df1d84ca4fe25ed69268eee5e46c10a3',
 };
+const lot183Migration = {
+  name: '20261104170000_enrollment_reopen_action',
+  checksum: 'f352bddb3988000d95de34edecbcc6c87e914cecb26a91fa8dd98661a3f69096',
+};
 const expectedHost = 'dpg-dbei7tqvcj2c73d1qukg-a.frankfurt-postgres.render.com';
 const expectedDatabase = 'gestschool_v3_postgres_staging';
 
@@ -116,13 +120,16 @@ export async function runStagingMigrations(
       .digest('hex');
     const lot174 = expected[18];
     const lot181 = expected[19];
+    const lot183 = expected[20];
     if (
-      expected.length !== 20 ||
+      expected.length !== 21 ||
       legacyHash !== legacyManifestHash ||
       lot174?.name !== lot174Migration.name ||
       lot174.checksum !== lot174Migration.checksum ||
       lot181?.name !== lot181Migration.name ||
-      lot181.checksum !== lot181Migration.checksum
+      lot181.checksum !== lot181Migration.checksum ||
+      lot183?.name !== lot183Migration.name ||
+      lot183.checksum !== lot183Migration.checksum
     )
       throw new Error();
   } catch {

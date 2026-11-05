@@ -134,8 +134,8 @@ async function historicalRoster(
       },
       orderBy: [
         { enrollmentId: 'asc' },
-        { effectiveDate: 'desc' },
         { recordedAt: 'desc' },
+        { effectiveDate: 'desc' },
         { id: 'desc' },
       ],
     }),

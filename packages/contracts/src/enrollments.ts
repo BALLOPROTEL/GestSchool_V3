@@ -9,6 +9,7 @@ export const enrollmentPermissionCodes = [
   'enrollments.cancel',
   'enrollments.transfer',
   'enrollments.complete',
+  'enrollments.reopen',
 ] as const;
 export const enrollmentStatuses = [
   'PENDING',
@@ -114,7 +115,14 @@ export interface EnrollmentList extends PageResult<EnrollmentView> {
 export interface EnrollmentEventView {
   id: string;
   kind:
-    'BASELINE' | 'CREATED' | 'UPDATED' | 'CONFIRMED' | 'CANCELLED' | 'TRANSFERRED' | 'COMPLETED';
+    | 'BASELINE'
+    | 'CREATED'
+    | 'UPDATED'
+    | 'CONFIRMED'
+    | 'CANCELLED'
+    | 'TRANSFERRED'
+    | 'COMPLETED'
+    | 'REOPENED';
   fromClassId: string | null;
   toClassId: string;
   fromClassName: string | null;

@@ -96,6 +96,7 @@ enum EnrollmentEventKind {
   CANCELLED
   TRANSFERRED
   COMPLETED
+  REOPENED
 
   @@map("enrollment_event_kind")
 }

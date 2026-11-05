@@ -41,6 +41,29 @@ export function enrollmentTransition(
   if (action === 'complete' && status === 'ACTIVE') return 'COMPLETED';
   return enrollmentConflict('ENROLLMENT_INVALID_TRANSITION');
 }
+export function enrollmentReopenTransition(
+  status: EnrollmentStatus,
+  latest: {
+    kind: string;
+    fromStatus: EnrollmentStatus | null;
+    toStatus: EnrollmentStatus;
+  } | null,
+): EnrollmentStatus {
+  if (status !== 'WITHDRAWN' && status !== 'COMPLETED')
+    return enrollmentConflict('ENROLLMENT_INVALID_TRANSITION');
+  if (!latest || latest.toStatus !== status)
+    return enrollmentConflict('ENROLLMENT_REOPEN_HISTORY_REQUIRED');
+  if (
+    status === 'WITHDRAWN' &&
+    latest.kind === 'CANCELLED' &&
+    (latest.fromStatus === 'PENDING' || latest.fromStatus === 'ACTIVE')
+  )
+    return latest.fromStatus;
+  if (status === 'COMPLETED' && latest.kind === 'COMPLETED' && latest.fromStatus === 'ACTIVE')
+    return 'ACTIVE';
+  return enrollmentConflict('ENROLLMENT_REOPEN_HISTORY_REQUIRED');
+}
+
 export function enrollmentCapacity(
   capacity: number | null,
   occupied: number,
