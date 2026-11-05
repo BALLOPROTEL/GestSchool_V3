@@ -120,7 +120,7 @@ function drawText(
   x: number,
   y: number,
   width: number,
-  options: { bold?: boolean; size?: number; align?: 'left' | 'right' | 'center' } = {},
+  options: { bold?: boolean; size?: number; align?: 'left' | 'right' | 'center'; height?: number } = {},
 ): void {
   const content = safeText(value);
   doc
@@ -129,6 +129,7 @@ function drawText(
     .fillColor('#172033')
     .text(content, x, y, {
       width,
+      height: options.height,
       align: options.align ?? (hasArabic(content) ? 'right' : 'left'),
       ellipsis: true,
       lineBreak: true,
@@ -282,6 +283,7 @@ export async function renderAttendancePdf(
       const width = columns[index]!.width;
       drawText(doc, value, x + 5, y + 7, width - 10, {
         size: 8,
+        height: rowHeight - 14,
         align: rtl || hasArabic(value) ? 'right' : 'left',
       });
       x += width;

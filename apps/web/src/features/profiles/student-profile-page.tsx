@@ -68,6 +68,8 @@ export function StudentProfilePage() {
   const [revision, setRevision] = useState(0);
   const [editing, setEditing] = useState(false);
   const [avatarBusy, setAvatarBusy] = useState(false);
+  const [attendancePage, setAttendancePage] = useState(1);
+  const attendancePageSize = 25;
   const avatarPath = allowed && valid.success ? `/api/v1/students/${valid.data}/avatar` : null;
   const avatarUrl = usePrivateAvatar(avatarPath, valid.success ? valid.data : null);
   const result = usePeopleData<PersonView>(
@@ -76,12 +78,15 @@ export function StudentProfilePage() {
   );
   const attendance = usePeopleData<AttendanceHistoryView>(
     allowed && attendanceAllowed && valid.success
-      ? `attendance/history?studentId=${encodeURIComponent(valid.data)}&pageSize=100`
+      ? `attendance/history?studentId=${encodeURIComponent(valid.data)}&page=${attendancePage}&pageSize=${attendancePageSize}`
       : null,
     revision,
   );
   const person = result.data;
   const attendancePercentage = attendanceRate(attendance.data);
+  const attendancePages = attendance.data
+    ? Math.max(1, Math.ceil(attendance.data.total / attendancePageSize))
+    : 1;
   async function changeAvatar(file: File | undefined) {
     if (!file || !avatarPath) return;
     setAvatarBusy(true);
@@ -293,12 +298,45 @@ export function StudentProfilePage() {
                   ) : tab === 'finance' ? (
                     <StudentFinance studentId={person.id} />
                   ) : (
-                    <StudentAttendancePanel
-                      data={attendance.data}
-                      loading={attendance.loading}
-                      error={attendance.error}
-                      allowed={attendanceAllowed}
-                    />
+                    <>
+                      <StudentAttendancePanel
+                        data={attendance.data}
+                        loading={attendance.loading}
+                        error={attendance.error}
+                        allowed={attendanceAllowed}
+                      />
+                      {attendance.data && attendance.data.total > attendancePageSize ? (
+                        <div className="flex items-center justify-between gap-3 border-t border-border px-5 py-4">
+                          <Button
+                            size="sm"
+                            type="button"
+                            variant="outline"
+                            disabled={attendancePage <= 1 || attendance.loading}
+                            onClick={() =>
+                              setAttendancePage((value) => Math.max(1, value - 1))
+                            }
+                          >
+                            {common('previous')}
+                          </Button>
+                          <span className="text-sm text-muted-foreground">
+                            {attendancePage} / {attendancePages}
+                          </span>
+                          <Button
+                            size="sm"
+                            type="button"
+                            variant="outline"
+                            disabled={attendancePage >= attendancePages || attendance.loading}
+                            onClick={() =>
+                              setAttendancePage((value) =>
+                                Math.min(attendancePages, value + 1),
+                              )
+                            }
+                          >
+                            {common('next')}
+                          </Button>
+                        </div>
+                      ) : null}
+                    </>
                   )}
                 </Card>
               </TabsContent>

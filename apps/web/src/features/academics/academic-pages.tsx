@@ -39,7 +39,7 @@ import {
   UsersRound,
 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from '../auth/auth-provider';
 import { AcademicPicker } from './academic-components';
@@ -102,6 +102,7 @@ export function AttendancePage() {
   const [date, setDate] = useState(localToday);
   const [saving, setSaving] = useState(false);
   const [pendingDiscard, setPendingDiscard] = useState<AttendanceDiscardAction | null>(null);
+  const bypassBeforeUnload = useRef(false);
   const path =
     canUseSheet && classId
       ? `attendance/sheet?classId=${encodeURIComponent(classId)}&date=${encodeURIComponent(date)}`
@@ -134,6 +135,7 @@ export function AttendancePage() {
   useEffect(() => {
     if (!dirty) return;
     const beforeUnload = (event: BeforeUnloadEvent) => {
+      if (bypassBeforeUnload.current) return;
       event.preventDefault();
       event.returnValue = '';
     };
@@ -255,6 +257,7 @@ export function AttendancePage() {
       setDate(action.value);
       return;
     }
+    bypassBeforeUnload.current = true;
     window.location.assign(action.value);
   }
 
