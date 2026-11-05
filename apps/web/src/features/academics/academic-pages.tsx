@@ -137,8 +137,8 @@ export function AttendancePage() {
     if (!dirty) return;
     const marker = `attendance-${Date.now()}-${Math.random()}`;
     const guardState = {
-      ...(window.history.state ?? {}),
-      __gestschoolAttendanceGuard: marker,
+      ...window.history.state,
+      gestschoolAttendanceGuard: marker,
     };
     window.history.pushState(guardState, '', window.location.href);
 
@@ -153,7 +153,7 @@ export function AttendancePage() {
       window.removeEventListener('popstate', guardHistory);
       if (
         !bypassBeforeUnload.current &&
-        window.history.state?.__gestschoolAttendanceGuard === marker
+        window.history.state?.gestschoolAttendanceGuard === marker
       ) {
         bypassBeforeUnload.current = true;
         window.history.back();
