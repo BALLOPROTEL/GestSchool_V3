@@ -1,6 +1,5 @@
-/// <reference lib="dom" />
-import { chromium } from 'playwright';
-import { escapeDocumentText, localFonts } from '../documents/renderer.js';
+import { createRequire } from 'node:module';
+import PDFDocument from 'pdfkit';
 
 export type AttendancePdfLocale = 'fr' | 'en' | 'ar';
 
@@ -93,123 +92,215 @@ const labels = {
   },
 } as const;
 
-const esc = escapeDocumentText;
+const require = createRequire(import.meta.url);
+const latinRegular = require.resolve('@fontsource/noto-sans/files/noto-sans-latin-400-normal.woff');
+const latinSemibold =
+  require.resolve('@fontsource/noto-sans/files/noto-sans-latin-600-normal.woff');
+const arabicRegular =
+  require.resolve('@fontsource/noto-sans-arabic/files/noto-sans-arabic-arabic-400-normal.woff');
+const arabicSemibold =
+  require.resolve('@fontsource/noto-sans-arabic/files/noto-sans-arabic-arabic-600-normal.woff');
 
-export async function attendancePdfHtml(
-  sheet: AttendancePdfSheet,
-  locale: AttendancePdfLocale,
-): Promise<string> {
-  const l = labels[locale];
-  const direction = locale === 'ar' ? 'rtl' : 'ltr';
-  const summaryItems: Array<[string, number]> = [
-    [l.total, sheet.summary.total],
-    [l.present, sheet.summary.present],
-    [l.absent, sheet.summary.absent],
-    [l.late, sheet.summary.late],
-    [l.excused, sheet.summary.excused],
-    [l.unmarked, sheet.summary.unmarked],
-  ];
-  const summary = summaryItems
-    .map(
-      ([label, value]) =>
-        '<div><span>' + esc(label) + '</span><strong>' + esc(value) + '</strong></div>',
-    )
-    .join('');
-  const rows = sheet.students
-    .map((student) => {
-      const status = l[student.status ?? 'UNMARKED'];
-      return (
-        '<tr><td>' +
-        esc(student.studentName) +
-        '</td><td>' +
-        esc(student.matricule) +
-        '</td><td>' +
-        esc(status) +
-        '</td><td>' +
-        esc(student.note) +
-        '</td></tr>'
-      );
-    })
-    .join('');
+function hasArabic(value: unknown): boolean {
+  return typeof value === 'string' && /[\u0600-\u06ff]/u.test(value);
+}
 
-  const css =
-    (await localFonts()) +
-    "@page{size:A4;margin:14mm}*{box-sizing:border-box}body{margin:0;color:#172033;font:10.5px 'GS Latin','GS Arabic',sans-serif}" +
-    "html[dir=rtl] body{font-family:'GS Arabic','GS Latin',sans-serif}" +
-    'header{border-bottom:2px solid #3157a4;padding-bottom:9px}h1{font-size:22px;margin:0 0 8px;color:#3157a4}' +
-    '.meta{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.meta div,.summary div{display:flex;justify-content:space-between;gap:8px}' +
-    '.meta span,.summary span{color:#526074}.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0;padding:10px;border:1px solid #cbd5e1;border-radius:8px}' +
-    'table{border-collapse:collapse;width:100%;table-layout:fixed}thead{display:table-header-group}tr{break-inside:avoid}' +
-    'th,td{border:1px solid #cbd5e1;padding:6px;text-align:start;vertical-align:top;overflow-wrap:anywhere}th{background:#f1f5f9}' +
-    'th:nth-child(1){width:30%}th:nth-child(2){width:18%}th:nth-child(3){width:20%}th:nth-child(4){width:32%}' +
-    'footer{margin-top:12px;padding-top:8px;border-top:1px solid #cbd5e1;color:#526074;font-size:9px}';
+function fontName(value: unknown, bold = false): string {
+  if (hasArabic(value)) return bold ? 'ArabicSemibold' : 'ArabicRegular';
+  return bold ? 'LatinSemibold' : 'LatinRegular';
+}
 
-  return (
-    '<!doctype html><html lang="' +
-    locale +
-    '" dir="' +
-    direction +
-    "\"><head><meta charset=\"utf-8\"><meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; font-src data:; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'\"><style>" +
-    css +
-    '</style></head><body><header><h1>' +
-    esc(l.title) +
-    '</h1><div class="meta"><div><span>' +
-    esc(l.class) +
-    '</span><strong>' +
-    esc(sheet.className) +
-    '</strong></div><div><span>' +
-    esc(l.year) +
-    '</span><strong>' +
-    esc(sheet.academicYearName) +
-    '</strong></div><div><span>' +
-    esc(l.date) +
-    '</span><strong>' +
-    esc(sheet.date) +
-    '</strong></div></div></header><section class="summary">' +
-    summary +
-    '</section><table><thead><tr><th>' +
-    esc(l.student) +
-    '</th><th>' +
-    esc(l.matricule) +
-    '</th><th>' +
-    esc(l.status) +
-    '</th><th>' +
-    esc(l.note) +
-    '</th></tr></thead><tbody>' +
-    rows +
-    '</tbody></table><footer>' +
-    esc(l.footer) +
-    '</footer></body></html>'
-  );
+function safeText(value: unknown): string {
+  return value == null ? '' : String(value);
+}
+
+function drawText(
+  doc: PDFKit.PDFDocument,
+  value: unknown,
+  x: number,
+  y: number,
+  width: number,
+  options: { bold?: boolean; size?: number; align?: 'left' | 'right' | 'center' } = {},
+): void {
+  const content = safeText(value);
+  doc
+    .font(fontName(content, options.bold))
+    .fontSize(options.size ?? 9)
+    .fillColor('#172033')
+    .text(content, x, y, {
+      width,
+      align: options.align ?? (hasArabic(content) ? 'right' : 'left'),
+      ellipsis: true,
+      lineBreak: true,
+    });
+}
+
+function drawLine(doc: PDFKit.PDFDocument, x1: number, y1: number, x2: number, y2: number): void {
+  doc.strokeColor('#cbd5e1').lineWidth(0.7).moveTo(x1, y1).lineTo(x2, y2).stroke();
 }
 
 export async function renderAttendancePdf(
   sheet: AttendancePdfSheet,
   locale: AttendancePdfLocale,
 ): Promise<Buffer> {
-  const html = await attendancePdfHtml(sheet, locale);
-  const browser = await chromium.launch({ headless: true, timeout: 15_000 });
-  try {
-    const context = await browser.newContext({
-      javaScriptEnabled: false,
-      serviceWorkers: 'block',
-      offline: true,
+  const l = labels[locale];
+  const rtl = locale === 'ar';
+  const doc = new PDFDocument({
+    size: 'A4',
+    margins: { top: 38, right: 38, bottom: 42, left: 38 },
+    info: {
+      Title: `${l.title} - ${sheet.className} - ${sheet.date}`,
+      Author: 'GestSchool',
+      Subject: l.title,
+      Creator: 'GestSchool',
+    },
+  });
+
+  doc.registerFont('LatinRegular', latinRegular);
+  doc.registerFont('LatinSemibold', latinSemibold);
+  doc.registerFont('ArabicRegular', arabicRegular);
+  doc.registerFont('ArabicSemibold', arabicSemibold);
+
+  const chunks: Buffer[] = [];
+  doc.on('data', (chunk: Buffer) => chunks.push(Buffer.from(chunk)));
+  const finished = new Promise<Buffer>((resolve, reject) => {
+    doc.once('end', () => resolve(Buffer.concat(chunks)));
+    doc.once('error', reject);
+  });
+
+  const pageWidth = doc.page.width;
+  const left = doc.page.margins.left;
+  const right = pageWidth - doc.page.margins.right;
+  const contentWidth = right - left;
+
+  const renderHeader = () => {
+    drawText(doc, l.title, left, 38, contentWidth, {
+      bold: true,
+      size: 20,
+      align: rtl ? 'right' : 'left',
     });
-    await context.route('**/*', (route) => route.abort('blockedbyclient'));
-    const page = await context.newPage();
-    await page.setContent(html, { waitUntil: 'load', timeout: 15_000 });
-    await page.evaluate(() => document.fonts.ready);
-    const pdf = await page.pdf({
-      format: 'A4',
-      printBackground: true,
-      tagged: true,
-      margin: { top: '14mm', right: '14mm', bottom: '14mm', left: '14mm' },
+    drawLine(doc, left, 69, right, 69);
+
+    const metaY = 81;
+    const metaWidth = contentWidth / 3;
+    const meta = [
+      [l.class, sheet.className],
+      [l.year, sheet.academicYearName],
+      [l.date, sheet.date],
+    ] as const;
+
+    meta.forEach(([label, value], index) => {
+      const x = left + metaWidth * index;
+      drawText(doc, label, x, metaY, metaWidth - 8, {
+        size: 7.5,
+        align: rtl ? 'right' : 'left',
+      });
+      drawText(doc, value, x, metaY + 13, metaWidth - 8, {
+        bold: true,
+        size: 9,
+        align: rtl ? 'right' : 'left',
+      });
     });
-    if (!pdf.subarray(0, 5).equals(Buffer.from('%PDF-')) || pdf.length > 10_000_000) {
-      throw new Error('ATTENDANCE_PDF_INVALID');
+  };
+
+  renderHeader();
+
+  const summary = [
+    [l.total, sheet.summary.total],
+    [l.present, sheet.summary.present],
+    [l.absent, sheet.summary.absent],
+    [l.late, sheet.summary.late],
+    [l.excused, sheet.summary.excused],
+    [l.unmarked, sheet.summary.unmarked],
+  ] as const;
+  const summaryTop = 120;
+  const summaryGap = 6;
+  const summaryWidth = (contentWidth - summaryGap * 2) / 3;
+
+  summary.forEach(([label, value], index) => {
+    const row = Math.floor(index / 3);
+    const column = index % 3;
+    const x = left + column * (summaryWidth + summaryGap);
+    const y = summaryTop + row * 38;
+    doc.roundedRect(x, y, summaryWidth, 31, 5).fillAndStroke('#f8fafc', '#cbd5e1');
+    drawText(doc, label, x + 7, y + 6, summaryWidth - 14, {
+      size: 7.5,
+      align: rtl ? 'right' : 'left',
+    });
+    drawText(doc, value, x + 7, y + 17, summaryWidth - 14, {
+      bold: true,
+      size: 10,
+      align: rtl ? 'right' : 'left',
+    });
+  });
+
+  const columns = [
+    { label: l.student, width: contentWidth * 0.31 },
+    { label: l.matricule, width: contentWidth * 0.18 },
+    { label: l.status, width: contentWidth * 0.21 },
+    { label: l.note, width: contentWidth * 0.3 },
+  ];
+  const rowHeight = 30;
+  const headerHeight = 24;
+  let y = summaryTop + 83;
+
+  const renderTableHeader = () => {
+    let x = left;
+    doc.rect(left, y, contentWidth, headerHeight).fillAndStroke('#f1f5f9', '#cbd5e1');
+    for (const column of columns) {
+      drawText(doc, column.label, x + 5, y + 7, column.width - 10, {
+        bold: true,
+        size: 8,
+        align: rtl ? 'right' : 'left',
+      });
+      x += column.width;
+      if (x < right - 1) drawLine(doc, x, y, x, y + headerHeight);
     }
-    return pdf;
-  } finally {
-    await browser.close();
+    y += headerHeight;
+  };
+
+  renderTableHeader();
+
+  for (const student of sheet.students) {
+    if (y + rowHeight > doc.page.height - 58) {
+      doc.addPage();
+      renderHeader();
+      y = 120;
+      renderTableHeader();
+    }
+
+    const values = [
+      student.studentName,
+      student.matricule,
+      l[student.status ?? 'UNMARKED'],
+      student.note ?? '',
+    ];
+
+    doc.rect(left, y, contentWidth, rowHeight).strokeColor('#cbd5e1').lineWidth(0.7).stroke();
+    let x = left;
+    values.forEach((value, index) => {
+      const width = columns[index]!.width;
+      drawText(doc, value, x + 5, y + 7, width - 10, {
+        size: 8,
+        align: rtl || hasArabic(value) ? 'right' : 'left',
+      });
+      x += width;
+      if (x < right - 1) drawLine(doc, x, y, x, y + rowHeight);
+    });
+    y += rowHeight;
   }
+
+  const footerY = Math.min(y + 12, doc.page.height - 44);
+  drawLine(doc, left, footerY, right, footerY);
+  drawText(doc, l.footer, left, footerY + 7, contentWidth, {
+    size: 7.5,
+    align: rtl ? 'right' : 'left',
+  });
+
+  doc.end();
+  const pdf = await finished;
+  if (!pdf.subarray(0, 5).equals(Buffer.from('%PDF-')) || pdf.length > 10_000_000) {
+    throw new Error('ATTENDANCE_PDF_INVALID');
+  }
+  return pdf;
 }

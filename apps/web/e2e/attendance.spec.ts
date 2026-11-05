@@ -64,11 +64,12 @@ test('LOT18.4 certifies explicit attendance save, reload persistence, PDF export
   await expect(page.getByText('Modifications non enregistrées.', { exact: false })).toBeVisible();
 
   const dateInput = page.getByLabel('Date', { exact: true });
-  page.once('dialog', async (dialog) => {
-    expect(dialog.message()).toContain('modifications ne sont pas enregistrées');
-    await dialog.dismiss();
-  });
   await dateInput.fill('2026-10-31');
+  const discardDialog = page.getByRole('dialog');
+  await expect(
+    discardDialog.getByRole('heading', { name: 'Abandonner les modifications ?' }),
+  ).toBeVisible();
+  await discardDialog.getByRole('button', { name: 'Annuler', exact: true }).click();
   await expect(dateInput).toHaveValue('2026-10-30');
 
   const saved = page.waitForResponse(
@@ -77,7 +78,11 @@ test('LOT18.4 certifies explicit attendance save, reload persistence, PDF export
       response.request().method() === 'PUT',
   );
   await page.getByRole('button', { name: 'Valider / Enregistrer la feuille', exact: true }).click();
-  expect((await saved).ok()).toBe(true);
+  const savedResponse = await saved;
+  expect(savedResponse.ok()).toBe(true);
+  const savedSheet = (await savedResponse.json()) as { students: Array<{ studentId: string }> };
+  const savedStudentId = savedSheet.students[0]?.studentId;
+  if (!savedStudentId) throw new Error('Missing saved attendance student');
   await expect(page.getByText('Présences enregistrées.', { exact: true })).toBeVisible();
   await expect(
     page.getByText('Toutes les modifications sont enregistrées.', { exact: true }),
@@ -92,6 +97,18 @@ test('LOT18.4 certifies explicit attendance save, reload persistence, PDF export
   const persistedRow = page.locator('tbody tr').first();
   await expect(persistedRow.getByRole('combobox')).toHaveValue('ABSENT');
   await expect(persistedRow.getByRole('textbox')).toHaveValue('Certification LOT18.4');
+
+  await page.goto(`/fr/students/${savedStudentId}`);
+  await expect(page.getByRole('tab', { name: 'Présence', exact: true })).toBeVisible();
+  await page.getByRole('tab', { name: 'Présence', exact: true }).click();
+  await expect(page.getByText('Certification LOT18.4', { exact: true })).toBeVisible();
+  await expect(page.getByText('Absent', { exact: true }).first()).toBeVisible();
+
+  await page.goto('/fr/attendance');
+  await page
+    .getByRole('combobox', { name: 'Classe', exact: true })
+    .selectOption(data.targetClassId);
+  await page.getByLabel('Date', { exact: true }).fill('2026-10-30');
 
   const csvDownload = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Exporter CSV', exact: true }).click();

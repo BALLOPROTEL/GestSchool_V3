@@ -6,7 +6,6 @@ import {
   Button,
   Card,
   CardContent,
-  EmptyState,
   KpiCard,
   Tabs,
   TabsContent,
@@ -21,7 +20,6 @@ import {
   CircleDollarSign,
   GraduationCap,
   Pencil,
-  Clock3,
   Trash2,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -32,7 +30,7 @@ import { StudentFinance } from '../finance/finance-page';
 import { StudentResults } from '../grades/grades-page';
 import { DocumentsPanel } from '../documents/documents-page';
 import { useDocumentCopy } from '../documents/document-copy';
-import { personId, type PersonView } from '@gestschool/contracts';
+import { personId, type AttendanceHistoryView, type PersonView } from '@gestschool/contracts';
 import { Link } from '../../i18n/navigation';
 import { useAuth } from '../auth/auth-provider';
 import {
@@ -47,6 +45,7 @@ import { ErrorNotice, PersonEditor } from '../directory/person-editor';
 import { PersonStatus } from '../directory/people-pages';
 import { GuardianLinks } from '../directory/guardian-links';
 import { StudentEnrollmentHistory } from '../enrollments/enrollment-page';
+import { StudentAttendancePanel, attendanceRate } from './student-attendance-panel';
 
 export function StudentProfilePage() {
   const common = useTranslations('Common');
@@ -58,6 +57,14 @@ export function StudentProfilePage() {
   const parameters = useParams<{ studentId: string }>();
   const valid = personId.safeParse(parameters.studentId);
   const allowed = canRead(session?.session, 'students');
+  const attendanceAllowed = Boolean(
+    session?.session.grants.some(
+      (grant) =>
+        grant.permission === 'attendance.read' &&
+        grant.scope !== 'NONE' &&
+        (grant.scope !== 'PLATFORM' || session.session.roles.includes('SUPER_ADMIN')),
+    ),
+  );
   const [revision, setRevision] = useState(0);
   const [editing, setEditing] = useState(false);
   const [avatarBusy, setAvatarBusy] = useState(false);
@@ -67,7 +74,14 @@ export function StudentProfilePage() {
     allowed && valid.success ? `students/${valid.data}` : null,
     revision,
   );
+  const attendance = usePeopleData<AttendanceHistoryView>(
+    allowed && attendanceAllowed && valid.success
+      ? `attendance/history?studentId=${encodeURIComponent(valid.data)}&pageSize=100`
+      : null,
+    revision,
+  );
   const person = result.data;
+  const attendancePercentage = attendanceRate(attendance.data);
   async function changeAvatar(file: File | undefined) {
     if (!file || !avatarPath) return;
     setAvatarBusy(true);
@@ -233,8 +247,23 @@ export function StudentProfilePage() {
             <KpiCard
               icon={CalendarCheck}
               label={profile('attendance')}
-              value="—"
-              helper={t('laterLot')}
+              value={
+                attendance.loading
+                  ? '…'
+                  : attendancePercentage == null
+                    ? '—'
+                    : `${attendancePercentage}%`
+              }
+              helper={
+                attendance.data
+                  ? profile('attendanceBreakdown', {
+                      present: attendance.data.summary.present,
+                      absent: attendance.data.summary.absent,
+                      late: attendance.data.summary.late,
+                      excused: attendance.data.summary.excused,
+                    })
+                  : profile('attendanceDescription')
+              }
             />
             <KpiCard
               icon={CircleDollarSign}
@@ -264,7 +293,12 @@ export function StudentProfilePage() {
                   ) : tab === 'finance' ? (
                     <StudentFinance studentId={person.id} />
                   ) : (
-                    <EmptyState icon={Clock3} title={profile(tab)} description={t('laterLot')} />
+                    <StudentAttendancePanel
+                      data={attendance.data}
+                      loading={attendance.loading}
+                      error={attendance.error}
+                      allowed={attendanceAllowed}
+                    />
                   )}
                 </Card>
               </TabsContent>

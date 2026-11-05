@@ -742,7 +742,7 @@
     "absent": "الغيابات",
     "address": "العنوان",
     "attendance": "الحضور",
-    "attendanceDescription": "الحصيلة منذ بداية السنة الدراسية",
+    "attendanceDescription": "ملخص الحضور المسجل",
     "back": "العودة إلى التلاميذ",
     "birth": "تاريخ الميلاد: 14 يناير 2008",
     "birthLabel": "تاريخ الميلاد",
@@ -770,7 +770,20 @@
     "photoAlt": "صورة {name}",
     "photoSaved": "تم حفظ صورة التلميذ.",
     "photoDeleted": "تم حذف صورة التلميذ.",
-    "photoError": "تعذر تحديث الصورة. استخدم صورة PNG أو JPEG صالحة بحجم لا يتجاوز 2 ميغابايت."
+    "photoError": "تعذر تحديث الصورة. استخدم صورة PNG أو JPEG صالحة بحجم لا يتجاوز 2 ميغابايت.",
+    "attendanceBreakdown": "{present} حاضر · {absent} غائب · {late} متأخر · {excused} مبرر",
+    "attendanceUnavailable": "ليس لديك صلاحية للوصول إلى بيانات حضور هذا الطالب.",
+    "attendanceError": "تعذر تحميل بيانات حضور هذا الطالب.",
+    "attendanceEmpty": "لا توجد بيانات حضور مسجلة لهذا الطالب.",
+    "attendanceDate": "التاريخ",
+    "attendanceClass": "الفصل",
+    "attendanceStatus": "الحالة",
+    "attendanceNote": "ملاحظة",
+    "excused": "مبررة",
+    "attendanceStatusPRESENT": "حاضر",
+    "attendanceStatusABSENT": "غائب",
+    "attendanceStatusLATE": "متأخر",
+    "attendanceStatusEXCUSED": "غياب مبرر"
   },
   "Parents": {
     "add": "إضافة ولي أمر",
@@ -886,7 +899,10 @@
     "discardChangesConfirm": "توجد تعديلات غير محفوظة. هل تريد تجاهلها والمتابعة؟",
     "concurrentUpdate": "تم تعديل هذه الورقة بواسطة مستخدم آخر. أعد تحميلها قبل الحفظ مجددًا.",
     "exportCsv": "تصدير CSV",
-    "exportPdf": "تصدير PDF"
+    "exportPdf": "تصدير PDF",
+    "discardChangesTitle": "تجاهل التعديلات؟",
+    "discardChangesDescription": "تحتوي هذه الورقة على تعديلات غير محفوظة. إذا تابعت فسيتم فقدانها.",
+    "discardChangesAction": "تجاهل ومتابعة"
   },
   "Finance": {
     "caption": "آخر الفواتير",

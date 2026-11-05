@@ -9,6 +9,12 @@ import {
   CardHeader,
   CardTitle,
   DataTable,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
   Input,
   KpiCard,
   Select,
@@ -47,6 +53,11 @@ import {
 import { usePeopleData } from '../directory/people-hooks';
 import { getInitials } from '../shared/format';
 import { PageHeader } from '../shared/page-header';
+
+type AttendanceDiscardAction =
+  | { kind: 'class'; value: string }
+  | { kind: 'date'; value: string }
+  | { kind: 'navigation'; value: string };
 
 function localToday() {
   const now = new Date();
@@ -90,6 +101,7 @@ export function AttendancePage() {
   const [classId, setClassId] = useState('');
   const [date, setDate] = useState(localToday);
   const [saving, setSaving] = useState(false);
+  const [pendingDiscard, setPendingDiscard] = useState<AttendanceDiscardAction | null>(null);
   const path =
     canUseSheet && classId
       ? `attendance/sheet?classId=${encodeURIComponent(classId)}&date=${encodeURIComponent(date)}`
@@ -139,10 +151,10 @@ export function AttendancePage() {
         `${window.location.pathname}${window.location.search}`
       )
         return;
-      if (window.confirm(translate('discardChangesConfirm'))) return;
       event.preventDefault();
       event.stopPropagation();
       event.stopImmediatePropagation();
+      setPendingDiscard({ kind: 'navigation', value: destination.href });
     };
     window.addEventListener('beforeunload', beforeUnload);
     document.addEventListener('click', guardLink, true);
@@ -234,18 +246,41 @@ export function AttendancePage() {
     },
   ];
 
-  function confirmDiscard() {
-    return !dirty || window.confirm(translate('discardChangesConfirm'));
+  function applyDiscardAction(action: AttendanceDiscardAction) {
+    if (action.kind === 'class') {
+      setClassId(action.value);
+      return;
+    }
+    if (action.kind === 'date') {
+      setDate(action.value);
+      return;
+    }
+    window.location.assign(action.value);
+  }
+
+  function requestDiscard(action: AttendanceDiscardAction) {
+    if (!dirty) {
+      applyDiscardAction(action);
+      return;
+    }
+    setPendingDiscard(action);
+  }
+
+  function confirmDiscardChanges() {
+    if (!pendingDiscard) return;
+    const action = pendingDiscard;
+    setPendingDiscard(null);
+    applyDiscardAction(action);
   }
 
   function changeClass(value: string) {
-    if (!confirmDiscard()) return;
-    setClassId(value);
+    if (value === classId) return;
+    requestDiscard({ kind: 'class', value });
   }
 
   function changeDate(value: string) {
-    if (!confirmDiscard()) return;
-    setDate(value);
+    if (value === date) return;
+    requestDiscard({ kind: 'date', value });
   }
 
   async function save() {
@@ -348,6 +383,28 @@ export function AttendancePage() {
         eyebrow={nav('academic')}
         title={translate('title')}
       />
+
+      <Dialog
+        open={pendingDiscard !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingDiscard(null);
+        }}
+      >
+        <DialogContent closeLabel={common('close')}>
+          <DialogHeader>
+            <DialogTitle>{translate('discardChangesTitle')}</DialogTitle>
+            <DialogDescription>{translate('discardChangesDescription')}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPendingDiscard(null)}>
+              {common('cancel')}
+            </Button>
+            <Button variant="destructive" onClick={confirmDiscardChanges}>
+              {translate('discardChangesAction')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {!canRead ? (
         <p
