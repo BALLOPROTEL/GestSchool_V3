@@ -205,7 +205,7 @@ beforeAll(async () => {
       { tenantId: tenant.id, teacherId, classSubjectId: mathId, academicPeriodId: periodId },
       {
         tenantId: tenant.id,
-        teacherId,
+        teacherId: frenchTeacher.id,
         classSubjectId: mathId,
         academicPeriodId: secondPeriodId,
       },
