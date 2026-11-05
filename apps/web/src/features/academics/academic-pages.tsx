@@ -291,7 +291,14 @@ export function AttendancePage() {
     }
     bypassBeforeUnload.current = true;
     if (action.kind === 'history') {
+      if (window.history.length <= 2) {
+        bypassBeforeUnload.current = false;
+        return;
+      }
       window.history.go(action.value);
+      window.setTimeout(() => {
+        bypassBeforeUnload.current = false;
+      }, 1_000);
       return;
     }
     window.location.assign(action.value);
@@ -333,8 +340,8 @@ export function AttendancePage() {
           { classId, date, entries: pendingEntries.slice(index, index + 500) },
           'PUT',
         );
+        setSheet(saved);
       }
-      setSheet(saved);
       setDraft(attendanceDraftFromSheet(saved));
       toast.success(translate('saved'));
     } catch (error) {
