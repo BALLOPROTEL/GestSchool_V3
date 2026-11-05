@@ -113,7 +113,8 @@
     "resultsReady": "Results are complete: averages and ranks are calculated and report cards can be published.",
     "blockerSubjectWithoutAssessment": "{subject}: no assessment exists for this period.",
     "blockerAssessmentNotPublished": "{assessment} · {subject}: status {status}. Publish this assessment so it contributes to results.",
-    "blockerMissingGrades": "{assessment} · {subject}: {count} missing grade(s) out of {total} student(s)."
+    "blockerMissingGrades": "{assessment} · {subject}: {count} missing grade(s) out of {total} student(s).",
+    "sudoOverrideHint": "Super-admin override: you are validating your own submission. A reason is required and this exception will be recorded in the audit log."
   },
   "FinanceFlow": {
     "rejectPayment": "Reject pending payment",

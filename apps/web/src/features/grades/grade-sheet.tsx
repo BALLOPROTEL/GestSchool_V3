@@ -48,6 +48,7 @@ export function GradeEntrySheet({
   const t = useTranslations('Results'),
     { session } = useAuth();
   const assessment = sheet.assessment;
+  const isSuperAdmin = session?.session.roles.includes('SUPER_ADMIN') ?? false;
   const can = (permission: string) => canResults(session?.session, permission, 'write');
   const editable =
     can('grades.create') &&
@@ -166,7 +167,8 @@ export function GradeEntrySheet({
                 !assessment.archivedAt &&
                 !(
                   item.action === 'validate' &&
-                  assessment.submittedByMembershipId === session?.session.membershipId
+                  assessment.submittedByMembershipId === session?.session.membershipId &&
+                  !isSuperAdmin
                 ),
             )
             .map((item) => (
@@ -381,7 +383,13 @@ function AssessmentConfirmation({
   close: () => void;
   saved: () => void;
 }) {
-  const t = useTranslations('Results');
+  const t = useTranslations('Results'),
+    { session } = useAuth();
+  const superAdminOverride =
+      action === 'validate' &&
+      assessment.submittedByMembershipId === session?.session.membershipId &&
+      session?.session.roles.includes('SUPER_ADMIN'),
+    reasonRequired = action === 'reopen' || superAdminOverride;
   const [busy, setBusy] = useState(false),
     [error, setError] = useState<unknown>();
   return (
@@ -412,7 +420,12 @@ function AssessmentConfirmation({
         }}
       >
         <p className="font-semibold">{assessment.title}</p>
-        {action === 'reopen' ? (
+        {superAdminOverride ? (
+          <p role="status" className="rounded-lg bg-muted p-3 text-sm">
+            {t('sudoOverrideHint')}
+          </p>
+        ) : null}
+        {reasonRequired ? (
           <ResultField label={t('reason')} name="reason" minLength={3} maxLength={500} required />
         ) : null}
         {error ? <ResultError error={error} /> : null}

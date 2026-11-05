@@ -19,6 +19,7 @@ import {
 
 let h: FinanceHarness, a: FinanceGraph, otherClass: FinanceGraph, foreign: FinanceGraph;
 let admin: FinanceAccount,
+  superAdmin: FinanceAccount,
   director: FinanceAccount,
   staff: FinanceAccount,
   teacher: FinanceAccount,
@@ -103,6 +104,7 @@ beforeAll(async () => {
   const tenant = await h.tenant(),
     other = await h.tenant();
   admin = await h.account(tenant.id, 'SCHOOL_ADMIN');
+  superAdmin = await h.account(tenant.id, 'SUPER_ADMIN');
   director = await h.account(tenant.id, 'DIRECTOR');
   staff = await h.account(tenant.id, 'ACADEMIC_STAFF');
   teacher = await h.account(tenant.id, 'TEACHER');
@@ -201,6 +203,12 @@ beforeAll(async () => {
   await h.db.teachingAssignment.createMany({
     data: [
       { tenantId: tenant.id, teacherId, classSubjectId: mathId, academicPeriodId: periodId },
+      {
+        tenantId: tenant.id,
+        teacherId,
+        classSubjectId: mathId,
+        academicPeriodId: secondPeriodId,
+      },
       {
         tenantId: tenant.id,
         teacherId: frenchTeacher.id,
@@ -500,6 +508,71 @@ describe('LOT 9 submission, independent validation and publication', () => {
         data: { score: '19' },
       }),
     ).rejects.toThrow();
+  });
+  it('allows SUPER_ADMIN self-validation only with an audited reason', async () => {
+    const created = await superAdmin.browser.send<AssessmentView>(
+      'assessments',
+      {
+        classSubjectId: mathId,
+        academicPeriodId: secondPeriodId,
+        title: 'Override super-admin',
+        assessedOn: '2026-09-15',
+        maxScore: '20',
+        weight: '1',
+      },
+      'POST',
+    );
+    expect(created.status).toBe(201);
+    const initial = await superAdmin.browser.send<GradeSheet>(
+      `assessments/${created.body.id}/grades`,
+    );
+    expect(initial.status).toBe(200);
+    const saved = await superAdmin.browser.send<GradeSheet>(
+      `assessments/${created.body.id}/grades`,
+      {
+        expectedVersion: created.body.version,
+        grades: initial.body.grades.map((row) => ({
+          studentId: row.studentId,
+          score: '12',
+          outcome: 'SCORED',
+        })),
+      },
+      'PUT',
+    );
+    expect(saved.status).toBe(200);
+    const submitted = await superAdmin.browser.send<AssessmentView>(
+      `assessments/${created.body.id}/submit`,
+      { expectedVersion: saved.body.assessment.version },
+      'POST',
+    );
+    expect(submitted.status).toBe(200);
+    await failure(
+      superAdmin.browser.send(
+        `assessments/${created.body.id}/validate`,
+        { expectedVersion: submitted.body.version },
+        'POST',
+      ),
+      409,
+      'RESULT_REASON_REQUIRED',
+    );
+    const reason = 'Override exceptionnel pour continuité de service';
+    const validated = await superAdmin.browser.send<AssessmentView>(
+      `assessments/${created.body.id}/validate`,
+      { expectedVersion: submitted.body.version, reason },
+      'POST',
+    );
+    expect(validated.status).toBe(200);
+    expect(validated.body.status).toBe('VALIDATED');
+    const audit = await h.db.auditLog.findFirstOrThrow({
+      where: {
+        tenantId: a.tenantId,
+        entityId: created.body.id,
+        action: 'assessment.validated',
+      },
+    });
+    expect(audit.metadata).toMatchObject({
+      after: { reason, superAdminOverride: true },
+    });
   });
   it('does not disclose live class averages to parents, students or teachers', async () => {
     for (const actor of [parent, pupil, teacher, accountant])

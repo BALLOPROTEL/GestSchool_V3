@@ -113,7 +113,8 @@
     "resultsReady": "Résultats complets : les moyennes et rangs sont calculés et les bulletins peuvent être publiés.",
     "blockerSubjectWithoutAssessment": "{subject} : aucune évaluation n’existe pour cette période.",
     "blockerAssessmentNotPublished": "{assessment} · {subject} : statut {status}. Publiez cette évaluation pour qu’elle compte dans les résultats.",
-    "blockerMissingGrades": "{assessment} · {subject} : {count} note(s) manquante(s) sur {total} élève(s)."
+    "blockerMissingGrades": "{assessment} · {subject} : {count} note(s) manquante(s) sur {total} élève(s).",
+    "sudoOverrideHint": "Mode super-admin : vous validez votre propre soumission. Une justification est obligatoire et cette dérogation sera enregistrée dans l’audit."
   },
   "FinanceFlow": {
     "rejectPayment": "Rejeter le paiement en attente",

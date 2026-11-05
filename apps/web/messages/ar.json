@@ -113,7 +113,8 @@
     "resultsReady": "النتائج مكتملة: تم حساب المعدلات والترتيب ويمكن نشر كشوف النتائج.",
     "blockerSubjectWithoutAssessment": "{subject}: لا يوجد تقييم لهذه الفترة.",
     "blockerAssessmentNotPublished": "{assessment} · {subject}: الحالة {status}. انشر هذا التقييم ليدخل في النتائج.",
-    "blockerMissingGrades": "{assessment} · {subject}: توجد {count} علامة مفقودة من أصل {total} طالب."
+    "blockerMissingGrades": "{assessment} · {subject}: توجد {count} علامة مفقودة من أصل {total} طالب.",
+    "sudoOverrideHint": "تجاوز المشرف الأعلى: أنت تعتمد إرسالاً قمت به بنفسك. يجب إدخال سبب، وسيتم تسجيل هذا الاستثناء في سجل التدقيق."
   },
   "FinanceFlow": {
     "rejectPayment": "رفض الدفعة المعلقة",
