@@ -40,3 +40,30 @@ export function attendancePendingEntries(
     ];
   });
 }
+
+export function attendanceSheetAfterCommittedBatch(
+  baseline: AttendanceSheetView,
+  saved: AttendanceSheetView,
+  studentIds: readonly string[],
+): AttendanceSheetView {
+  const committed = new Set(studentIds);
+  const savedByStudent = new Map(saved.students.map((student) => [student.studentId, student]));
+  const students = baseline.students.map((student) =>
+    committed.has(student.studentId) ? (savedByStudent.get(student.studentId) ?? student) : student,
+  );
+  const count = (status: AttendanceStatus) =>
+    students.filter((student) => student.status === status).length;
+
+  return {
+    ...baseline,
+    students,
+    summary: {
+      total: students.length,
+      unmarked: students.filter((student) => student.status == null).length,
+      present: count('PRESENT'),
+      absent: count('ABSENT'),
+      late: count('LATE'),
+      excused: count('EXCUSED'),
+    },
+  };
+}

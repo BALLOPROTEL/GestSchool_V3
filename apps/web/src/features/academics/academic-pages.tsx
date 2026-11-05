@@ -48,6 +48,7 @@ import { downloadAttendance } from '../attendance/attendance-client';
 import {
   attendanceDraftFromSheet,
   attendancePendingEntries,
+  attendanceSheetAfterCommittedBatch,
   type AttendanceDraft,
 } from '../attendance/attendance-state';
 import { usePeopleData } from '../directory/people-hooks';
@@ -335,10 +336,16 @@ export function AttendancePage() {
     try {
       let saved = sheet;
       for (let index = 0; index < pendingEntries.length; index += 500) {
-        saved = await peopleRequest<AttendanceSheetView>(
+        const batch = pendingEntries.slice(index, index + 500);
+        const response = await peopleRequest<AttendanceSheetView>(
           'attendance/sheet',
-          { classId, date, entries: pendingEntries.slice(index, index + 500) },
+          { classId, date, entries: batch },
           'PUT',
+        );
+        saved = attendanceSheetAfterCommittedBatch(
+          saved,
+          response,
+          batch.map((entry) => entry.studentId),
         );
         setSheet(saved);
       }

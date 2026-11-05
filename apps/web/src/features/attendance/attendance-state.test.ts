@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import type { AttendanceSheetView } from '@gestschool/contracts';
-import { attendanceDraftFromSheet, attendancePendingEntries } from './attendance-state';
+import {
+  attendanceDraftFromSheet,
+  attendancePendingEntries,
+  attendanceSheetAfterCommittedBatch,
+} from './attendance-state';
 
 const sheet: AttendanceSheetView = {
   classId: '00000000-0000-4000-8000-000000000001',
@@ -36,6 +40,46 @@ const sheet: AttendanceSheetView = {
 describe('attendance draft state', () => {
   it('starts clean from the persisted sheet', () => {
     expect(attendancePendingEntries(sheet, attendanceDraftFromSheet(sheet))).toEqual([]);
+  });
+
+  it('reconciles only rows from a committed batch', () => {
+    const saved: AttendanceSheetView = {
+      ...sheet,
+      students: [
+        {
+          ...sheet.students[0]!,
+          status: 'ABSENT',
+          note: 'Saved locally',
+          updatedAt: '2026-11-05T09:00:00.000Z',
+        },
+        {
+          ...sheet.students[1]!,
+          status: 'PRESENT',
+          note: 'Concurrent change',
+          updatedAt: '2026-11-05T09:01:00.000Z',
+        },
+      ],
+      summary: { total: 2, unmarked: 0, present: 1, absent: 1, late: 0, excused: 0 },
+    };
+
+    const reconciled = attendanceSheetAfterCommittedBatch(sheet, saved, [
+      sheet.students[0]!.studentId,
+    ]);
+
+    expect(reconciled.students[0]).toMatchObject({
+      status: 'ABSENT',
+      note: 'Saved locally',
+      updatedAt: '2026-11-05T09:00:00.000Z',
+    });
+    expect(reconciled.students[1]).toEqual(sheet.students[1]);
+    expect(reconciled.summary).toEqual({
+      total: 2,
+      unmarked: 1,
+      present: 0,
+      absent: 1,
+      late: 0,
+      excused: 0,
+    });
   });
 
   it('emits only dirty rows with the optimistic concurrency snapshot', () => {
