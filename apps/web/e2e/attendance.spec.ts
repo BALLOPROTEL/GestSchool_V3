@@ -48,6 +48,7 @@ test('LOT18.4 certifies explicit attendance save, reload persistence, PDF export
   const auth = (await (await sessionResponse).json()) as LoginResult;
   if (auth.kind !== 'session') throw new Error('Expected attendance admin session');
 
+  await page.goto('/fr/students');
   await page.goto('/fr/attendance');
   await expect(page.getByRole('heading', { level: 1, name: 'Suivi des présences' })).toBeVisible();
 
@@ -71,6 +72,13 @@ test('LOT18.4 certifies explicit attendance save, reload persistence, PDF export
   ).toBeVisible();
   await discardDialog.getByRole('button', { name: 'Annuler', exact: true }).click();
   await expect(dateInput).toHaveValue('2026-10-30');
+
+  await page.evaluate(() => window.history.back());
+  await expect(
+    discardDialog.getByRole('heading', { name: 'Abandonner les modifications ?' }),
+  ).toBeVisible();
+  await discardDialog.getByRole('button', { name: 'Annuler', exact: true }).click();
+  await expect(page).toHaveURL(/\/fr\/attendance$/);
 
   const saved = page.waitForResponse(
     (response) =>

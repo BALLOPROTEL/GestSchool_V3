@@ -57,7 +57,8 @@ import { PageHeader } from '../shared/page-header';
 type AttendanceDiscardAction =
   | { kind: 'class'; value: string }
   | { kind: 'date'; value: string }
-  | { kind: 'navigation'; value: string };
+  | { kind: 'navigation'; value: string }
+  | { kind: 'history'; value: number };
 
 function localToday() {
   const now = new Date();
@@ -131,6 +132,37 @@ export function AttendancePage() {
     [draft, sheet],
   );
   const dirty = pendingEntries.length > 0;
+
+  useEffect(() => {
+    if (!dirty) return;
+    const marker = `attendance-${Date.now()}-${Math.random()}`;
+    const guardState = {
+      ...(window.history.state ?? {}),
+      __gestschoolAttendanceGuard: marker,
+    };
+    window.history.pushState(guardState, '', window.location.href);
+
+    const guardHistory = () => {
+      if (bypassBeforeUnload.current) return;
+      window.history.pushState(guardState, '', window.location.href);
+      setPendingDiscard({ kind: 'history', value: -2 });
+    };
+
+    window.addEventListener('popstate', guardHistory);
+    return () => {
+      window.removeEventListener('popstate', guardHistory);
+      if (
+        !bypassBeforeUnload.current &&
+        window.history.state?.__gestschoolAttendanceGuard === marker
+      ) {
+        bypassBeforeUnload.current = true;
+        window.history.back();
+        window.setTimeout(() => {
+          bypassBeforeUnload.current = false;
+        }, 0);
+      }
+    };
+  }, [dirty]);
 
   useEffect(() => {
     if (!dirty) return;
@@ -258,6 +290,10 @@ export function AttendancePage() {
       return;
     }
     bypassBeforeUnload.current = true;
+    if (action.kind === 'history') {
+      window.history.go(action.value);
+      return;
+    }
     window.location.assign(action.value);
   }
 
@@ -277,12 +313,12 @@ export function AttendancePage() {
   }
 
   function changeClass(value: string) {
-    if (value === classId) return;
+    if (saving || value === classId) return;
     requestDiscard({ kind: 'class', value });
   }
 
   function changeDate(value: string) {
-    if (value === date) return;
+    if (saving || value === date) return;
     requestDiscard({ kind: 'date', value });
   }
 
@@ -290,11 +326,14 @@ export function AttendancePage() {
     if (!sheet || !canWrite || !pendingEntries.length) return;
     setSaving(true);
     try {
-      const saved = await peopleRequest<AttendanceSheetView>(
-        'attendance/sheet',
-        { classId, date, entries: pendingEntries },
-        'PUT',
-      );
+      let saved = sheet;
+      for (let index = 0; index < pendingEntries.length; index += 500) {
+        saved = await peopleRequest<AttendanceSheetView>(
+          'attendance/sheet',
+          { classId, date, entries: pendingEntries.slice(index, index + 500) },
+          'PUT',
+        );
+      }
       setSheet(saved);
       setDraft(attendanceDraftFromSheet(saved));
       toast.success(translate('saved'));
@@ -427,6 +466,7 @@ export function AttendancePage() {
                 path="classes?status=ACTIVE"
                 value={classId}
                 onChange={changeClass}
+                disabled={saving}
                 required
               />
               <label className="space-y-1 text-sm">
@@ -434,6 +474,7 @@ export function AttendancePage() {
                 <Input
                   type="date"
                   value={date}
+                  disabled={saving}
                   onChange={(event) => changeDate(event.target.value)}
                 />
               </label>
