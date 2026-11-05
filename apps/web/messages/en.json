@@ -501,9 +501,7 @@
     "studentProfile": "Student profile",
     "laterLot": "Not available in this phase."
   },
-  "Meta": {
-    "description": "School management platform for French-speaking institutions"
-  },
+  "Meta": { "description": "School management platform for French-speaking institutions" },
   "Common": {
     "actions": "Actions",
     "add": "Add",
@@ -744,7 +742,7 @@
     "absent": "Absences",
     "address": "Address",
     "attendance": "Attendance",
-    "attendanceDescription": "Summary since the beginning of the academic year",
+    "attendanceDescription": "Summary of recorded attendance",
     "back": "Back to students",
     "birth": "Born 14 January 2008",
     "birthLabel": "Date of birth",
@@ -772,7 +770,20 @@
     "photoAlt": "Photo of {name}",
     "photoSaved": "Student photo saved.",
     "photoDeleted": "Student photo removed.",
-    "photoError": "Unable to update the photo. Use a valid PNG or JPEG up to 2 MB."
+    "photoError": "Unable to update the photo. Use a valid PNG or JPEG up to 2 MB.",
+    "attendanceBreakdown": "{present} present · {absent} absent · {late} late · {excused} excused",
+    "attendanceUnavailable": "You do not have access to this student’s attendance data.",
+    "attendanceError": "Unable to load this student’s attendance.",
+    "attendanceEmpty": "No attendance has been recorded for this student.",
+    "attendanceDate": "Date",
+    "attendanceClass": "Class",
+    "attendanceStatus": "Status",
+    "attendanceNote": "Note",
+    "excused": "Excused",
+    "attendanceStatusPRESENT": "Present",
+    "attendanceStatusABSENT": "Absent",
+    "attendanceStatusLATE": "Late",
+    "attendanceStatusEXCUSED": "Excused absence"
   },
   "Parents": {
     "add": "Add parent",
@@ -881,7 +892,17 @@
     "historyError": "Unable to load attendance history.",
     "historyEmpty": "No attendance records for this student.",
     "excused": "Excused",
-    "historyPage": "Page {page} of {pages}"
+    "historyPage": "Page {page} of {pages}",
+    "saveSheet": "Validate / Save sheet",
+    "unsavedChanges": "Unsaved changes. Save the sheet before changing context.",
+    "allSaved": "All changes are saved.",
+    "discardChangesConfirm": "Some changes are not saved. Discard them and continue?",
+    "concurrentUpdate": "This sheet was changed by another user. Reload it before saving again.",
+    "exportCsv": "Export CSV",
+    "exportPdf": "Export PDF",
+    "discardChangesTitle": "Discard changes?",
+    "discardChangesDescription": "This sheet contains unsaved changes. If you continue, they will be lost.",
+    "discardChangesAction": "Discard and continue"
   },
   "Finance": {
     "caption": "Recent invoices",

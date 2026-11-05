@@ -1,9 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
 import {
   attendanceBulkWrite,
+  attendanceExportQuery,
   attendanceHistoryQuery,
   attendanceSheetQuery,
 } from '@gestschool/contracts';
+import { renderAttendancePdf } from '@gestschool/infrastructure';
 import type { RequestContext } from '../../iam/domain/context.js';
 import { AttendanceRepository } from '../domain/attendance.repository.js';
 import {
@@ -38,8 +40,22 @@ export class AttendanceService {
 
   async export(context: RequestContext, input: unknown) {
     attendanceAccess(context, 'attendance.export', attendanceExportScopes);
-    const query = attendanceSheetQuery.parse(input);
-    const sheet = await this.repository.sheet(context, query, 'attendance.export');
+    const query = attendanceExportQuery.parse(input);
+    const sheet = await this.repository.sheet(
+      context,
+      { classId: query.classId, date: query.date },
+      'attendance.export',
+    );
+
+    if (query.format === 'pdf') {
+      const pdf = await renderAttendancePdf(sheet, query.locale);
+      return {
+        bytes: pdf,
+        fileName: `gestschool-attendance-${sheet.date}.pdf`,
+        contentType: 'application/pdf',
+      };
+    }
+
     const lines = [
       ['student', 'matricule', 'class', 'date', 'status', 'note'],
       ...sheet.students.map((student) => [
@@ -51,10 +67,13 @@ export class AttendanceService {
         student.note ?? '',
       ]),
     ];
-    const csv = `\uFEFF${lines.map((row) => row.map((value) => csvCell(value)).join(',')).join('\r\n')}\r\n`;
+    const csv = `\uFEFF${lines
+      .map((row) => row.map((value) => csvCell(value)).join(','))
+      .join('\r\n')}\r\n`;
     return {
       bytes: new TextEncoder().encode(csv),
       fileName: `gestschool-attendance-${sheet.date}.csv`,
+      contentType: 'text/csv; charset=utf-8',
     };
   }
 }

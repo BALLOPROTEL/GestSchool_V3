@@ -27,10 +27,21 @@ export const attendanceSheetQuery = z.strictObject({
   date: attendanceDate,
 });
 
+export const attendanceExportFormats = ['csv', 'pdf'] as const;
+export type AttendanceExportFormat = (typeof attendanceExportFormats)[number];
+export const attendanceExportLocales = ['fr', 'en', 'ar'] as const;
+export type AttendanceExportLocale = (typeof attendanceExportLocales)[number];
+
+export const attendanceExportQuery = attendanceSheetQuery.extend({
+  format: z.enum([...attendanceExportFormats]).default('csv'),
+  locale: z.enum([...attendanceExportLocales]).default('fr'),
+});
+
 export const attendanceEntry = z.strictObject({
   studentId: z.uuid(),
   status: z.enum([...attendanceStatuses]).nullable(),
   note: attendanceNote,
+  expectedUpdatedAt: z.iso.datetime().nullable().optional(),
 });
 
 export const attendanceBulkWrite = z
@@ -64,6 +75,7 @@ export const attendanceHistoryQuery = z
 
 export type AttendanceBulkWrite = z.infer<typeof attendanceBulkWrite>;
 export type AttendanceSheetQuery = z.infer<typeof attendanceSheetQuery>;
+export type AttendanceExportQuery = z.infer<typeof attendanceExportQuery>;
 export type AttendanceHistoryQuery = z.infer<typeof attendanceHistoryQuery>;
 
 export interface AttendanceRecordView {

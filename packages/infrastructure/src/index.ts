@@ -16,3 +16,5 @@ export * from './reports/serializers.js';
 export * from './reports/queue.js';
 export * from './operations/monitoring.js';
 export * from './security/totp-qr.js';
+
+export * from './attendance/pdf.js';

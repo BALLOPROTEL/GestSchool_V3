@@ -501,9 +501,7 @@
     "studentProfile": "Fiche élève",
     "laterLot": "Non disponible dans ce lot."
   },
-  "Meta": {
-    "description": "Plateforme de gestion scolaire pour les établissements francophones"
-  },
+  "Meta": { "description": "Plateforme de gestion scolaire pour les établissements francophones" },
   "Common": {
     "actions": "Actions",
     "add": "Ajouter",
@@ -744,7 +742,7 @@
     "absent": "Absences",
     "address": "Adresse",
     "attendance": "Présence",
-    "attendanceDescription": "Bilan depuis le début de l’année scolaire",
+    "attendanceDescription": "Bilan des présences enregistrées",
     "back": "Retour aux élèves",
     "birth": "Né(e) le 14 janvier 2008",
     "birthLabel": "Date de naissance",
@@ -772,7 +770,20 @@
     "photoAlt": "Photo de {name}",
     "photoSaved": "Photo de l’élève enregistrée.",
     "photoDeleted": "Photo de l’élève supprimée.",
-    "photoError": "Impossible de mettre à jour la photo. Utilisez un PNG ou JPEG valide de 2 Mo maximum."
+    "photoError": "Impossible de mettre à jour la photo. Utilisez un PNG ou JPEG valide de 2 Mo maximum.",
+    "attendanceBreakdown": "{present} présence(s) · {absent} absence(s) · {late} retard(s) · {excused} justifiée(s)",
+    "attendanceUnavailable": "Vous n’avez pas accès aux données de présence de cet élève.",
+    "attendanceError": "Impossible de charger les présences de cet élève.",
+    "attendanceEmpty": "Aucune présence enregistrée pour cet élève.",
+    "attendanceDate": "Date",
+    "attendanceClass": "Classe",
+    "attendanceStatus": "Statut",
+    "attendanceNote": "Note",
+    "excused": "Justifiées",
+    "attendanceStatusPRESENT": "Présent",
+    "attendanceStatusABSENT": "Absent",
+    "attendanceStatusLATE": "En retard",
+    "attendanceStatusEXCUSED": "Absence justifiée"
   },
   "Parents": {
     "add": "Ajouter un parent",
@@ -881,7 +892,17 @@
     "historyError": "Impossible de charger l’historique des présences.",
     "historyEmpty": "Aucune présence enregistrée pour cet élève.",
     "excused": "Justifiées",
-    "historyPage": "Page {page} sur {pages}"
+    "historyPage": "Page {page} sur {pages}",
+    "saveSheet": "Valider / Enregistrer la feuille",
+    "unsavedChanges": "Modifications non enregistrées. Validez la feuille avant de changer de contexte.",
+    "allSaved": "Toutes les modifications sont enregistrées.",
+    "discardChangesConfirm": "Des modifications ne sont pas enregistrées. Les abandonner et continuer ?",
+    "concurrentUpdate": "Cette feuille a été modifiée par un autre utilisateur. Rechargez-la avant d’enregistrer à nouveau.",
+    "exportCsv": "Exporter CSV",
+    "exportPdf": "Exporter PDF",
+    "discardChangesTitle": "Abandonner les modifications ?",
+    "discardChangesDescription": "Cette feuille contient des modifications non enregistrées. Si vous continuez, elles seront perdues.",
+    "discardChangesAction": "Abandonner et continuer"
   },
   "Finance": {
     "caption": "Factures récentes",

@@ -9,6 +9,12 @@ import {
   CardHeader,
   CardTitle,
   DataTable,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
   Input,
   KpiCard,
   Select,
@@ -32,25 +38,35 @@ import {
   Save,
   UsersRound,
 } from 'lucide-react';
-import { useTranslations } from 'next-intl';
-import { useEffect, useMemo, useState } from 'react';
+import { useLocale, useTranslations } from 'next-intl';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from '../auth/auth-provider';
 import { AcademicPicker } from './academic-components';
 import { peopleRequest, PeopleError } from '../directory/people-client';
 import { downloadAttendance } from '../attendance/attendance-client';
+import {
+  attendanceDraftFromSheet,
+  attendancePendingEntries,
+  attendanceSheetAfterCommittedBatch,
+  type AttendanceDraft,
+} from '../attendance/attendance-state';
 import { usePeopleData } from '../directory/people-hooks';
 import { getInitials } from '../shared/format';
 import { PageHeader } from '../shared/page-header';
 
-type DraftRow = { status: AttendanceStatus | ''; note: string };
+type AttendanceDiscardAction =
+  | { kind: 'class'; value: string }
+  | { kind: 'date'; value: string }
+  | { kind: 'navigation'; value: string }
+  | { kind: 'history'; value: number };
 
 function localToday() {
   const now = new Date();
   return new Date(now.getTime() - now.getTimezoneOffset() * 60_000).toISOString().slice(0, 10);
 }
 
-function canAttendance(session: SessionView | undefined, action: 'read' | 'write') {
+function canAttendance(session: SessionView | undefined, action: 'read' | 'write' | 'export') {
   return Boolean(
     session?.grants.some(
       (grant) =>
@@ -78,38 +94,113 @@ export function AttendancePage() {
   const common = useTranslations('Common');
   const nav = useTranslations('Nav');
   const translate = useTranslations('Attendance');
+  const locale = useLocale() as 'fr' | 'en' | 'ar';
   const { session } = useAuth();
   const canRead = canAttendance(session?.session, 'read');
   const canUseSheet = canAttendanceSheet(session?.session);
   const canWrite = canAttendance(session?.session, 'write');
+  const canExport = canAttendance(session?.session, 'export');
   const [classId, setClassId] = useState('');
   const [date, setDate] = useState(localToday);
-  const [revision, setRevision] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [pendingDiscard, setPendingDiscard] = useState<AttendanceDiscardAction | null>(null);
+  const bypassBeforeUnload = useRef(false);
   const path =
     canUseSheet && classId
       ? `attendance/sheet?classId=${encodeURIComponent(classId)}&date=${encodeURIComponent(date)}`
       : null;
-  const result = usePeopleData<AttendanceSheetView>(path, revision);
-  const [draft, setDraft] = useState<Record<string, DraftRow>>({});
+  const result = usePeopleData<AttendanceSheetView>(path);
+  const [sheet, setSheet] = useState<AttendanceSheetView>();
+  const [draft, setDraft] = useState<AttendanceDraft>({});
 
   useEffect(() => {
-    if (!result.data) {
+    if (result.data) {
+      setSheet(result.data);
+      setDraft(attendanceDraftFromSheet(result.data));
+    } else if (!result.loading) {
+      setSheet(undefined);
       setDraft({});
-      return;
     }
-    setDraft(
-      Object.fromEntries(
-        result.data.students.map((student) => [
-          student.studentId,
-          { status: student.status ?? '', note: student.note ?? '' },
-        ]),
-      ),
-    );
-  }, [result.data]);
+  }, [result.data, result.loading]);
+
+  useEffect(() => {
+    setSheet(undefined);
+    setDraft({});
+  }, [path]);
+
+  const pendingEntries = useMemo(
+    () => (sheet ? attendancePendingEntries(sheet, draft) : []),
+    [draft, sheet],
+  );
+  const dirty = pendingEntries.length > 0;
+
+  useEffect(() => {
+    if (!dirty) return;
+    const marker = `attendance-${Date.now()}-${Math.random()}`;
+    const guardState = {
+      ...window.history.state,
+      gestschoolAttendanceGuard: marker,
+    };
+    window.history.pushState(guardState, '', window.location.href);
+
+    const guardHistory = () => {
+      if (bypassBeforeUnload.current) return;
+      window.history.pushState(guardState, '', window.location.href);
+      setPendingDiscard({ kind: 'history', value: -2 });
+    };
+
+    window.addEventListener('popstate', guardHistory);
+    return () => {
+      window.removeEventListener('popstate', guardHistory);
+      if (
+        !bypassBeforeUnload.current &&
+        window.history.state?.gestschoolAttendanceGuard === marker
+      ) {
+        bypassBeforeUnload.current = true;
+        window.history.back();
+        window.setTimeout(() => {
+          bypassBeforeUnload.current = false;
+        }, 0);
+      }
+    };
+  }, [dirty]);
+
+  useEffect(() => {
+    if (!dirty) return;
+    const beforeUnload = (event: BeforeUnloadEvent) => {
+      if (bypassBeforeUnload.current) return;
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    const guardLink = (event: MouseEvent) => {
+      if (event.defaultPrevented || event.button !== 0) return;
+      const target = event.target instanceof Element ? event.target.closest('a[href]') : null;
+      if (!target || target.hasAttribute('download') || target.getAttribute('target') === '_blank')
+        return;
+      const href = target.getAttribute('href');
+      if (!href || href.startsWith('#')) return;
+      const destination = new URL((target as HTMLAnchorElement).href, window.location.href);
+      if (destination.origin !== window.location.origin) return;
+      if (
+        `${destination.pathname}${destination.search}` ===
+        `${window.location.pathname}${window.location.search}`
+      )
+        return;
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+      setPendingDiscard({ kind: 'navigation', value: destination.href });
+    };
+    window.addEventListener('beforeunload', beforeUnload);
+    document.addEventListener('click', guardLink, true);
+    return () => {
+      window.removeEventListener('beforeunload', beforeUnload);
+      document.removeEventListener('click', guardLink, true);
+    };
+  }, [dirty, translate]);
 
   const summary = useMemo(() => {
-    const rows = result.data?.students ?? [];
+    const rows = sheet?.students ?? [];
     const statuses = rows.map((row) => draft[row.studentId]?.status ?? row.status ?? '');
     const count = (status: AttendanceStatus) => statuses.filter((value) => value === status).length;
     return {
@@ -120,7 +211,7 @@ export function AttendancePage() {
       late: count('LATE'),
       excused: count('EXCUSED'),
     };
-  }, [draft, result.data]);
+  }, [draft, sheet]);
 
   const columns: readonly DataTableColumn<AttendanceSheetStudent>[] = [
     {
@@ -190,94 +281,186 @@ export function AttendancePage() {
     },
   ];
 
-  async function save() {
-    if (!result.data || !canWrite) return;
-    const entries = result.data.students.flatMap((student) => {
-      const status = draft[student.studentId]?.status ?? '';
-      const note = status === '' ? null : draft[student.studentId]?.note.trim() || null;
-      const originalStatus = student.status ?? '';
-      const originalNote = student.status ? (student.note ?? null) : null;
-      if (status === originalStatus && note === originalNote) return [];
-      return [
-        {
-          studentId: student.studentId,
-          status: status === '' ? null : status,
-          note,
-        },
-      ];
-    });
-    if (!entries.length) {
-      toast.error(translate('nothingToSave'));
+  function applyDiscardAction(action: AttendanceDiscardAction) {
+    if (action.kind === 'class') {
+      setClassId(action.value);
       return;
     }
+    if (action.kind === 'date') {
+      setDate(action.value);
+      return;
+    }
+    bypassBeforeUnload.current = true;
+    if (action.kind === 'history') {
+      if (window.history.length <= 2) {
+        bypassBeforeUnload.current = false;
+        return;
+      }
+      window.history.go(action.value);
+      window.setTimeout(() => {
+        bypassBeforeUnload.current = false;
+      }, 1_000);
+      return;
+    }
+    window.location.assign(action.value);
+  }
+
+  function requestDiscard(action: AttendanceDiscardAction) {
+    if (!dirty) {
+      applyDiscardAction(action);
+      return;
+    }
+    setPendingDiscard(action);
+  }
+
+  function confirmDiscardChanges() {
+    if (!pendingDiscard) return;
+    const action = pendingDiscard;
+    setPendingDiscard(null);
+    applyDiscardAction(action);
+  }
+
+  function changeClass(value: string) {
+    if (saving || value === classId) return;
+    requestDiscard({ kind: 'class', value });
+  }
+
+  function changeDate(value: string) {
+    if (saving || value === date) return;
+    requestDiscard({ kind: 'date', value });
+  }
+
+  async function save() {
+    if (!sheet || !canWrite || !pendingEntries.length) return;
     setSaving(true);
     try {
-      for (let index = 0; index < entries.length; index += 500)
-        await peopleRequest<AttendanceSheetView>(
+      let saved = sheet;
+      for (let index = 0; index < pendingEntries.length; index += 500) {
+        const batch = pendingEntries.slice(index, index + 500);
+        const response = await peopleRequest<AttendanceSheetView>(
           'attendance/sheet',
-          { classId, date, entries: entries.slice(index, index + 500) },
+          { classId, date, entries: batch },
           'PUT',
         );
-      setRevision((value) => value + 1);
+        saved = attendanceSheetAfterCommittedBatch(
+          saved,
+          response,
+          batch.map((entry) => entry.studentId),
+        );
+        setSheet(saved);
+      }
+      setDraft(attendanceDraftFromSheet(saved));
       toast.success(translate('saved'));
-    } catch {
-      toast.error(translate('saveError'));
+    } catch (error) {
+      toast.error(
+        error instanceof PeopleError && error.code === 'ATTENDANCE_CONCURRENT_UPDATE'
+          ? translate('concurrentUpdate')
+          : translate('saveError'),
+      );
     } finally {
       setSaving(false);
     }
   }
 
+  const actions =
+    sheet && (canWrite || canExport) ? (
+      <div className="flex flex-wrap gap-2">
+        {canWrite ? (
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={saving}
+            onClick={() =>
+              setDraft((current) =>
+                Object.fromEntries(
+                  sheet.students.map((student) => [
+                    student.studentId,
+                    {
+                      status: 'PRESENT',
+                      note: current[student.studentId]?.note ?? '',
+                    },
+                  ]),
+                ),
+              )
+            }
+          >
+            <CheckCircle2 />
+            {translate('markAllPresent')}
+          </Button>
+        ) : null}
+        {canExport ? (
+          <>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={saving || !classId || dirty}
+              onClick={() =>
+                void downloadAttendance(classId, date, 'csv', locale).catch(() =>
+                  toast.error(translate('exportError')),
+                )
+              }
+            >
+              <Download />
+              {translate('exportCsv')}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={saving || !classId || dirty}
+              onClick={() =>
+                void downloadAttendance(classId, date, 'pdf', locale).catch(() =>
+                  toast.error(translate('exportError')),
+                )
+              }
+            >
+              <Download />
+              {translate('exportPdf')}
+            </Button>
+          </>
+        ) : null}
+        {canWrite ? (
+          <Button size="sm" disabled={saving || !dirty} onClick={() => void save()}>
+            <Save />
+            {saving ? translate('saving') : translate('saveSheet')}
+          </Button>
+        ) : null}
+      </div>
+    ) : undefined;
+
   return (
-    <div className="page-shell" data-attendance-ready={!result.loading}>
+    <div
+      className="page-shell"
+      data-attendance-ready={!result.loading}
+      data-attendance-dirty={dirty}
+    >
       <PageHeader
-        actions={
-          canWrite && result.data ? (
-            <div className="flex flex-wrap gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={saving}
-                onClick={() =>
-                  setDraft((current) =>
-                    Object.fromEntries(
-                      result.data?.students.map((student) => [
-                        student.studentId,
-                        {
-                          status: 'PRESENT',
-                          note: current[student.studentId]?.note ?? '',
-                        },
-                      ]) ?? [],
-                    ),
-                  )
-                }
-              >
-                <CheckCircle2 />
-                {translate('markAllPresent')}
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={saving || !classId}
-                onClick={() =>
-                  void downloadAttendance(classId, date).catch(() =>
-                    toast.error(translate('exportError')),
-                  )
-                }
-              >
-                <Download />
-                {translate('export')}
-              </Button>
-              <Button size="sm" disabled={saving} onClick={() => void save()}>
-                <Save />
-                {saving ? translate('saving') : common('save')}
-              </Button>
-            </div>
-          ) : undefined
-        }
+        actions={actions}
         description={translate('description')}
         eyebrow={nav('academic')}
         title={translate('title')}
       />
+
+      <Dialog
+        open={pendingDiscard !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingDiscard(null);
+        }}
+      >
+        <DialogContent closeLabel={common('close')}>
+          <DialogHeader>
+            <DialogTitle>{translate('discardChangesTitle')}</DialogTitle>
+            <DialogDescription>{translate('discardChangesDescription')}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPendingDiscard(null)}>
+              {common('cancel')}
+            </Button>
+            <Button variant="destructive" onClick={confirmDiscardChanges}>
+              {translate('discardChangesAction')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {!canRead ? (
         <p
@@ -296,15 +479,34 @@ export function AttendancePage() {
                 label={common('class')}
                 path="classes?status=ACTIVE"
                 value={classId}
-                onChange={setClassId}
+                onChange={changeClass}
+                disabled={saving}
                 required
               />
               <label className="space-y-1 text-sm">
                 <span className="font-medium">{common('date')}</span>
-                <Input type="date" value={date} onChange={(event) => setDate(event.target.value)} />
+                <Input
+                  type="date"
+                  value={date}
+                  disabled={saving}
+                  onChange={(event) => changeDate(event.target.value)}
+                />
               </label>
             </CardContent>
           </Card>
+
+          {canWrite && sheet ? (
+            <p
+              role="status"
+              className={`mt-3 rounded-lg border px-3 py-2 text-sm ${
+                dirty
+                  ? 'border-amber-500/40 bg-amber-500/10 text-amber-950 dark:text-amber-100'
+                  : 'border-border bg-muted/30 text-muted-foreground'
+              }`}
+            >
+              {dirty ? translate('unsavedChanges') : translate('allSaved')}
+            </p>
+          ) : null}
 
           <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
             <KpiCard icon={UsersRound} label={translate('total')} value={String(summary.total)} />
@@ -350,13 +552,13 @@ export function AttendancePage() {
             </p>
           ) : null}
 
-          {result.data ? (
+          {sheet ? (
             <Card className="mt-5 overflow-hidden">
               <CardHeader>
                 <CardTitle>
                   {translate('sheetFor', {
-                    class: result.data.className,
-                    date: result.data.date,
+                    class: sheet.className,
+                    date: sheet.date,
                   })}
                 </CardTitle>
               </CardHeader>
@@ -366,7 +568,7 @@ export function AttendancePage() {
                   columns={columns}
                   getRowId={(row) => row.studentId}
                   minWidth={860}
-                  rows={result.data.students}
+                  rows={sheet.students}
                   emptyState={
                     <p className="p-8 text-center text-muted-foreground">{translate('empty')}</p>
                   }

@@ -55,7 +55,7 @@ export class AttendanceController {
     response.setHeader('Cache-Control', 'private, no-store');
     response.setHeader('Content-Security-Policy', "sandbox; default-src 'none'");
     return new StreamableFile(Buffer.from(file.bytes), {
-      type: 'text/csv; charset=utf-8',
+      type: file.contentType,
       disposition: `attachment; filename="${file.fileName}"`,
       length: file.bytes.length,
     });
