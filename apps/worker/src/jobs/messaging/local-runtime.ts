@@ -10,6 +10,7 @@ import {
 } from '@gestschool/infrastructure';
 import { MessagingOutboxDispatcher } from './dispatch.js';
 import { MessagingDelivery } from './local-delivery.js';
+import { safeMessagingFailureCode } from './provider-error-code.js';
 
 export class LocalMessagingRuntime implements OnModuleDestroy {
   private readonly infrastructure = loadInfrastructureConfig();
@@ -42,12 +43,13 @@ export class LocalMessagingRuntime implements OnModuleDestroy {
       ({ tenantId, eventId }, job) => delivery.process(tenantId, eventId, job),
     );
     worker.on('error', () => this.logger.error('MESSAGING_WORKER_UNAVAILABLE'));
-    worker.on('failed', (job) =>
+    worker.on('failed', (job, error) =>
       this.logger.warn(
         JSON.stringify({
           event: 'messaging.job.failed',
           eventId: job?.id,
           attempt: job?.attemptsMade,
+          providerErrorCode: safeMessagingFailureCode(error),
         }),
       ),
     );
