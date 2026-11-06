@@ -103,7 +103,11 @@ function editableFromView(value: TenantSettingsView): TenantSettingsUpdate {
 }
 
 async function logoDataUrl(file: File): Promise<string> {
-  if (!['image/png', 'image/jpeg'].includes(file.type) || file.size === 0 || file.size > 250_000)
+  if (
+    !['image/png', 'image/jpeg'].includes(file.type) ||
+    file.size === 0 ||
+    file.size > 250_000
+  )
     throw new Error('SETTINGS_LOGO_INVALID');
   const bytes = new Uint8Array(await file.arrayBuffer());
   let binary = '';
@@ -304,6 +308,7 @@ export function SettingsPage() {
                       type="file"
                       onChange={(event) => {
                         const file = event.target.files?.item(0);
+                        event.currentTarget.value = '';
                         if (!file) return;
                         void logoDataUrl(file)
                           .then((value) => patch('schoolLogoDataUrl', value))
@@ -313,9 +318,20 @@ export function SettingsPage() {
                     <p className="text-xs text-muted-foreground">{translate('logoHint')}</p>
                     {form.schoolLogoDataUrl ? (
                       <div className="flex items-center gap-3 rounded-lg border p-3">
-                        <Image alt={translate('logo')} className="size-14 rounded-md object-contain" height={56} src={form.schoolLogoDataUrl} unoptimized width={56} />
+                        <Image
+                          alt={translate('logo')}
+                          className="size-14 rounded-md object-contain"
+                          height={56}
+                          src={form.schoolLogoDataUrl}
+                          unoptimized
+                          width={56}
+                        />
                         {canWrite ? (
-                          <Button onClick={() => patch('schoolLogoDataUrl', null)} type="button" variant="outline">
+                          <Button
+                            onClick={() => patch('schoolLogoDataUrl', null)}
+                            type="button"
+                            variant="outline"
+                          >
                             {translate('removeLogo')}
                           </Button>
                         ) : null}
@@ -323,16 +339,35 @@ export function SettingsPage() {
                     ) : null}
                   </Field>
                 </div>
-                <div aria-label={translate('documentPreview')} className="rounded-xl border bg-card p-4 shadow-sm">
-                  <div className="mb-4 h-1 rounded-full" style={{ backgroundColor: /^#[0-9A-Fa-f]{6}$/.test(form.primaryColor) ? form.primaryColor : '#1D4ED8' }} />
+                <div
+                  aria-label={translate('documentPreview')}
+                  className="rounded-xl border bg-card p-4 shadow-sm"
+                >
+                  <div
+                    className="mb-4 h-1 rounded-full"
+                    style={{
+                      backgroundColor: /^#[0-9A-Fa-f]{6}$/.test(form.primaryColor)
+                        ? form.primaryColor
+                        : '#1D4ED8',
+                    }}
+                  />
                   <div className="flex items-start gap-3">
                     {form.schoolLogoDataUrl ? (
-                      <Image alt="" className="size-12 rounded object-contain" height={48} src={form.schoolLogoDataUrl} unoptimized width={48} />
+                      <Image
+                        alt=""
+                        className="size-12 rounded object-contain"
+                        height={48}
+                        src={form.schoolLogoDataUrl}
+                        unoptimized
+                        width={48}
+                      />
                     ) : null}
                     <div className="min-w-0">
                       <p className="font-semibold">{form.schoolName}</p>
                       <p className="mt-1 text-xs text-muted-foreground">
-                        {[form.schoolCode, form.address, form.email, form.phone].filter(Boolean).join(' · ')}
+                        {[form.schoolCode, form.address, form.email, form.phone]
+                          .filter(Boolean)
+                          .join(' · ')}
                       </p>
                     </div>
                   </div>
