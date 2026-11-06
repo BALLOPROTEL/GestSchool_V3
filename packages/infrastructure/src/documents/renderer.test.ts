@@ -13,7 +13,8 @@ const snapshot: DocumentSnapshot = {
     code: 'GS-001',
     email: 'direction@example.invalid',
     phone: '+225 01020304',
-    logoDataUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9WlVQAAAAASUVORK5CYII=',
+    logoDataUrl:
+      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9WlVQAAAAASUVORK5CYII=',
   },
   holder: { name: '<script>fetch("http://169.254.169.254")</script>', matricule: 'A01' },
   academicYear: '2026–2027',
@@ -51,7 +52,9 @@ describe('offline PDF template boundary', () => {
       expect(html).toContain('size:85.60mm 53.98mm');
       expect(html).toContain('class="school-logo"');
       expect(html).toContain('data:image/png;base64,');
-      expect(html).toContain('GS-001 · Cocody, Abidjan · direction@example.invalid · +225 01020304');
+      expect(html).toContain(
+        'GS-001 · Cocody, Abidjan · direction@example.invalid · +225 01020304',
+      );
       expect(html).not.toContain('<script>');
       expect(html).not.toContain('<iframe');
       expect(html).toContain('&lt;script&gt;');
