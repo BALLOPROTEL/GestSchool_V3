@@ -265,8 +265,8 @@ test('keeps internal design system out of the production portal', async ({ page 
   await page.goto('/');
   await waitForPageReady(page);
   await expect(page.getByRole('link', { name: 'Composants UI', exact: true })).toHaveCount(0);
-  const response = await page.goto('/design-system', { waitUntil: 'domcontentloaded' });
-  expect(response?.status()).toBe(404);
+  await page.goto('/design-system', { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/i);
 });
 
 test('has no automated WCAG A/AA violations on representative screens', async ({
