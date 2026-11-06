@@ -45,6 +45,40 @@ export const documentSourceQuery = z.strictObject({
   studentId: z.uuid().optional(),
 });
 export type DocumentSourceQuery = z.infer<typeof documentSourceQuery>;
+
+export const enrollmentBackedDocumentTypes = [
+  'SCHOOL_CERTIFICATE',
+  'ENROLLMENT_CERTIFICATE',
+  'STUDENT_CARD',
+] as const;
+export type EnrollmentBackedDocumentType = (typeof enrollmentBackedDocumentTypes)[number];
+
+export const documentEligibilityQuery = z.strictObject({
+  studentId: z.uuid(),
+  documentType: z.enum(enrollmentBackedDocumentTypes),
+});
+export type DocumentEligibilityQuery = z.infer<typeof documentEligibilityQuery>;
+
+export const documentEligibilityBlockers = [
+  'STUDENT_NOT_ACTIVE',
+  'NO_ACTIVE_ENROLLMENT',
+  'ACADEMIC_YEAR_NOT_ACTIVE',
+] as const;
+export type DocumentEligibilityBlocker = (typeof documentEligibilityBlockers)[number];
+
+export const documentEligibilityWarnings = ['PHOTO_MISSING', 'SCHOOL_ADDRESS_MISSING'] as const;
+export type DocumentEligibilityWarning = (typeof documentEligibilityWarnings)[number];
+
+export interface DocumentEligibilityView {
+  studentId: string;
+  documentType: EnrollmentBackedDocumentType;
+  eligible: boolean;
+  sourceId: string | null;
+  blockers: DocumentEligibilityBlocker[];
+  warnings: DocumentEligibilityWarning[];
+  className: string | null;
+  academicYear: string | null;
+}
 export interface DocumentSourceView {
   id: string;
   label: string;

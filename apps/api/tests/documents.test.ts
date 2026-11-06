@@ -4,6 +4,7 @@ import { chromium } from '@playwright/test';
 import { loadInfrastructureConfig } from '@gestschool/config/environment';
 import {
   documentSnapshotSchema,
+  type DocumentEligibilityView,
   type DocumentView,
   type DocumentList,
   type OfficialDocumentType,
@@ -229,6 +230,44 @@ afterAll(async () => {
 });
 
 describe('LOT 10 — real official document pipeline', () => {
+  it('explains student-card eligibility and advisory branding gaps', async () => {
+    const eligible = await admin.browser.send<DocumentEligibilityView>(
+      `documents/eligibility?studentId=${a.student.id}&documentType=STUDENT_CARD`,
+    );
+    expect(eligible.status).toBe(200);
+    expect(eligible.body).toMatchObject({
+      studentId: a.student.id,
+      documentType: 'STUDENT_CARD',
+      eligible: true,
+      sourceId: a.enrollment.id,
+      blockers: [],
+      className: a.classroom.name,
+      academicYear: a.year.name,
+    });
+    expect(eligible.body.warnings).toEqual(
+      expect.arrayContaining(['PHOTO_MISSING', 'SCHOOL_ADDRESS_MISSING']),
+    );
+
+    const withoutEnrollment = await h.db.student.create({
+      data: {
+        tenantId: a.tenantId,
+        matricule: `NO-ENROLL-${randomUUID().slice(0, 8)}`,
+        firstName: 'Sans',
+        lastName: 'Inscription',
+      },
+    });
+    const blocked = await admin.browser.send<DocumentEligibilityView>(
+      `documents/eligibility?studentId=${withoutEnrollment.id}&documentType=STUDENT_CARD`,
+    );
+    expect(blocked.status).toBe(200);
+    expect(blocked.body).toMatchObject({
+      eligible: false,
+      sourceId: null,
+      blockers: ['NO_ACTIVE_ENROLLMENT'],
+      className: null,
+      academicYear: null,
+    });
+  });
   it('commits one PENDING document and one versioned outbox event for ten concurrent requests', async () => {
     const key = randomUUID(),
       replies = await Promise.all(

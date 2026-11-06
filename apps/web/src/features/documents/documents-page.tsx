@@ -5,6 +5,8 @@ import { Button, Card, CardContent, Pagination, StatusBadge } from '@gestschool/
 import { FileText, Download, Eye, Plus } from 'lucide-react';
 import {
   documentTypes,
+  enrollmentBackedDocumentTypes,
+  type DocumentEligibilityView,
   type DocumentList,
   type DocumentSourceView,
   type DocumentView,
@@ -57,12 +59,19 @@ export function DocumentsPanel({ studentId, sourceId, documentType, eligible = t
       setSearch(new URLSearchParams(window.location.search).get('search') ?? '');
   }, [sourceId, studentId]);
   const debounced = useDebounced(search),
-    canRead = canDocuments(session?.session, 'documents.read');
+    canRead = canDocuments(session?.session, 'documents.read'),
+    types = documentTypesFor(session?.session);
   const q = new URLSearchParams({ page: String(page), pageSize: '10', search: debounced });
   if (studentId) q.set('studentId', studentId);
   if (sourceId) q.set('sourceId', sourceId);
   if (documentType || filter) q.set('documentType', documentType ?? filter);
   const result = usePeopleData<DocumentList>(canRead ? `documents?${q}` : null, revision);
+  const cardEligibility = usePeopleData<DocumentEligibilityView>(
+    canRead && studentId && types.includes('STUDENT_CARD')
+      ? `documents/eligibility?studentId=${encodeURIComponent(studentId)}&documentType=STUDENT_CARD`
+      : null,
+    revision,
+  );
   const refresh = () => setRevision((value) => value + 1);
   useEffect(() => {
     if (!result.data?.items.some((d) => ['PENDING', 'PROCESSING'].includes(d.status))) return;
@@ -75,7 +84,6 @@ export function DocumentsPanel({ studentId, sourceId, documentType, eligible = t
         {t.forbidden}
       </p>
     );
-  const types = documentTypesFor(session?.session);
   async function download(row: DocumentView) {
     setError(false);
     setBusy(true);
@@ -115,6 +123,31 @@ export function DocumentsPanel({ studentId, sourceId, documentType, eligible = t
           ) : null}
         </div>
       </div>
+      {studentId && cardEligibility.data ? (
+        <div
+          className="rounded-lg border p-3 text-sm"
+          data-student-card-eligibility={cardEligibility.data.eligible ? 'ready' : 'blocked'}
+          role="status"
+        >
+          <p className="font-semibold">
+            {cardEligibility.data.eligible ? t.eligibilityReady : t.eligibilityBlocked}
+          </p>
+          {cardEligibility.data.blockers.length ? (
+            <ul className="mt-2 list-disc space-y-1 ps-5">
+              {cardEligibility.data.blockers.map((code) => (
+                <li key={code}>{t[code]}</li>
+              ))}
+            </ul>
+          ) : null}
+          {cardEligibility.data.warnings.length ? (
+            <ul className="mt-2 list-disc space-y-1 ps-5 text-muted-foreground">
+              {cardEligibility.data.warnings.map((code) => (
+                <li key={code}>{t[code]}</li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
+      ) : null}
       {!sourceId ? (
         <div className="grid gap-3 sm:grid-cols-2">
           <SearchField
@@ -305,6 +338,16 @@ function DocumentGenerator({
   const q = new URLSearchParams({ documentType: type, search: debounced });
   if (studentId) q.set('studentId', studentId);
   const sources = usePeopleData<DocumentSourceView[]>(!sourceId ? `documents/sources?${q}` : null);
+  const enrollmentBacked = enrollmentBackedDocumentTypes.some((item) => item === type);
+  const eligibility = usePeopleData<DocumentEligibilityView>(
+    studentId && enrollmentBacked
+      ? `documents/eligibility?studentId=${encodeURIComponent(studentId)}&documentType=${type}`
+      : null,
+  );
+  useEffect(() => {
+    if (!sourceId && eligibility.data?.eligible && eligibility.data.sourceId)
+      setSource(eligibility.data.sourceId);
+  }, [eligibility.data, sourceId]);
   return (
     <AcademicDialog title={t.generate} description={t.sourceHint} close={close} busy={busy}>
       <form
@@ -386,13 +429,33 @@ function DocumentGenerator({
             </label>
           </>
         ) : null}
-        {error || sources.error ? (
+        {eligibility.data && !eligibility.data.eligible ? (
+          <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm">
+            <p className="font-semibold">{t.eligibilityBlocked}</p>
+            <ul className="mt-2 list-disc space-y-1 ps-5">
+              {eligibility.data.blockers.map((code) => (
+                <li key={code}>{t[code]}</li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+        {eligibility.data?.warnings.length ? (
+          <ul className="list-disc space-y-1 ps-5 text-sm text-muted-foreground">
+            {eligibility.data.warnings.map((code) => (
+              <li key={code}>{t[code]}</li>
+            ))}
+          </ul>
+        ) : null}
+        {error || sources.error || eligibility.error ? (
           <p role="alert" className="text-sm text-destructive">
             {t.error}
           </p>
         ) : null}
         <div className="flex flex-wrap gap-2">
-          <Button type="submit" disabled={busy || !source}>
+          <Button
+            type="submit"
+            disabled={busy || !source || (eligibility.data ? !eligibility.data.eligible : false)}
+          >
             {t.generate}
           </Button>
           <Button type="button" variant="outline" disabled={busy} onClick={close}>

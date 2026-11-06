@@ -1,4 +1,6 @@
 import type {
+  DocumentEligibilityQuery,
+  DocumentEligibilityView,
   DocumentList,
   DocumentQuery,
   DocumentSourceQuery,
@@ -16,6 +18,10 @@ export abstract class DocumentsRepository {
     context: RequestContext,
     query: DocumentSourceQuery,
   ): Promise<DocumentSourceView[]>;
+  abstract eligibility(
+    context: RequestContext,
+    query: DocumentEligibilityQuery,
+  ): Promise<DocumentEligibilityView>;
   abstract list(context: RequestContext, query: DocumentQuery): Promise<DocumentList>;
   abstract detail(context: RequestContext, id: string): Promise<DocumentView>;
   abstract generate(
