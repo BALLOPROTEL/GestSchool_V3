@@ -106,7 +106,7 @@
     "limit": "The processing limit has been reached.",
     "unavailable": "Service unavailable. Please try again.",
     "workflowDRAFT": "1/4 Draft — enter every grade, save them, then submit the assessment. Draft grades do not yet count toward averages or report cards.",
-    "workflowSUBMITTED": "2/4 Submitted — grades are saved and waiting for validation by another authorized person.",
+    "workflowSUBMITTED": "2/4 Submitted — grades are waiting for independent validation. An authorized administrator may use a justified override when necessary.",
     "workflowVALIDATED": "3/4 Validated — the assessment must still be published before it contributes to averages, ranks and report cards.",
     "workflowPUBLISHED": "4/4 Published — these grades now contribute to averages and report cards. Published corrections remain audited.",
     "workflowLOCKED": "Published and locked — grades contribute to results and no further changes are allowed.",
@@ -114,7 +114,7 @@
     "blockerSubjectWithoutAssessment": "{subject}: no assessment exists for this period.",
     "blockerAssessmentNotPublished": "{assessment} · {subject}: status {status}. Publish this assessment so it contributes to results.",
     "blockerMissingGrades": "{assessment} · {subject}: {count} missing grade(s) out of {total} student(s).",
-    "sudoOverrideHint": "Super-admin override: you are validating your own submission. A reason is required and this exception will be recorded in the audit log."
+    "sudoOverrideHint": "Administrator override: you are validating your own submission. A reason is required and this exception will be recorded in the audit log."
   },
   "FinanceFlow": {
     "rejectPayment": "Reject pending payment",

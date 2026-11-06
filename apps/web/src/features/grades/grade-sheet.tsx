@@ -24,7 +24,13 @@ import { useAuth } from '../auth/auth-provider';
 import { AcademicDialog } from '../academics/academic-components';
 import { usePeopleData } from '../directory/people-hooks';
 import { PeopleError } from '../directory/people-client';
-import { canResults, resultsRequest, scoreInput, validScore } from './results-client';
+import {
+  canAdministrativeOverride,
+  canResults,
+  resultsRequest,
+  scoreInput,
+  validScore,
+} from './results-client';
 import { ResultError, ResultField, ResultSelect, ResultStatus } from './results-components';
 import { AssessmentEditor } from './assessment-editor';
 
@@ -48,7 +54,7 @@ export function GradeEntrySheet({
   const t = useTranslations('Results'),
     { session } = useAuth();
   const assessment = sheet.assessment;
-  const isSuperAdmin = session?.session.roles.includes('SUPER_ADMIN') ?? false;
+  const canOverride = canAdministrativeOverride(session?.session);
   const can = (permission: string) => canResults(session?.session, permission, 'write');
   const editable =
     can('grades.create') &&
@@ -168,7 +174,7 @@ export function GradeEntrySheet({
                 !(
                   item.action === 'validate' &&
                   assessment.submittedByMembershipId === session?.session.membershipId &&
-                  !isSuperAdmin
+                  !canOverride
                 ),
             )
             .map((item) => (
@@ -385,11 +391,11 @@ function AssessmentConfirmation({
 }) {
   const t = useTranslations('Results'),
     { session } = useAuth();
-  const superAdminOverride =
+  const administrativeOverride =
       action === 'validate' &&
       assessment.submittedByMembershipId === session?.session.membershipId &&
-      session?.session.roles.includes('SUPER_ADMIN'),
-    reasonRequired = action === 'reopen' || superAdminOverride;
+      canAdministrativeOverride(session?.session),
+    reasonRequired = action === 'reopen' || administrativeOverride;
   const [busy, setBusy] = useState(false),
     [error, setError] = useState<unknown>();
   return (
@@ -420,7 +426,7 @@ function AssessmentConfirmation({
         }}
       >
         <p className="font-semibold">{assessment.title}</p>
-        {superAdminOverride ? (
+        {administrativeOverride ? (
           <p role="status" className="rounded-lg bg-muted p-3 text-sm">
             {t('sudoOverrideHint')}
           </p>

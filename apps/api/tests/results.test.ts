@@ -509,13 +509,17 @@ describe('LOT 9 submission, independent validation and publication', () => {
       }),
     ).rejects.toThrow();
   });
-  it('allows SUPER_ADMIN self-validation only with an audited reason', async () => {
-    const created = await superAdmin.browser.send<AssessmentView>(
+  it.each([
+    ['SUPER_ADMIN', () => superAdmin] as const,
+    ['SCHOOL_ADMIN', () => admin] as const,
+  ])('allows %s self-validation only with an audited reason', async (role, actorFactory) => {
+    const actor = actorFactory();
+    const created = await actor.browser.send<AssessmentView>(
       'assessments',
       {
         classSubjectId: mathId,
         academicPeriodId: secondPeriodId,
-        title: 'Override super-admin',
+        title: `Override ${role}`,
         assessedOn: '2026-09-15',
         maxScore: '20',
         weight: '1',
@@ -523,11 +527,11 @@ describe('LOT 9 submission, independent validation and publication', () => {
       'POST',
     );
     expect(created.status).toBe(201);
-    const initial = await superAdmin.browser.send<GradeSheet>(
+    const initial = await actor.browser.send<GradeSheet>(
       `assessments/${created.body.id}/grades`,
     );
     expect(initial.status).toBe(200);
-    const saved = await superAdmin.browser.send<GradeSheet>(
+    const saved = await actor.browser.send<GradeSheet>(
       `assessments/${created.body.id}/grades`,
       {
         expectedVersion: created.body.version,
@@ -540,14 +544,14 @@ describe('LOT 9 submission, independent validation and publication', () => {
       'PUT',
     );
     expect(saved.status).toBe(200);
-    const submitted = await superAdmin.browser.send<AssessmentView>(
+    const submitted = await actor.browser.send<AssessmentView>(
       `assessments/${created.body.id}/submit`,
       { expectedVersion: saved.body.assessment.version },
       'POST',
     );
     expect(submitted.status).toBe(200);
     await failure(
-      superAdmin.browser.send(
+      actor.browser.send(
         `assessments/${created.body.id}/validate`,
         { expectedVersion: submitted.body.version },
         'POST',
@@ -556,7 +560,7 @@ describe('LOT 9 submission, independent validation and publication', () => {
       'RESULT_REASON_REQUIRED',
     );
     const reason = 'Override exceptionnel pour continuité de service';
-    const validated = await superAdmin.browser.send<AssessmentView>(
+    const validated = await actor.browser.send<AssessmentView>(
       `assessments/${created.body.id}/validate`,
       { expectedVersion: submitted.body.version, reason },
       'POST',
@@ -571,7 +575,7 @@ describe('LOT 9 submission, independent validation and publication', () => {
       },
     });
     expect(audit.metadata).toMatchObject({
-      after: { reason, superAdminOverride: true },
+      after: { reason, administrativeOverride: true, overrideRole: role },
     });
   });
   it('does not disclose live class averages to parents, students or teachers', async () => {

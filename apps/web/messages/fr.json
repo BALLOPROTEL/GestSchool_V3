@@ -106,7 +106,7 @@
     "limit": "La limite de traitement a été atteinte.",
     "unavailable": "Le service est indisponible. Réessayez.",
     "workflowDRAFT": "1/4 Brouillon — saisissez toutes les notes, enregistrez-les puis soumettez l’évaluation. Une note en brouillon ne compte pas encore dans les moyennes ni les bulletins.",
-    "workflowSUBMITTED": "2/4 Soumis — les notes sont enregistrées mais attendent la validation d’une autre personne autorisée.",
+    "workflowSUBMITTED": "2/4 Soumis — les notes attendent une validation indépendante. Un administrateur autorisé peut utiliser un override justifié si nécessaire.",
     "workflowVALIDATED": "3/4 Validé — l’évaluation doit encore être publiée pour entrer dans les moyennes, rangs et bulletins.",
     "workflowPUBLISHED": "4/4 Publié — ces notes alimentent désormais les moyennes et les bulletins. Toute correction publiée reste tracée.",
     "workflowLOCKED": "Publié et verrouillé — les notes alimentent les résultats et aucune modification n’est autorisée.",
@@ -114,7 +114,7 @@
     "blockerSubjectWithoutAssessment": "{subject} : aucune évaluation n’existe pour cette période.",
     "blockerAssessmentNotPublished": "{assessment} · {subject} : statut {status}. Publiez cette évaluation pour qu’elle compte dans les résultats.",
     "blockerMissingGrades": "{assessment} · {subject} : {count} note(s) manquante(s) sur {total} élève(s).",
-    "sudoOverrideHint": "Mode super-admin : vous validez votre propre soumission. Une justification est obligatoire et cette dérogation sera enregistrée dans l’audit."
+    "sudoOverrideHint": "Override administrateur : vous validez votre propre soumission. Une justification est obligatoire et cette dérogation sera enregistrée dans l’audit."
   },
   "FinanceFlow": {
     "rejectPayment": "Rejeter le paiement en attente",
