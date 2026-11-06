@@ -400,7 +400,9 @@ function DocumentGenerator({
         ) : null}
         {eligibility.data && !eligibility.data.eligible ? (
           <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm">
-            <p className="font-semibold">{t.eligibilityBlocked}</p>
+            <p className="font-semibold">
+              {t[type]} · {t.eligibilityBlocked}
+            </p>
             <ul className="mt-2 list-disc space-y-1 ps-5">
               {eligibility.data.blockers.map((code) => (
                 <li key={code}>{t[code]}</li>

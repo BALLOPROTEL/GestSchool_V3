@@ -34,10 +34,11 @@ const fr = {
   print: 'Carte ID-1 · 85,60 × 53,98 mm · imprimer à 100 %',
   photo: 'Photo indisponible',
   eligibilityReady: 'Carte élève générable',
-  eligibilityBlocked: 'Carte élève non générable',
+  eligibilityBlocked: 'Non générable',
   STUDENT_NOT_ACTIVE: 'Le statut de l’élève doit être Actif.',
   NO_ACTIVE_ENROLLMENT: 'Aucune inscription active n’est disponible pour cet élève.',
-  ACADEMIC_YEAR_NOT_ACTIVE: 'L’inscription active n’appartient pas à une année scolaire active.',
+  ACADEMIC_YEAR_NOT_ACTIVE:
+    'L’élève est inscrit, mais son inscription active n’est rattachée à aucune année scolaire actuellement active. Activez l’année concernée dans Années scolaires.',
   PHOTO_MISSING:
     'Photo absente : la carte peut être générée, mais elle affichera « Photo indisponible ».',
   SCHOOL_ADDRESS_MISSING:
@@ -104,10 +105,11 @@ const en: Copy = {
   print: 'ID-1 card · 85.60 × 53.98 mm · print at 100%',
   photo: 'Photo unavailable',
   eligibilityReady: 'Student card can be generated',
-  eligibilityBlocked: 'Student card cannot be generated',
+  eligibilityBlocked: 'Cannot be generated',
   STUDENT_NOT_ACTIVE: 'The student status must be Active.',
   NO_ACTIVE_ENROLLMENT: 'No active enrollment is available for this student.',
-  ACADEMIC_YEAR_NOT_ACTIVE: 'The active enrollment does not belong to an active academic year.',
+  ACADEMIC_YEAR_NOT_ACTIVE:
+    'The student is enrolled, but the active enrollment is not linked to a currently active academic year. Activate the relevant academic year first.',
   PHOTO_MISSING:
     'Photo missing: the card can still be generated, but it will display “Photo unavailable”.',
   SCHOOL_ADDRESS_MISSING:
@@ -172,10 +174,11 @@ const ar: Copy = {
   print: 'بطاقة ID-1 · 85.60 × 53.98 مم · طباعة بنسبة 100٪',
   photo: 'الصورة غير متوفرة',
   eligibilityReady: 'يمكن إنشاء بطاقة الطالب',
-  eligibilityBlocked: 'لا يمكن إنشاء بطاقة الطالب',
+  eligibilityBlocked: 'غير قابل للإنشاء',
   STUDENT_NOT_ACTIVE: 'يجب أن تكون حالة الطالب نشطة.',
   NO_ACTIVE_ENROLLMENT: 'لا يوجد تسجيل نشط متاح لهذا الطالب.',
-  ACADEMIC_YEAR_NOT_ACTIVE: 'التسجيل النشط لا ينتمي إلى سنة دراسية نشطة.',
+  ACADEMIC_YEAR_NOT_ACTIVE:
+    'الطالب مسجل، لكن تسجيله النشط غير مرتبط بسنة دراسية نشطة حالياً. فعّل السنة الدراسية المعنية أولاً.',
   PHOTO_MISSING: 'الصورة غير موجودة: يمكن إنشاء البطاقة لكنها ستعرض أن الصورة غير متوفرة.',
   SCHOOL_ADDRESS_MISSING:
     'عنوان المؤسسة غير موجود: يمكن إنشاء الوثيقة لكن الهوية البصرية ستكون غير مكتملة.',
