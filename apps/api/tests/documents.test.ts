@@ -263,7 +263,13 @@ describe('LOT 10 — real official document pipeline', () => {
       className: a.classroom.name,
       academicYear: a.year.name,
     });
-    expect(eligible.body.warnings).toEqual(
+    expect(eligible.body.warnings).toEqual(['PHOTO_MISSING']);
+
+    const unbranded = await foreign.browser.send<DocumentEligibilityView>(
+      `documents/eligibility?studentId=${b.student.id}&documentType=STUDENT_CARD`,
+    );
+    expect(unbranded.status).toBe(200);
+    expect(unbranded.body.warnings).toEqual(
       expect.arrayContaining(['PHOTO_MISSING', 'SCHOOL_ADDRESS_MISSING']),
     );
 
