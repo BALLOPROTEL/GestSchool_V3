@@ -114,7 +114,8 @@ beforeAll(async () => {
         publicAddress: 'Cocody, Abidjan',
         email: 'direction@example.invalid',
         phone: '+225 01020304',
-        schoolLogoDataUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9WlVQAAAAASUVORK5CYII=',
+        schoolLogoDataUrl:
+          'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9WlVQAAAAASUVORK5CYII=',
       },
     },
     create: {
@@ -125,7 +126,8 @@ beforeAll(async () => {
         publicAddress: 'Cocody, Abidjan',
         email: 'direction@example.invalid',
         phone: '+225 01020304',
-        schoolLogoDataUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9WlVQAAAAASUVORK5CYII=',
+        schoolLogoDataUrl:
+          'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9WlVQAAAAASUVORK5CYII=',
       },
     },
   });
@@ -312,7 +314,8 @@ describe('LOT 10 — real official document pipeline', () => {
       publicAddress: 'Cocody, Abidjan',
       email: 'direction@example.invalid',
       phone: '+225 01020304',
-      logoDataUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9WlVQAAAAASUVORK5CYII=',
+      logoDataUrl:
+        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9WlVQAAAAASUVORK5CYII=',
     });
     expect(
       await h.db.outboxEvent.count({
