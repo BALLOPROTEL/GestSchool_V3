@@ -18,6 +18,7 @@ import {
 import type { SessionView, TenantSettingsUpdate, TenantSettingsView } from '@gestschool/contracts';
 import { Building2, CalendarDays, Save } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState, type ReactNode } from 'react';
 import { toast } from 'sonner';
@@ -95,9 +96,20 @@ function editableFromView(value: TenantSettingsView): TenantSettingsUpdate {
     email: value.email,
     phone: value.phone,
     address: value.address,
+    schoolLogoDataUrl: value.schoolLogoDataUrl ?? null,
     primaryColor: value.primaryColor,
     timezone: value.timezone,
   };
+}
+
+async function logoDataUrl(file: File): Promise<string> {
+  if (!['image/png', 'image/jpeg'].includes(file.type) || file.size === 0 || file.size > 250_000)
+    throw new Error('SETTINGS_LOGO_INVALID');
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  let binary = '';
+  for (let offset = 0; offset < bytes.length; offset += 32_768)
+    binary += String.fromCharCode(...bytes.subarray(offset, offset + 32_768));
+  return `data:${file.type};base64,${btoa(binary)}`;
 }
 
 export function SettingsPage() {
@@ -261,27 +273,110 @@ export function SettingsPage() {
               icon={Building2}
               title={translate('branding')}
             >
-              <Field htmlFor="primary-color" label={translate('primaryColor')}>
-                <div className="flex max-w-md gap-3">
-                  <Input
-                    aria-label={translate('primaryColorPicker')}
-                    className="w-14 px-1"
-                    id="primary-color-picker"
-                    type="color"
-                    value={form.primaryColor}
-                    disabled={!canWrite}
-                    onChange={(event) => patch('primaryColor', event.target.value.toUpperCase())}
-                  />
-                  <Input
-                    className="font-mono"
-                    id="primary-color"
-                    value={form.primaryColor}
-                    disabled={!canWrite}
-                    maxLength={7}
-                    onChange={(event) => patch('primaryColor', event.target.value)}
-                  />
+              <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(280px,0.8fr)]">
+                <div className="space-y-5">
+                  <Field htmlFor="primary-color" label={translate('primaryColor')}>
+                    <div className="flex max-w-md gap-3">
+                      <Input
+                        aria-label={translate('primaryColorPicker')}
+                        className="w-14 px-1"
+                        id="primary-color-picker"
+                        type="color"
+                        value={form.primaryColor}
+                        disabled={!canWrite}
+                        onChange={(event) =>
+                          patch('primaryColor', event.target.value.toUpperCase())
+                        }
+                      />
+                      <Input
+                        className="font-mono"
+                        id="primary-color"
+                        value={form.primaryColor}
+                        disabled={!canWrite}
+                        maxLength={7}
+                        onChange={(event) => patch('primaryColor', event.target.value)}
+                      />
+                    </div>
+                  </Field>
+                  <Field htmlFor="school-logo" label={translate('logo')}>
+                    <Input
+                      accept="image/png,image/jpeg"
+                      disabled={!canWrite}
+                      id="school-logo"
+                      type="file"
+                      onChange={(event) => {
+                        const file = event.target.files?.item(0);
+                        event.currentTarget.value = '';
+                        if (!file) return;
+                        void logoDataUrl(file)
+                          .then((value) => patch('schoolLogoDataUrl', value))
+                          .catch(() => toast.error(translate('logoInvalid')));
+                      }}
+                    />
+                    <p className="text-xs text-muted-foreground">{translate('logoHint')}</p>
+                    {form.schoolLogoDataUrl ? (
+                      <div className="flex items-center gap-3 rounded-lg border p-3">
+                        <Image
+                          alt={translate('logo')}
+                          className="size-14 rounded-md object-contain"
+                          height={56}
+                          src={form.schoolLogoDataUrl}
+                          unoptimized
+                          width={56}
+                        />
+                        {canWrite ? (
+                          <Button
+                            onClick={() => patch('schoolLogoDataUrl', null)}
+                            type="button"
+                            variant="outline"
+                          >
+                            {translate('removeLogo')}
+                          </Button>
+                        ) : null}
+                      </div>
+                    ) : null}
+                  </Field>
                 </div>
-              </Field>
+                <div
+                  aria-label={translate('documentPreview')}
+                  className="rounded-xl border bg-card p-4 shadow-sm"
+                >
+                  <div
+                    className="mb-4 h-1 rounded-full"
+                    style={{
+                      backgroundColor: /^#[0-9A-Fa-f]{6}$/.test(form.primaryColor)
+                        ? form.primaryColor
+                        : '#1D4ED8',
+                    }}
+                  />
+                  <div className="flex items-start gap-3">
+                    {form.schoolLogoDataUrl ? (
+                      <Image
+                        alt=""
+                        className="size-12 rounded object-contain"
+                        height={48}
+                        src={form.schoolLogoDataUrl}
+                        unoptimized
+                        width={48}
+                      />
+                    ) : null}
+                    <div className="min-w-0">
+                      <p className="font-semibold">{form.schoolName}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {[form.schoolCode, form.address, form.email, form.phone]
+                          .filter(Boolean)
+                          .join(' · ')}
+                      </p>
+                    </div>
+                  </div>
+                  <p className="mt-6 text-lg font-semibold">{translate('previewDocumentTitle')}</p>
+                  <div className="mt-4 space-y-2">
+                    <div className="h-2 w-4/5 rounded bg-muted" />
+                    <div className="h-2 w-3/5 rounded bg-muted" />
+                    <div className="h-2 w-2/3 rounded bg-muted" />
+                  </div>
+                </div>
+              </div>
             </SettingsCard>
           </TabsContent>
 

@@ -41,7 +41,6 @@ import {
   ChevronDown,
   ClipboardList,
   Command,
-  FileText,
   FolderOpen,
   Globe2,
   GraduationCap,
@@ -841,7 +840,6 @@ function ProfileMenu() {
   const router = useRouter();
   const iam = useTranslations('Iam');
   const shell = useTranslations('Shell');
-  const nav = useTranslations('Nav');
   const avatarUrl = usePrivateAvatar(
     session ? '/api/v1/auth/profile/avatar' : null,
     session?.session.membershipId,
@@ -879,12 +877,6 @@ function ProfileMenu() {
           <Link href="/profile">
             <UsersRound />
             {shell('profile')}
-          </Link>
-        </DropdownItem>
-        <DropdownItem asChild>
-          <Link href="/design-system">
-            <FileText />
-            {nav('designSystem')}
           </Link>
         </DropdownItem>
         <DropdownSeparator />

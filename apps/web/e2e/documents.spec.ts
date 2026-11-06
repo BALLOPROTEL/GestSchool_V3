@@ -121,6 +121,47 @@ test('LOT 10 official PDFs, QR verification, revocation and scoped downloads at 
   await page.goto(`/fr/students/${data.studentId}`);
   await page.getByRole('tab', { name: 'Documents officiels', exact: true }).click();
   await ready(page);
+  await page.getByRole('button', { name: 'Générer un document', exact: true }).click();
+  const studentDialog = page.getByRole('dialog');
+  await studentDialog
+    .getByRole('combobox', { name: 'Type de document', exact: true })
+    .selectOption('STUDENT_CARD');
+  await expect(studentDialog).toContainText('Photo absente');
+  await expect(
+    studentDialog.getByRole('combobox', { name: 'Source officielle', exact: true }),
+  ).toHaveValue(data.enrollmentId);
+  await page.route('**/api/v1/documents/eligibility?*', async (route) => {
+    const url = new URL(route.request().url());
+    if (url.searchParams.get('documentType') !== 'SCHOOL_CERTIFICATE') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        studentId: data.studentId,
+        documentType: 'SCHOOL_CERTIFICATE',
+        eligible: false,
+        sourceId: null,
+        blockers: ['ACADEMIC_YEAR_NOT_ACTIVE'],
+        warnings: [],
+        className: '6e A',
+        academicYear: '2027',
+      }),
+    });
+  });
+  await studentDialog
+    .getByRole('combobox', { name: 'Type de document', exact: true })
+    .selectOption('SCHOOL_CERTIFICATE');
+  await expect(studentDialog).toContainText('Certificat de scolarité · Non générable');
+  await expect(studentDialog).toContainText(
+    'L’élève est inscrit, mais son inscription active n’est rattachée à aucune année scolaire actuellement active.',
+  );
+  await expect(studentDialog).not.toContainText('Carte élève non générable');
+  await page.unroute('**/api/v1/documents/eligibility?*');
+  await studentDialog.getByRole('button', { name: 'Annuler', exact: true }).click();
+  await expect(studentDialog).toBeHidden();
   await expect(page.locator(`[data-document-id="${card.id}"]`)).toBeVisible();
   await pdf(page, card);
   await overflow(page);

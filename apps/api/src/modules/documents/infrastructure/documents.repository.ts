@@ -6,6 +6,8 @@ import {
   DOCUMENT_GENERATION_EVENT,
   documentSnapshotSchema,
   reportSnapshotSchema,
+  type DocumentEligibilityQuery,
+  type DocumentEligibilityView,
   type DocumentList,
   type DocumentQuery,
   type DocumentSourceQuery,
@@ -161,6 +163,88 @@ export class PrismaDocumentsRepository extends DocumentsRepository implements On
       label: `${r.student.firstName} ${r.student.lastName} · ${r.student.matricule} · ${r.schoolClass.name} · ${r.schoolClass.academicYear.name}`,
     }));
   }
+  override async eligibility(
+    context: RequestContext,
+    q: DocumentEligibilityQuery,
+  ): Promise<DocumentEligibilityView> {
+    if (!allowedDocumentTypes(context, 'documents.generate').includes(q.documentType)) deny();
+    const tenantId = context.tenantId;
+    const [student, tenant] = await Promise.all([
+      this.database.client.student.findFirst({
+        where: { tenantId, id: q.studentId },
+        select: {
+          id: true,
+          status: true,
+          avatarKey: true,
+          enrollments: {
+            where: { tenantId },
+            orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+            take: 20,
+            select: {
+              id: true,
+              status: true,
+              endedOn: true,
+              schoolClass: {
+                select: {
+                  name: true,
+                  academicYear: { select: { name: true, status: true } },
+                },
+              },
+            },
+          },
+        },
+      }),
+      this.database.client.tenant.findFirst({
+        where: { id: tenantId, status: 'ACTIVE' },
+        include: { settings: true },
+      }),
+    ]);
+    const currentStudent = documentFound(student),
+      currentTenant = documentFound(tenant),
+      openEnrollments = currentStudent.enrollments.filter(
+        (enrollment) => enrollment.status === 'ACTIVE' && !enrollment.endedOn,
+      ),
+      eligibleEnrollment = openEnrollments.find(
+        (enrollment) => enrollment.schoolClass.academicYear.status === 'ACTIVE',
+      ),
+      contextEnrollment =
+        eligibleEnrollment ?? openEnrollments[0] ?? currentStudent.enrollments[0] ?? null,
+      blockers: DocumentEligibilityView['blockers'] = [],
+      warnings: DocumentEligibilityView['warnings'] = [];
+
+    if (currentStudent.status !== 'ACTIVE') blockers.push('STUDENT_NOT_ACTIVE');
+    if (!openEnrollments.length) blockers.push('NO_ACTIVE_ENROLLMENT');
+    else if (!eligibleEnrollment) blockers.push('ACADEMIC_YEAR_NOT_ACTIVE');
+
+    if (q.documentType === 'STUDENT_CARD' && !currentStudent.avatarKey)
+      warnings.push('PHOTO_MISSING');
+
+    const settings =
+        currentTenant.settings?.values &&
+        typeof currentTenant.settings.values === 'object' &&
+        !Array.isArray(currentTenant.settings.values)
+          ? currentTenant.settings.values
+          : null,
+      address =
+        settings && typeof settings['publicAddress'] === 'string'
+          ? settings['publicAddress'].trim()
+          : settings && typeof settings['address'] === 'string'
+            ? settings['address'].trim()
+            : '';
+    if (!address) warnings.push('SCHOOL_ADDRESS_MISSING');
+
+    return {
+      studentId: currentStudent.id,
+      documentType: q.documentType,
+      eligible: blockers.length === 0,
+      sourceId: blockers.length === 0 && eligibleEnrollment ? eligibleEnrollment.id : null,
+      blockers,
+      warnings,
+      className: contextEnrollment?.schoolClass.name ?? null,
+      academicYear: contextEnrollment?.schoolClass.academicYear.name ?? null,
+    };
+  }
+
   override async list(context: RequestContext, q: DocumentQuery): Promise<DocumentList> {
     const where: Prisma.DocumentWhereInput = {
       ...scope(context, 'documents.read'),

@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { z } from 'zod';
 import {
+  documentEligibilityQuery,
   documentQuery,
   documentReasonInput,
   documentTemplateInput,
@@ -21,6 +22,10 @@ export class DocumentsService {
   sources(context: RequestContext, query: unknown) {
     documentAccess(context, 'documents.generate', true);
     return this.repository.sources(context, documentSourceQuery.parse(query));
+  }
+  eligibility(context: RequestContext, query: unknown) {
+    documentAccess(context, 'documents.generate', true);
+    return this.repository.eligibility(context, documentEligibilityQuery.parse(query));
   }
   list(context: RequestContext, query: unknown) {
     documentAccess(context, 'documents.read');

@@ -45,6 +45,40 @@ export const documentSourceQuery = z.strictObject({
   studentId: z.uuid().optional(),
 });
 export type DocumentSourceQuery = z.infer<typeof documentSourceQuery>;
+
+export const enrollmentBackedDocumentTypes = [
+  'SCHOOL_CERTIFICATE',
+  'ENROLLMENT_CERTIFICATE',
+  'STUDENT_CARD',
+] as const;
+export type EnrollmentBackedDocumentType = (typeof enrollmentBackedDocumentTypes)[number];
+
+export const documentEligibilityQuery = z.strictObject({
+  studentId: z.uuid(),
+  documentType: z.enum(enrollmentBackedDocumentTypes),
+});
+export type DocumentEligibilityQuery = z.infer<typeof documentEligibilityQuery>;
+
+export const documentEligibilityBlockers = [
+  'STUDENT_NOT_ACTIVE',
+  'NO_ACTIVE_ENROLLMENT',
+  'ACADEMIC_YEAR_NOT_ACTIVE',
+] as const;
+export type DocumentEligibilityBlocker = (typeof documentEligibilityBlockers)[number];
+
+export const documentEligibilityWarnings = ['PHOTO_MISSING', 'SCHOOL_ADDRESS_MISSING'] as const;
+export type DocumentEligibilityWarning = (typeof documentEligibilityWarnings)[number];
+
+export interface DocumentEligibilityView {
+  studentId: string;
+  documentType: EnrollmentBackedDocumentType;
+  eligible: boolean;
+  sourceId: string | null;
+  blockers: DocumentEligibilityBlocker[];
+  warnings: DocumentEligibilityWarning[];
+  className: string | null;
+  academicYear: string | null;
+}
 export interface DocumentSourceView {
   id: string;
   label: string;
@@ -63,11 +97,25 @@ export const documentTemplateInput = z.strictObject({
   layout: documentTemplateLayout,
 });
 export type DocumentTemplateInput = z.infer<typeof documentTemplateInput>;
+const documentLogoDataUrl = z
+  .string()
+  .max(350_000)
+  .regex(/^data:image\/(?:png|jpeg);base64,[A-Za-z0-9+/]+={0,2}$/)
+  .nullable()
+  .optional();
+
 export const documentSnapshotSchema = z.strictObject({
   schemaVersion: z.literal(1),
   documentType: z.enum(documentTypes),
   locale: z.enum(documentLocales),
-  school: z.strictObject({ name: z.string().max(160), publicAddress: z.string().max(240) }),
+  school: z.strictObject({
+    name: z.string().max(160),
+    publicAddress: z.string().max(240),
+    code: z.string().max(40).optional(),
+    email: z.string().max(254).nullable().optional(),
+    phone: z.string().max(30).nullable().optional(),
+    logoDataUrl: documentLogoDataUrl,
+  }),
   holder: z.strictObject({ name: z.string().max(220), matricule: z.string().max(40) }),
   academicYear: z.string().max(160),
   academicPeriod: z.string().max(160),

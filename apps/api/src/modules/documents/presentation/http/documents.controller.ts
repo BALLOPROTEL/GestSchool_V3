@@ -35,6 +35,11 @@ export class DocumentsController {
   sources(@Req() req: IamRequest, @Query() q: unknown) {
     return this.service.sources(requestContext(req), q);
   }
+  @Get('documents/eligibility')
+  @RequirePermission('documents.generate', documentWriteScopes)
+  eligibility(@Req() req: IamRequest, @Query() q: unknown) {
+    return this.service.eligibility(requestContext(req), q);
+  }
   @Get('documents/:id')
   @RequirePermission('documents.read', documentReadScopes)
   detail(@Req() req: IamRequest, @Param('id') id: string) {

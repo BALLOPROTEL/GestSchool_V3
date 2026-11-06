@@ -1,5 +1,5 @@
-import { DesignSystemPage } from '../../../../features/design-system/design-system-page';
+import { notFound } from 'next/navigation';
 
 export default function Page() {
-  return <DesignSystemPage />;
+  notFound();
 }

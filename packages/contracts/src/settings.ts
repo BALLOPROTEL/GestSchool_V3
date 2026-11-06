@@ -21,6 +21,12 @@ export const tenantSettingsUpdate = z.strictObject({
   email: z.email().max(254).nullable(),
   phone: optionalText(30),
   address: optionalText(500),
+  schoolLogoDataUrl: z
+    .string()
+    .max(350_000)
+    .regex(/^data:image\/(?:png|jpeg);base64,[A-Za-z0-9+/]+={0,2}$/)
+    .nullable()
+    .optional(),
   primaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
   timezone: z
     .string()

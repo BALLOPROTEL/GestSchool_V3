@@ -4,6 +4,7 @@ import { chromium } from '@playwright/test';
 import { loadInfrastructureConfig } from '@gestschool/config/environment';
 import {
   documentSnapshotSchema,
+  type DocumentEligibilityView,
   type DocumentView,
   type DocumentList,
   type OfficialDocumentType,
@@ -106,8 +107,29 @@ beforeAll(async () => {
   await h.db.academicYear.update({ where: { id: b.year.id }, data: { status: 'ACTIVE' } });
   await h.db.tenantSetting.upsert({
     where: { tenantId: tenant.id },
-    update: { values: { primaryColor: '#123ABC' } },
-    create: { tenantId: tenant.id, values: { primaryColor: '#123ABC' } },
+    update: {
+      values: {
+        primaryColor: '#123ABC',
+        schoolCode: 'GS-DOC',
+        publicAddress: 'Cocody, Abidjan',
+        email: 'direction@example.invalid',
+        phone: '+225 01020304',
+        schoolLogoDataUrl:
+          'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9WlVQAAAAASUVORK5CYII=',
+      },
+    },
+    create: {
+      tenantId: tenant.id,
+      values: {
+        primaryColor: '#123ABC',
+        schoolCode: 'GS-DOC',
+        publicAddress: 'Cocody, Abidjan',
+        email: 'direction@example.invalid',
+        phone: '+225 01020304',
+        schoolLogoDataUrl:
+          'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9WlVQAAAAASUVORK5CYII=',
+      },
+    },
   });
   const guardian = await h.db.guardian.create({
     data: {
@@ -229,6 +251,50 @@ afterAll(async () => {
 });
 
 describe('LOT 10 — real official document pipeline', () => {
+  it('explains student-card eligibility and advisory branding gaps', async () => {
+    const eligible = await admin.browser.send<DocumentEligibilityView>(
+      `documents/eligibility?studentId=${a.student.id}&documentType=STUDENT_CARD`,
+    );
+    expect(eligible.status).toBe(200);
+    expect(eligible.body).toMatchObject({
+      studentId: a.student.id,
+      documentType: 'STUDENT_CARD',
+      eligible: true,
+      sourceId: a.enrollment.id,
+      blockers: [],
+      className: a.classroom.name,
+      academicYear: a.year.name,
+    });
+    expect(eligible.body.warnings).toEqual(['PHOTO_MISSING']);
+
+    const unbranded = await foreign.browser.send<DocumentEligibilityView>(
+      `documents/eligibility?studentId=${b.student.id}&documentType=STUDENT_CARD`,
+    );
+    expect(unbranded.status).toBe(200);
+    expect(unbranded.body.warnings).toEqual(
+      expect.arrayContaining(['PHOTO_MISSING', 'SCHOOL_ADDRESS_MISSING']),
+    );
+
+    const withoutEnrollment = await h.db.student.create({
+      data: {
+        tenantId: a.tenantId,
+        matricule: `NO-ENROLL-${randomUUID().slice(0, 8)}`,
+        firstName: 'Sans',
+        lastName: 'Inscription',
+      },
+    });
+    const blocked = await admin.browser.send<DocumentEligibilityView>(
+      `documents/eligibility?studentId=${withoutEnrollment.id}&documentType=STUDENT_CARD`,
+    );
+    expect(blocked.status).toBe(200);
+    expect(blocked.body).toMatchObject({
+      eligible: false,
+      sourceId: null,
+      blockers: ['NO_ACTIVE_ENROLLMENT'],
+      className: null,
+      academicYear: null,
+    });
+  });
   it('commits one PENDING document and one versioned outbox event for ten concurrent requests', async () => {
     const key = randomUUID(),
       replies = await Promise.all(
@@ -241,7 +307,16 @@ describe('LOT 10 — real official document pipeline', () => {
     certificate = replies[0]!.body;
     expect(certificate.status).toBe('PENDING');
     const stored = await h.db.document.findUniqueOrThrow({ where: { id: certificate.id } });
-    expect(documentSnapshotSchema.parse(stored.snapshot).template.accent).toBe('#123ABC');
+    const frozenSnapshot = documentSnapshotSchema.parse(stored.snapshot);
+    expect(frozenSnapshot.template.accent).toBe('#123ABC');
+    expect(frozenSnapshot.school).toMatchObject({
+      code: 'GS-DOC',
+      publicAddress: 'Cocody, Abidjan',
+      email: 'direction@example.invalid',
+      phone: '+225 01020304',
+      logoDataUrl:
+        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9WlVQAAAAASUVORK5CYII=',
+    });
     expect(
       await h.db.outboxEvent.count({
         where: { aggregateId: certificate.id, eventType: 'documents.generation.requested.v1' },
@@ -540,6 +615,16 @@ describe('LOT 10 — real official document pipeline', () => {
     await h.db.schoolClass.update({
       where: { id: a.classroom.id },
       data: { name: 'Nouveau libellé' },
+    });
+    await h.db.tenantSetting.update({
+      where: { tenantId: a.tenantId },
+      data: {
+        values: {
+          primaryColor: '#654321',
+          publicAddress: 'Nouvelle adresse',
+          schoolLogoDataUrl: null,
+        },
+      },
     });
     const after = await h.db.document.findMany({
       where: { id: { in: [certificate.id, card.id] } },
