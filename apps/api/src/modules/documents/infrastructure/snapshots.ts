@@ -47,7 +47,9 @@ export async function captureDocumentSource(
         ? settings['email'].slice(0, 254)
         : null,
     phone =
-      settings && typeof settings['phone'] === 'string' ? settings['phone'].slice(0, 30) : null,
+      settings && typeof settings['phone'] === 'string'
+        ? settings['phone'].slice(0, 30)
+        : null,
     schoolLogoDataUrl =
       settings &&
       typeof settings['schoolLogoDataUrl'] === 'string' &&

@@ -288,7 +288,9 @@ export function SettingsPage() {
                         type="color"
                         value={form.primaryColor}
                         disabled={!canWrite}
-                        onChange={(event) => patch('primaryColor', event.target.value.toUpperCase())}
+                        onChange={(event) =>
+                          patch('primaryColor', event.target.value.toUpperCase())
+                        }
                       />
                       <Input
                         className="font-mono"
