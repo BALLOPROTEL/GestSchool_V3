@@ -201,17 +201,20 @@ export class PrismaDocumentsRepository extends DocumentsRepository implements On
     ]);
     const currentStudent = documentFound(student),
       currentTenant = documentFound(tenant),
-      activeEnrollment = currentStudent.enrollments.find(
+      openEnrollments = currentStudent.enrollments.filter(
         (enrollment) => enrollment.status === 'ACTIVE' && !enrollment.endedOn,
       ),
-      contextEnrollment = activeEnrollment ?? currentStudent.enrollments[0] ?? null,
+      eligibleEnrollment = openEnrollments.find(
+        (enrollment) => enrollment.schoolClass.academicYear.status === 'ACTIVE',
+      ),
+      contextEnrollment =
+        eligibleEnrollment ?? openEnrollments[0] ?? currentStudent.enrollments[0] ?? null,
       blockers: DocumentEligibilityView['blockers'] = [],
       warnings: DocumentEligibilityView['warnings'] = [];
 
     if (currentStudent.status !== 'ACTIVE') blockers.push('STUDENT_NOT_ACTIVE');
-    if (!activeEnrollment) blockers.push('NO_ACTIVE_ENROLLMENT');
-    else if (activeEnrollment.schoolClass.academicYear.status !== 'ACTIVE')
-      blockers.push('ACADEMIC_YEAR_NOT_ACTIVE');
+    if (!openEnrollments.length) blockers.push('NO_ACTIVE_ENROLLMENT');
+    else if (!eligibleEnrollment) blockers.push('ACADEMIC_YEAR_NOT_ACTIVE');
 
     if (q.documentType === 'STUDENT_CARD' && !currentStudent.avatarKey)
       warnings.push('PHOTO_MISSING');
@@ -234,7 +237,7 @@ export class PrismaDocumentsRepository extends DocumentsRepository implements On
       studentId: currentStudent.id,
       documentType: q.documentType,
       eligible: blockers.length === 0,
-      sourceId: blockers.length === 0 && activeEnrollment ? activeEnrollment.id : null,
+      sourceId: blockers.length === 0 && eligibleEnrollment ? eligibleEnrollment.id : null,
       blockers,
       warnings,
       className: contextEnrollment?.schoolClass.name ?? null,
