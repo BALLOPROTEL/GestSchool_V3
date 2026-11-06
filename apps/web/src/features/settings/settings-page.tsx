@@ -103,11 +103,7 @@ function editableFromView(value: TenantSettingsView): TenantSettingsUpdate {
 }
 
 async function logoDataUrl(file: File): Promise<string> {
-  if (
-    !['image/png', 'image/jpeg'].includes(file.type) ||
-    file.size === 0 ||
-    file.size > 250_000
-  )
+  if (!['image/png', 'image/jpeg'].includes(file.type) || file.size === 0 || file.size > 250_000)
     throw new Error('SETTINGS_LOGO_INVALID');
   const bytes = new Uint8Array(await file.arrayBuffer());
   let binary = '';

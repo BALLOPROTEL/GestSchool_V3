@@ -43,20 +43,14 @@ export async function captureDocumentSource(
         ? settings['schoolCode'].slice(0, 40)
         : '',
     email =
-      settings && typeof settings['email'] === 'string'
-        ? settings['email'].slice(0, 254)
-        : null,
+      settings && typeof settings['email'] === 'string' ? settings['email'].slice(0, 254) : null,
     phone =
-      settings && typeof settings['phone'] === 'string'
-        ? settings['phone'].slice(0, 30)
-        : null,
+      settings && typeof settings['phone'] === 'string' ? settings['phone'].slice(0, 30) : null,
     schoolLogoDataUrl =
       settings &&
       typeof settings['schoolLogoDataUrl'] === 'string' &&
       settings['schoolLogoDataUrl'].length <= 350_000 &&
-      /^data:image\/(?:png|jpeg);base64,[A-Za-z0-9+/]+={0,2}$/.test(
-        settings['schoolLogoDataUrl'],
-      )
+      /^data:image\/(?:png|jpeg);base64,[A-Za-z0-9+/]+={0,2}$/.test(settings['schoolLogoDataUrl'])
         ? settings['schoolLogoDataUrl']
         : null;
   const primaryColor =
