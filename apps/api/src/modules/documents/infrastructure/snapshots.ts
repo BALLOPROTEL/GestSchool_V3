@@ -38,6 +38,23 @@ export async function captureDocumentSource(
       : settings && typeof settings['address'] === 'string'
         ? settings['address'].slice(0, 240)
         : '';
+  const schoolCode =
+      settings && typeof settings['schoolCode'] === 'string'
+        ? settings['schoolCode'].slice(0, 40)
+        : '',
+    email =
+      settings && typeof settings['email'] === 'string' ? settings['email'].slice(0, 254) : null,
+    phone =
+      settings && typeof settings['phone'] === 'string' ? settings['phone'].slice(0, 30) : null,
+    schoolLogoDataUrl =
+      settings &&
+      typeof settings['schoolLogoDataUrl'] === 'string' &&
+      settings['schoolLogoDataUrl'].length <= 350_000 &&
+      /^data:image\/(?:png|jpeg);base64,[A-Za-z0-9+/]+={0,2}$/.test(
+        settings['schoolLogoDataUrl'],
+      )
+        ? settings['schoolLogoDataUrl']
+        : null;
   const primaryColor =
     settings &&
     typeof settings['primaryColor'] === 'string' &&
@@ -48,7 +65,14 @@ export async function captureDocumentSource(
     schemaVersion: 1,
     documentType: input.documentType,
     locale: input.locale,
-    school: { name: tenant.name, publicAddress },
+    school: {
+      name: tenant.name,
+      publicAddress,
+      code: schoolCode,
+      email,
+      phone,
+      logoDataUrl: schoolLogoDataUrl,
+    },
     holder: { name: '', matricule: '' },
     academicYear: '',
     academicPeriod: '',

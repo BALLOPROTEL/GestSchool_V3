@@ -97,11 +97,25 @@ export const documentTemplateInput = z.strictObject({
   layout: documentTemplateLayout,
 });
 export type DocumentTemplateInput = z.infer<typeof documentTemplateInput>;
+const documentLogoDataUrl = z
+  .string()
+  .max(350_000)
+  .regex(/^data:image\/(?:png|jpeg);base64,[A-Za-z0-9+/]+={0,2}$/)
+  .nullable()
+  .optional();
+
 export const documentSnapshotSchema = z.strictObject({
   schemaVersion: z.literal(1),
   documentType: z.enum(documentTypes),
   locale: z.enum(documentLocales),
-  school: z.strictObject({ name: z.string().max(160), publicAddress: z.string().max(240) }),
+  school: z.strictObject({
+    name: z.string().max(160),
+    publicAddress: z.string().max(240),
+    code: z.string().max(40).optional(),
+    email: z.string().max(254).nullable().optional(),
+    phone: z.string().max(30).nullable().optional(),
+    logoDataUrl: documentLogoDataUrl,
+  }),
   holder: z.strictObject({ name: z.string().max(220), matricule: z.string().max(40) }),
   academicYear: z.string().max(160),
   academicPeriod: z.string().max(160),

@@ -15,6 +15,7 @@ const defaults = {
   email: null,
   phone: null,
   address: null,
+  schoolLogoDataUrl: null,
   primaryColor: '#1D4ED8',
 } as const;
 
@@ -51,6 +52,7 @@ function view(row: {
     email: values['email'] ?? defaults.email,
     phone: values['phone'] ?? defaults.phone,
     address: values['address'] ?? values['publicAddress'] ?? defaults.address,
+    schoolLogoDataUrl: values['schoolLogoDataUrl'] ?? defaults.schoolLogoDataUrl,
     primaryColor: values['primaryColor'] ?? defaults.primaryColor,
     timezone: row.setting?.timezone ?? 'Africa/Abidjan',
   });
@@ -119,6 +121,7 @@ export class PrismaSettingsRepository extends SettingsRepository {
         phone: input.phone,
         address: input.address,
         publicAddress: input.address,
+        schoolLogoDataUrl: input.schoolLogoDataUrl ?? null,
         primaryColor: input.primaryColor.toUpperCase(),
       };
 
