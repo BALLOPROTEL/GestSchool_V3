@@ -10,6 +10,7 @@ import { PrismaSettingsRepository } from '../src/modules/settings/infrastructure
 const database = createPrismaClient(loadInfrastructureConfig().databaseUrl);
 const settingsDatabase = new SettingsDatabase();
 const repository = new PrismaSettingsRepository(settingsDatabase);
+const schoolLogoDataUrl = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9WlVQAAAAASUVORK5CYII=';
 
 async function fixture() {
   const suffix = randomUUID().slice(0, 8);
@@ -59,6 +60,7 @@ function payload(schoolName: string): TenantSettingsUpdate {
     email: 'direction@example.invalid',
     phone: '+225 01020304',
     address: 'Cocody, Abidjan',
+    schoolLogoDataUrl,
     primaryColor: '#123ABC',
     timezone: 'Africa/Abidjan',
   };
@@ -91,6 +93,7 @@ describe('LOT17 tenant settings repository', () => {
       schoolName: 'École GestSchool Test',
       schoolCode: 'GS-CI-001',
       primaryColor: '#123ABC',
+      schoolLogoDataUrl,
       timezone: 'Africa/Abidjan',
       activeAcademicYear: { id: data.year.id },
     });
@@ -129,7 +132,23 @@ describe('LOT17 tenant settings repository', () => {
       publicAddress: 'Cocody, Abidjan',
       customExistingKey: 'preserve-me',
       primaryColor: '#123ABC',
+      schoolLogoDataUrl,
     });
+  });
+
+  it('rejects unsafe or oversized logo references before persistence', () => {
+    expect(
+      tenantSettingsUpdate.safeParse({
+        ...payload('École Logo'),
+        schoolLogoDataUrl: 'https://example.invalid/logo.png',
+      }).success,
+    ).toBe(false);
+    expect(
+      tenantSettingsUpdate.safeParse({
+        ...payload('École Logo'),
+        schoolLogoDataUrl: `data:image/png;base64,${'A'.repeat(350_001)}`,
+      }).success,
+    ).toBe(false);
   });
 
   it('rejects an invalid IANA time zone before persistence', () => {

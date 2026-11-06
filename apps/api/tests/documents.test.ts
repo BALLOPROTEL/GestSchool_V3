@@ -107,8 +107,27 @@ beforeAll(async () => {
   await h.db.academicYear.update({ where: { id: b.year.id }, data: { status: 'ACTIVE' } });
   await h.db.tenantSetting.upsert({
     where: { tenantId: tenant.id },
-    update: { values: { primaryColor: '#123ABC' } },
-    create: { tenantId: tenant.id, values: { primaryColor: '#123ABC' } },
+    update: {
+      values: {
+        primaryColor: '#123ABC',
+        schoolCode: 'GS-DOC',
+        publicAddress: 'Cocody, Abidjan',
+        email: 'direction@example.invalid',
+        phone: '+225 01020304',
+        schoolLogoDataUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9WlVQAAAAASUVORK5CYII=',
+      },
+    },
+    create: {
+      tenantId: tenant.id,
+      values: {
+        primaryColor: '#123ABC',
+        schoolCode: 'GS-DOC',
+        publicAddress: 'Cocody, Abidjan',
+        email: 'direction@example.invalid',
+        phone: '+225 01020304',
+        schoolLogoDataUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9WlVQAAAAASUVORK5CYII=',
+      },
+    },
   });
   const guardian = await h.db.guardian.create({
     data: {
@@ -280,7 +299,15 @@ describe('LOT 10 — real official document pipeline', () => {
     certificate = replies[0]!.body;
     expect(certificate.status).toBe('PENDING');
     const stored = await h.db.document.findUniqueOrThrow({ where: { id: certificate.id } });
-    expect(documentSnapshotSchema.parse(stored.snapshot).template.accent).toBe('#123ABC');
+    const frozenSnapshot = documentSnapshotSchema.parse(stored.snapshot);
+    expect(frozenSnapshot.template.accent).toBe('#123ABC');
+    expect(frozenSnapshot.school).toMatchObject({
+      code: 'GS-DOC',
+      publicAddress: 'Cocody, Abidjan',
+      email: 'direction@example.invalid',
+      phone: '+225 01020304',
+      logoDataUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9WlVQAAAAASUVORK5CYII=',
+    });
     expect(
       await h.db.outboxEvent.count({
         where: { aggregateId: certificate.id, eventType: 'documents.generation.requested.v1' },
@@ -579,6 +606,16 @@ describe('LOT 10 — real official document pipeline', () => {
     await h.db.schoolClass.update({
       where: { id: a.classroom.id },
       data: { name: 'Nouveau libellé' },
+    });
+    await h.db.tenantSetting.update({
+      where: { tenantId: a.tenantId },
+      data: {
+        values: {
+          primaryColor: '#654321',
+          publicAddress: 'Nouvelle adresse',
+          schoolLogoDataUrl: null,
+        },
+      },
     });
     const after = await h.db.document.findMany({
       where: { id: { in: [certificate.id, card.id] } },
