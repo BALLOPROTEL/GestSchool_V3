@@ -44,7 +44,7 @@ test.beforeEach(async ({ page }, testInfo) => {
     title.startsWith('renders every') ||
     (title.startsWith('supports theme') && viewport === '1366x768') ||
     (title.startsWith('provides working') && ['360x800', '1366x768'].includes(viewport)) ||
-    (title.startsWith('exposes and') && viewport === '1440x900') ||
+    (title.startsWith('keeps internal') && viewport === '1440x900') ||
     (title.startsWith('has no automated') && viewport === '1920x1080');
   if (!runs) return;
   const csrf = await page.request.get('/api/v1/auth/csrf');
@@ -82,7 +82,6 @@ const routes = [
   '/audit',
   '/settings',
   '/profile',
-  '/design-system',
 ] as const;
 
 test('renders every LOT 1 page without runtime errors or document overflow', async ({ page }) => {
@@ -261,64 +260,13 @@ test('exercises real login, activation and password reset flows', async ({ page 
   expect(errors).toEqual([]);
 });
 
-test('exposes and operates the shared component catalogue', async ({ page }, testInfo) => {
-  test.skip(testInfo.project.name !== '1440x900', 'Component interactions are certified once.');
-  await page.goto('/design-system');
-
-  for (const slot of [
-    'button',
-    'input',
-    'select',
-    'textarea',
-    'checkbox',
-    'radio',
-    'switch',
-    'badge',
-    'card',
-    'status-badge',
-    'data-table-scroll',
-    'skeleton',
-  ]) {
-    await expect(
-      page.locator(`[data-slot="${slot}"]`).first(),
-      `${slot} should be represented`,
-    ).toBeVisible();
-  }
-
-  const dialogTrigger = page.getByRole('button', { name: 'Dialog', exact: true });
-  await dialogTrigger.focus();
-  await page.keyboard.press('Enter');
-  await expect(
-    page.getByRole('dialog').getByRole('heading', { name: 'Confirmer l’action' }),
-  ).toBeVisible();
-  await page.keyboard.press('Escape');
-  await expect(page.getByRole('dialog')).toBeHidden();
-
-  const drawerTrigger = page.getByRole('button', { name: 'Drawer', exact: true });
-  await drawerTrigger.focus();
-  await page.keyboard.press('Enter');
-  await expect(page.getByRole('dialog').getByText('Tiroir de démonstration')).toBeVisible();
-  await page.keyboard.press('Escape');
-  await expect(page.getByRole('dialog')).toBeHidden();
-
-  const dropdownTrigger = page.getByRole('button', { name: /Dropdown/ });
-  await dropdownTrigger.focus();
-  await page.keyboard.press('Enter');
-  await expect(page.getByRole('menuitem', { name: 'Modifier' })).toBeVisible();
-  await page.keyboard.press('Escape');
-  const componentsTab = page.getByRole('tab', {
-    name: 'Bibliothèque des composants réutilisables de GestSchool.',
-  });
-  await componentsTab.focus();
-  await page.keyboard.press('ArrowRight');
-  await expect(
-    page.getByRole('tab', { name: 'États de chargement, vide et erreur' }),
-  ).toHaveAttribute('data-state', 'active');
-  await page.getByRole('button', { name: '3', exact: true }).click();
-  await expect(page.getByRole('button', { name: '3', exact: true })).toHaveAttribute(
-    'aria-current',
-    'page',
-  );
+test('keeps internal design system out of the production portal', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== '1440x900', 'Production exposure is certified once.');
+  await page.goto('/');
+  await waitForPageReady(page);
+  await expect(page.getByRole('link', { name: 'Composants UI', exact: true })).toHaveCount(0);
+  const response = await page.goto('/design-system', { waitUntil: 'domcontentloaded' });
+  expect(response?.status()).toBe(404);
 });
 
 test('has no automated WCAG A/AA violations on representative screens', async ({
@@ -329,15 +277,7 @@ test('has no automated WCAG A/AA violations on representative screens', async ({
     testInfo.project.name !== '1920x1080',
     'Accessibility audit is certified at the largest desktop viewport.',
   );
-  for (const route of [
-    '/',
-    '/login',
-    '/students',
-    '/students/EL-2024-001',
-    '/settings',
-    '/design-system',
-    '/ar',
-  ]) {
+  for (const route of ['/', '/login', '/students', '/students/EL-2024-001', '/settings', '/ar']) {
     await page.goto(route.replace('EL-2024-001', fixtures().studentId));
     await waitForPageReady(page);
     const results = await new AxeBuilder({ page })

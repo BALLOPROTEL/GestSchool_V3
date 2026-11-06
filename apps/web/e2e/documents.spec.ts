@@ -121,9 +121,17 @@ test('LOT 10 official PDFs, QR verification, revocation and scoped downloads at 
   await page.goto(`/fr/students/${data.studentId}`);
   await page.getByRole('tab', { name: 'Documents officiels', exact: true }).click();
   await ready(page);
-  const eligibility = page.locator('[data-student-card-eligibility="ready"]');
-  await expect(eligibility).toContainText('Carte élève générable');
-  await expect(eligibility).toContainText('Photo absente');
+  await page.getByRole('button', { name: 'Générer un document', exact: true }).click();
+  const studentDialog = page.getByRole('dialog');
+  await studentDialog
+    .getByRole('combobox', { name: 'Type de document', exact: true })
+    .selectOption('STUDENT_CARD');
+  await expect(studentDialog).toContainText('Photo absente');
+  await expect(
+    studentDialog.getByRole('combobox', { name: 'Source officielle', exact: true }),
+  ).toHaveValue(data.enrollmentId);
+  await studentDialog.getByRole('button', { name: 'Annuler', exact: true }).click();
+  await expect(studentDialog).toBeHidden();
   await expect(page.locator(`[data-document-id="${card.id}"]`)).toBeVisible();
   await pdf(page, card);
   await overflow(page);

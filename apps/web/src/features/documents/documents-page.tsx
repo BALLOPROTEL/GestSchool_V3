@@ -66,12 +66,6 @@ export function DocumentsPanel({ studentId, sourceId, documentType, eligible = t
   if (sourceId) q.set('sourceId', sourceId);
   if (documentType || filter) q.set('documentType', documentType ?? filter);
   const result = usePeopleData<DocumentList>(canRead ? `documents?${q}` : null, revision);
-  const cardEligibility = usePeopleData<DocumentEligibilityView>(
-    canRead && studentId && types.includes('STUDENT_CARD')
-      ? `documents/eligibility?studentId=${encodeURIComponent(studentId)}&documentType=STUDENT_CARD`
-      : null,
-    revision,
-  );
   const refresh = () => setRevision((value) => value + 1);
   useEffect(() => {
     if (!result.data?.items.some((d) => ['PENDING', 'PROCESSING'].includes(d.status))) return;
@@ -123,31 +117,6 @@ export function DocumentsPanel({ studentId, sourceId, documentType, eligible = t
           ) : null}
         </div>
       </div>
-      {studentId && cardEligibility.data ? (
-        <div
-          className="rounded-lg border p-3 text-sm"
-          data-student-card-eligibility={cardEligibility.data.eligible ? 'ready' : 'blocked'}
-          role="status"
-        >
-          <p className="font-semibold">
-            {cardEligibility.data.eligible ? t.eligibilityReady : t.eligibilityBlocked}
-          </p>
-          {cardEligibility.data.blockers.length ? (
-            <ul className="mt-2 list-disc space-y-1 ps-5">
-              {cardEligibility.data.blockers.map((code) => (
-                <li key={code}>{t[code]}</li>
-              ))}
-            </ul>
-          ) : null}
-          {cardEligibility.data.warnings.length ? (
-            <ul className="mt-2 list-disc space-y-1 ps-5 text-muted-foreground">
-              {cardEligibility.data.warnings.map((code) => (
-                <li key={code}>{t[code]}</li>
-              ))}
-            </ul>
-          ) : null}
-        </div>
-      ) : null}
       {!sourceId ? (
         <div className="grid gap-3 sm:grid-cols-2">
           <SearchField
