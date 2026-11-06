@@ -24,7 +24,13 @@ import { useAuth } from '../auth/auth-provider';
 import { AcademicDialog } from '../academics/academic-components';
 import { usePeopleData } from '../directory/people-hooks';
 import { PeopleError } from '../directory/people-client';
-import { canResults, resultsRequest, scoreInput, validScore } from './results-client';
+import {
+  canAdministrativeOverride,
+  canResults,
+  resultsRequest,
+  scoreInput,
+  validScore,
+} from './results-client';
 import { ResultError, ResultField, ResultSelect, ResultStatus } from './results-components';
 import { AssessmentEditor } from './assessment-editor';
 
@@ -48,6 +54,7 @@ export function GradeEntrySheet({
   const t = useTranslations('Results'),
     { session } = useAuth();
   const assessment = sheet.assessment;
+  const canOverride = canAdministrativeOverride(session?.session);
   const can = (permission: string) => canResults(session?.session, permission, 'write');
   const editable =
     can('grades.create') &&
@@ -139,6 +146,13 @@ export function GradeEntrySheet({
             </div>
           ))}
         </dl>
+        <p
+          role="status"
+          data-assessment-workflow={assessment.status}
+          className="rounded-lg bg-muted p-3 text-sm"
+        >
+          {t(`workflow${assessment.status}`)}
+        </p>
         {assessment.status === 'LOCKED' ? <p role="status">{t('locked')}</p> : null}
         <div className="flex flex-wrap items-center gap-2">
           {editable ? (
@@ -159,7 +173,8 @@ export function GradeEntrySheet({
                 !assessment.archivedAt &&
                 !(
                   item.action === 'validate' &&
-                  assessment.submittedByMembershipId === session?.session.membershipId
+                  assessment.submittedByMembershipId === session?.session.membershipId &&
+                  !canOverride
                 ),
             )
             .map((item) => (
@@ -374,7 +389,13 @@ function AssessmentConfirmation({
   close: () => void;
   saved: () => void;
 }) {
-  const t = useTranslations('Results');
+  const t = useTranslations('Results'),
+    { session } = useAuth();
+  const administrativeOverride =
+      action === 'validate' &&
+      assessment.submittedByMembershipId === session?.session.membershipId &&
+      canAdministrativeOverride(session?.session),
+    reasonRequired = action === 'reopen' || administrativeOverride;
   const [busy, setBusy] = useState(false),
     [error, setError] = useState<unknown>();
   return (
@@ -405,7 +426,12 @@ function AssessmentConfirmation({
         }}
       >
         <p className="font-semibold">{assessment.title}</p>
-        {action === 'reopen' ? (
+        {administrativeOverride ? (
+          <p role="status" className="rounded-lg bg-muted p-3 text-sm">
+            {t('sudoOverrideHint')}
+          </p>
+        ) : null}
+        {reasonRequired ? (
           <ResultField label={t('reason')} name="reason" minLength={3} maxLength={500} required />
         ) : null}
         {error ? <ResultError error={error} /> : null}

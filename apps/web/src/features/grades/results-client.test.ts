@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { roleGrants, type SystemRole, type SessionView } from '@gestschool/contracts';
-import { canResults, resultErrorKey, scoreInput, validScore } from './results-client';
+import {
+  canAdministrativeOverride,
+  canResults,
+  resultErrorKey,
+  scoreInput,
+  validScore,
+} from './results-client';
 import { PeopleError } from '../directory/people-client';
 const session = (role: SystemRole): SessionView => ({
   user: { id: 'user', displayName: 'Test' },
@@ -31,6 +37,20 @@ describe('Results frontend guards and exact score validation', () => {
     expect(canResults(session(role), 'grades.read')).toBe(true);
     expect(canResults(session(role), 'grades.read', 'write')).toBe(false);
     expect(canResults(session(role), 'grades.update', 'write')).toBe(false);
+  });
+  it('allows audited administrative override only to privileged administrators', () => {
+    expect(canAdministrativeOverride(session('SUPER_ADMIN'))).toBe(true);
+    expect(canAdministrativeOverride(session('SCHOOL_ADMIN'))).toBe(true);
+    for (const role of [
+      'DIRECTOR',
+      'ACADEMIC_STAFF',
+      'TEACHER',
+      'ACCOUNTANT',
+      'PARENT',
+      'STUDENT',
+    ] as const)
+      expect(canAdministrativeOverride(session(role))).toBe(false);
+    expect(canAdministrativeOverride(undefined)).toBe(false);
   });
   it('denies accountants and unauthenticated users', () => {
     expect(canResults(session('ACCOUNTANT'), 'grades.read')).toBe(false);

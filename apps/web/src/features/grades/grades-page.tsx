@@ -20,7 +20,7 @@ import {
   type ResultList,
 } from '@gestschool/contracts';
 import { Plus } from 'lucide-react';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '../auth/auth-provider';
 import { AcademicPicker } from '../academics/academic-components';
@@ -64,6 +64,7 @@ function ResultsWorkspace({ studentId }: { studentId?: string }) {
     [creating, setCreating] = useState(false),
     [revision, setRevision] = useState(0),
     [dirty, setDirty] = useState(false);
+  const detailRef = useRef<HTMLDivElement>(null);
   const refresh = useCallback(() => {
     setDirty(false);
     setRevision((value) => value + 1);
@@ -87,6 +88,19 @@ function ResultsWorkspace({ studentId }: { studentId?: string }) {
   const subjectOptions = [
     ...new Map((assignments.data?.items ?? []).map((row) => [row.classSubjectId, row])).values(),
   ];
+  useEffect(() => {
+    if (!selected || detail.data?.assessment.id !== selected) return;
+    detailRef.current?.scrollIntoView({ block: 'start' });
+    detailRef.current?.focus({ preventScroll: true });
+  }, [detail.data?.assessment.id, selected]);
+  function openAssessment(id: string) {
+    if (selected === id && detail.data?.assessment.id === id) {
+      detailRef.current?.scrollIntoView({ block: 'start' });
+      detailRef.current?.focus({ preventScroll: true });
+      return;
+    }
+    setSelected(id);
+  }
   function reset() {
     setSelected(undefined);
     setPage(1);
@@ -129,7 +143,9 @@ function ResultsWorkspace({ studentId }: { studentId?: string }) {
           size="sm"
           variant="outline"
           disabled={dirty}
-          onClick={() => setSelected(row.id)}
+          aria-controls="assessment-detail"
+          aria-expanded={selected === row.id}
+          onClick={() => openAssessment(row.id)}
         >
           {t('open')}
         </Button>
@@ -290,16 +306,24 @@ function ResultsWorkspace({ studentId }: { studentId?: string }) {
                   ) : null}
                 </CardContent>
               </Card>
-              {detail.loading ? <p role="status">{t('loading')}</p> : null}
-              {detail.error ? <ResultError error={detail.error} /> : null}
-              {detail.data ? (
-                <GradeEntrySheet
-                  key={`${detail.data.assessment.id}:${revision}`}
-                  sheet={detail.data}
-                  refresh={refresh}
-                  dirtyChanged={setDirty}
-                />
-              ) : null}
+              <div
+                ref={detailRef}
+                id="assessment-detail"
+                data-assessment-detail={selected}
+                tabIndex={-1}
+                className="scroll-mt-4 outline-none"
+              >
+                {detail.loading ? <p role="status">{t('loading')}</p> : null}
+                {detail.error ? <ResultError error={detail.error} /> : null}
+                {detail.data ? (
+                  <GradeEntrySheet
+                    key={`${detail.data.assessment.id}:${revision}`}
+                    sheet={detail.data}
+                    refresh={refresh}
+                    dirtyChanged={setDirty}
+                  />
+                ) : null}
+              </div>
             </TabsContent>
             {administrative && !studentId ? (
               <TabsContent value="results">

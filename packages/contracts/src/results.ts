@@ -200,6 +200,21 @@ export interface StudentResult {
   complete: boolean;
   warnings: string[];
 }
+export type ResultBlockerCode =
+  'SUBJECT_WITHOUT_ASSESSMENT' | 'ASSESSMENT_NOT_PUBLISHED' | 'GRADES_MISSING';
+
+export interface ResultBlocker {
+  code: ResultBlockerCode;
+  classSubjectId: string;
+  subjectId: string;
+  subjectName: string;
+  assessmentId: string | null;
+  assessmentTitle: string | null;
+  assessmentStatus: ResultStatus | null;
+  missingGrades: number;
+  eligibleStudents: number;
+}
+
 export interface ClassResults {
   academicYear: { id: string; name: string };
   academicPeriod: { id: string; name: string; startsOn: string; endsOn: string };
@@ -208,6 +223,7 @@ export interface ClassResults {
   population: number;
   rankedPopulation: number;
   warnings: string[];
+  blockers: ResultBlocker[];
   students: StudentResult[];
 }
 export interface ReportSnapshot {

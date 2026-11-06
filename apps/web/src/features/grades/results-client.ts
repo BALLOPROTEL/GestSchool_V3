@@ -1,6 +1,9 @@
 import type { GradeOutcome, SessionView } from '@gestschool/contracts';
 import { PeopleError } from '../directory/people-client';
 export { peopleRequest as resultsRequest } from '../directory/people-client';
+export function canAdministrativeOverride(session: SessionView | undefined): boolean {
+  return Boolean(session?.roles.some((role) => role === 'SUPER_ADMIN' || role === 'SCHOOL_ADMIN'));
+}
 export function canResults(
   session: SessionView | undefined,
   permission: string,

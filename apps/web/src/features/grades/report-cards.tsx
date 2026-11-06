@@ -12,6 +12,7 @@ import {
 import type {
   ClassResults,
   ReportCardView,
+  ResultBlocker,
   ResultList,
   StudentResult,
   SubjectResult,
@@ -43,6 +44,26 @@ export function ClassResultPanel({
     revision,
   );
   const [action, setAction] = useState<'generate' | 'publish'>();
+  const publicationBlocked = Boolean(
+    results.data &&
+    (results.data.blockers.length > 0 || results.data.students.some((row) => !row.complete)),
+  );
+  const blockerMessage = (blocker: ResultBlocker) => {
+    if (blocker.code === 'SUBJECT_WITHOUT_ASSESSMENT')
+      return t('blockerSubjectWithoutAssessment', { subject: blocker.subjectName });
+    if (blocker.code === 'ASSESSMENT_NOT_PUBLISHED')
+      return t('blockerAssessmentNotPublished', {
+        assessment: blocker.assessmentTitle ?? '—',
+        subject: blocker.subjectName,
+        status: blocker.assessmentStatus ? t(blocker.assessmentStatus) : '—',
+      });
+    return t('blockerMissingGrades', {
+      assessment: blocker.assessmentTitle ?? '—',
+      subject: blocker.subjectName,
+      count: blocker.missingGrades,
+      total: blocker.eligibleStudents,
+    });
+  };
   const columns: DataTableColumn<StudentResult>[] = [
     {
       id: 'student',
@@ -85,12 +106,26 @@ export function ClassResultPanel({
               {results.data.schoolClass.name} · {results.data.academicPeriod.name} ·{' '}
               {t('population')}: <bdi>{results.data.population}</bdi>
             </p>
-            {results.data.warnings.length > 0 ||
-            results.data.students.some((row) => !row.complete) ? (
-              <p role="status" className="rounded-lg bg-muted p-3">
-                {t('incomplete')}
+            {publicationBlocked ? (
+              <div role="status" className="space-y-2 rounded-lg bg-muted p-3 text-sm">
+                <p className="font-medium">{t('incomplete')}</p>
+                {results.data.blockers.length ? (
+                  <ul className="list-disc space-y-1 ps-5" data-result-blockers>
+                    {results.data.blockers.map((blocker, index) => (
+                      <li
+                        key={`${blocker.code}:${blocker.assessmentId ?? blocker.classSubjectId}:${index}`}
+                      >
+                        {blockerMessage(blocker)}
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+              </div>
+            ) : (
+              <p role="status" className="rounded-lg bg-muted p-3 text-sm">
+                {t('resultsReady')}
               </p>
-            ) : null}
+            )}
             <div className="flex flex-wrap gap-2">
               {(['generate', 'publish'] as const)
                 .filter((verb) => canResults(session?.session, `report-cards.${verb}`, 'tenant'))
@@ -99,7 +134,9 @@ export function ClassResultPanel({
                     key={verb}
                     variant="outline"
                     onClick={() => setAction(verb)}
-                    disabled={results.data?.population === 0}
+                    disabled={
+                      results.data?.population === 0 || (verb === 'publish' && publicationBlocked)
+                    }
                   >
                     {t(verb === 'generate' ? 'generateReports' : 'publishReports')}
                   </Button>

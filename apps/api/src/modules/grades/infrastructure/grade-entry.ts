@@ -168,8 +168,12 @@ export async function assessmentAction(
   if (action !== 'lock') openAssessmentContext(a);
   const status = transition(a.status, action);
   if (action === 'reopen' && !input.reason) resultError('RESULT_REASON_REQUIRED');
-  if (action === 'validate' && context.membershipId === a.submittedByMembershipId)
-    resultError('ASSESSMENT_SELF_VALIDATION', 403);
+  const selfValidation =
+      action === 'validate' && context.membershipId === a.submittedByMembershipId,
+    overrideRole = context.roles.find((role) => role === 'SUPER_ADMIN' || role === 'SCHOOL_ADMIN'),
+    administrativeOverride = selfValidation && Boolean(overrideRole);
+  if (selfValidation && !administrativeOverride) resultError('ASSESSMENT_SELF_VALIDATION', 403);
+  if (administrativeOverride && !input.reason) resultError('RESULT_REASON_REQUIRED');
   if (action === 'submit' || action === 'archive')
     await assignmentForWrite(
       db,
@@ -209,6 +213,9 @@ export async function assessmentAction(
   await resultAudit(db, context, `assessment.${suffix}`, id, assessmentView(a), {
     ...assessmentView(after),
     reason: input.reason ?? null,
+    ...(administrativeOverride
+      ? { administrativeOverride: true, overrideRole: overrideRole ?? null }
+      : {}),
   });
   return assessmentView(after);
 }
