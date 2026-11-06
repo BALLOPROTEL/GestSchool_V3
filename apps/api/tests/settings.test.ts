@@ -10,7 +10,8 @@ import { PrismaSettingsRepository } from '../src/modules/settings/infrastructure
 const database = createPrismaClient(loadInfrastructureConfig().databaseUrl);
 const settingsDatabase = new SettingsDatabase();
 const repository = new PrismaSettingsRepository(settingsDatabase);
-const schoolLogoDataUrl = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9WlVQAAAAASUVORK5CYII=';
+const schoolLogoDataUrl =
+  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9WlVQAAAAASUVORK5CYII=';
 
 async function fixture() {
   const suffix = randomUUID().slice(0, 8);
