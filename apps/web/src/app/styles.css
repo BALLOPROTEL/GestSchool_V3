@@ -38,3 +38,11 @@ textarea {
 .scroll-fade {
   background-image: linear-gradient(to inline-end, transparent, var(--card));
 }
+
+[data-sonner-toast] [data-title] {
+  color: var(--card-foreground) !important;
+}
+
+[data-sonner-toast] [data-description] {
+  color: var(--muted-foreground) !important;
+}
