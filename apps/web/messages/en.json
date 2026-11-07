@@ -955,6 +955,8 @@
     "recipientNotAuthorized": "This recipient is not authorized in the staging environment.",
     "channelNotAuthorized": "This channel is not authorized in this environment.",
     "deliveryRetrying": "The latest delivery attempt failed. Another retry is scheduled.",
+    "deliveryBounced": "The email provider reports that the message bounced. No automatic retry is scheduled.",
+    "deliveryRejected": "The email provider rejected the message. No automatic retry is scheduled.",
     "deliveryFailed": "Delivery failed after the configured retry attempts.",
     "forbidden": "You cannot access communications.",
     "loading": "Loading communications…",

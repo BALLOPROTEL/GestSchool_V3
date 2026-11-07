@@ -41,6 +41,8 @@ export type DeliveryErrorKey =
   | 'recipientNotAuthorized'
   | 'channelNotAuthorized'
   | 'deliveryRetrying'
+  | 'deliveryBounced'
+  | 'deliveryRejected'
   | 'deliveryFailed';
 
 export function deliveryErrorKey(code: string | null, status: string): DeliveryErrorKey {
@@ -54,5 +56,7 @@ export function deliveryErrorKey(code: string | null, status: string): DeliveryE
     code === 'BREVO_WHATSAPP_TEMPLATE_MISSING'
   )
     return 'channelNotAuthorized';
+  if (status === 'BOUNCED') return 'deliveryBounced';
+  if (status === 'REJECTED') return 'deliveryRejected';
   return status === 'FAILED' ? 'deliveryFailed' : 'deliveryRetrying';
 }

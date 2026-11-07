@@ -955,6 +955,8 @@
     "recipientNotAuthorized": "Ce destinataire n’est pas autorisé dans l’environnement de staging.",
     "channelNotAuthorized": "Ce canal n’est pas autorisé dans cet environnement.",
     "deliveryRetrying": "La dernière tentative de livraison a échoué. Un nouvel essai est prévu.",
+    "deliveryBounced": "Le fournisseur e-mail indique que le message a rebondi. Aucun nouvel essai automatique n’est prévu.",
+    "deliveryRejected": "Le fournisseur e-mail a rejeté le message. Aucun nouvel essai automatique n’est prévu.",
     "deliveryFailed": "La livraison a échoué après les tentatives prévues.",
     "forbidden": "Vous n’avez pas accès aux communications.",
     "loading": "Chargement des communications…",

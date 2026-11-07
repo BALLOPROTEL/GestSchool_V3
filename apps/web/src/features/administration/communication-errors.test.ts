@@ -33,6 +33,8 @@ describe('communication error presentation', () => {
     );
     expect(deliveryErrorKey('WHATSAPP_NOT_AUTHORIZED', 'FAILED')).toBe('channelNotAuthorized');
     expect(deliveryErrorKey('anything-sensitive', 'PENDING')).toBe('deliveryRetrying');
+    expect(deliveryErrorKey('BREVO_BOUNCED', 'BOUNCED')).toBe('deliveryBounced');
+    expect(deliveryErrorKey('BREVO_REJECTED', 'REJECTED')).toBe('deliveryRejected');
     expect(deliveryErrorKey('anything-sensitive', 'FAILED')).toBe('deliveryFailed');
   });
 });
