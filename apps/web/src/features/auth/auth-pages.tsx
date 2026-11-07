@@ -488,12 +488,16 @@ function SetPasswordPage({ activation }: { activation: boolean }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   useEffect(() => {
-    const value = new URLSearchParams(window.location.hash.slice(1)).get('token');
-    if (value) {
+    const url = new URL(window.location.href);
+    const hashToken = new URLSearchParams(url.hash.slice(1)).get('token');
+    const queryToken = url.searchParams.get('token');
+    const value = hashToken ?? queryToken;
+    if (value && /^[A-Za-z0-9_-]{43}$/.test(value)) {
       setToken(value);
       setStep(2);
-      window.history.replaceState(null, '', window.location.pathname);
     }
+    if (hashToken !== null || queryToken !== null)
+      window.history.replaceState(null, '', window.location.pathname);
   }, []);
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();

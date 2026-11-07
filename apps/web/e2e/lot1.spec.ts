@@ -231,28 +231,19 @@ test('exercises real login, activation and password reset flows', async ({ page 
   await page.getByRole('button', { name: /Envoyer le lien/ }).click();
   await expect(page.getByRole('heading', { name: 'E-mail envoyé !' })).toBeVisible();
 
-  await page.goto('/activation');
+  await page.goto(`/activation?token=${encodeURIComponent(fixture.activation.token)}`);
   await waitForPageReady(page);
-  const activationInput = page.getByLabel('Jeton à usage unique');
-  await activationInput.fill('!'.repeat(43));
-  expect(
-    await activationInput.evaluate((input: HTMLInputElement) => input.validity.patternMismatch),
-  ).toBe(true);
-  await activationInput.fill(`${'a'.repeat(41)}-_`);
-  expect(await activationInput.evaluate((input: HTMLInputElement) => input.checkValidity())).toBe(
-    true,
-  );
-  await activationInput.fill(fixture.activation.token);
-  await page.getByRole('button', { name: /Mot de passe/ }).click();
+  await expect(page).toHaveURL(/\/fr\/activation$/);
+  await expect(page.getByLabel('Jeton à usage unique')).toHaveCount(0);
   await page.getByLabel('Créer un mot de passe').fill(fixture.activation.password);
   await page.getByLabel('Confirmer le mot de passe').fill(fixture.activation.password);
   await page.getByRole('button', { name: /Activer mon compte/ }).click();
   await expect(page.getByRole('heading', { name: 'Compte activé !' })).toBeVisible();
 
-  await page.goto('/reset-password');
+  await page.goto(`/reset-password#token=${encodeURIComponent(fixture.reset.token)}`);
   await waitForPageReady(page);
-  await page.getByLabel('Jeton à usage unique').fill(fixture.reset.token);
-  await page.getByRole('button', { name: /Mot de passe/ }).click();
+  await expect(page).toHaveURL(/\/fr\/reset-password$/);
+  await expect(page.getByLabel('Jeton à usage unique')).toHaveCount(0);
   await page.getByLabel('Créer un mot de passe').fill(fixture.reset.password);
   await page.getByLabel('Confirmer le mot de passe').fill(fixture.reset.password);
   await page.getByRole('button', { name: 'Enregistrer le mot de passe' }).click();

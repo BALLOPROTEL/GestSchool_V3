@@ -104,7 +104,7 @@ export class MessagingDelivery {
         if (isIamDelivery(event.eventType)) {
           const token = await this.privateIamToken(resolved.authTokenId, event.eventType);
           const action = new URL(path, this.config.appPublicOrigin);
-          action.searchParams.set('token', token);
+          action.hash = new URLSearchParams({ token }).toString();
           const privateContent = renderMessagingTemplate(template, {
             ...values,
             actionUrl: action.toString(),
