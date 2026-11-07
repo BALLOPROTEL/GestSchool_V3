@@ -35,7 +35,24 @@ export async function login(page: Page, credentials: Credentials, mfa: boolean) 
   await page.getByLabel('E-mail ou identifiant', { exact: true }).fill(credentials.email);
   await page.getByLabel('Mot de passe', { exact: true }).fill(credentials.password);
   await page.getByRole('button', { name: /Se connecter/ }).click();
-  if (mfa) await completeMfa(page, credentials);
+
+  if (mfa) {
+    const heading = page.getByRole('heading', {
+      name: 'Vérification en deux étapes',
+      exact: true,
+    });
+    await expect
+      .poll(
+        async () => {
+          if (await heading.isVisible()) return 'mfa';
+          return new URL(page.url()).pathname === '/fr' ? 'session' : 'pending';
+        },
+        { timeout: 10000 },
+      )
+      .not.toBe('pending');
+    if (await heading.isVisible()) await completeMfa(page, credentials);
+  }
+
   await expect(page).toHaveURL(/\/fr$/);
   await ready(page);
 }
