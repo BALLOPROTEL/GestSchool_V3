@@ -279,7 +279,7 @@ export function CommunicationsPage() {
                           ? translate('providerHttp', {
                               status: brevoHttpStatus(message.lastErrorCode) ?? '—',
                             })
-                          : translate(deliveryErrorKey(message.lastErrorCode))}
+                          : translate(deliveryErrorKey(message.lastErrorCode, message.status))}
                       </p>
                     ) : null}
                   </div>

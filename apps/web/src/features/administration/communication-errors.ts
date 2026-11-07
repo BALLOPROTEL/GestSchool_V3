@@ -37,9 +37,13 @@ export function brevoHttpStatus(code: string | null): string | null {
 }
 
 export type DeliveryErrorKey =
-  'providerUnavailable' | 'recipientNotAuthorized' | 'channelNotAuthorized' | 'deliveryFailed';
+  | 'providerUnavailable'
+  | 'recipientNotAuthorized'
+  | 'channelNotAuthorized'
+  | 'deliveryRetrying'
+  | 'deliveryFailed';
 
-export function deliveryErrorKey(code: string | null): DeliveryErrorKey {
+export function deliveryErrorKey(code: string | null, status: string): DeliveryErrorKey {
   if (code === 'BREVO_CONNECTION_UNCERTAIN' || code === 'BREVO_RESPONSE_UNCERTAIN')
     return 'providerUnavailable';
   if (code === 'STAGING_RECIPIENT_NOT_AUTHORIZED') return 'recipientNotAuthorized';
@@ -50,5 +54,5 @@ export function deliveryErrorKey(code: string | null): DeliveryErrorKey {
     code === 'BREVO_WHATSAPP_TEMPLATE_MISSING'
   )
     return 'channelNotAuthorized';
-  return 'deliveryFailed';
+  return status === 'FAILED' ? 'deliveryFailed' : 'deliveryRetrying';
 }

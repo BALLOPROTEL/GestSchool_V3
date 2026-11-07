@@ -954,6 +954,7 @@
     "providerUnavailable": "Le fournisseur e-mail est temporairement indisponible ou sa réponse est incertaine.",
     "recipientNotAuthorized": "Ce destinataire n’est pas autorisé dans l’environnement de staging.",
     "channelNotAuthorized": "Ce canal n’est pas autorisé dans cet environnement.",
+    "deliveryRetrying": "La dernière tentative de livraison a échoué. Un nouvel essai est prévu.",
     "deliveryFailed": "La livraison a échoué après les tentatives prévues.",
     "forbidden": "Vous n’avez pas accès aux communications.",
     "loading": "Chargement des communications…",

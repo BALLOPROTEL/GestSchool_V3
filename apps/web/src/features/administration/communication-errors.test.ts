@@ -27,9 +27,12 @@ describe('communication error presentation', () => {
   it('keeps delivery diagnostics bounded to safe categories', () => {
     expect(brevoHttpStatus('BREVO_HTTP_403')).toBe('403');
     expect(brevoHttpStatus('provider body with secret')).toBeNull();
-    expect(deliveryErrorKey('BREVO_CONNECTION_UNCERTAIN')).toBe('providerUnavailable');
-    expect(deliveryErrorKey('STAGING_RECIPIENT_NOT_AUTHORIZED')).toBe('recipientNotAuthorized');
-    expect(deliveryErrorKey('WHATSAPP_NOT_AUTHORIZED')).toBe('channelNotAuthorized');
-    expect(deliveryErrorKey('anything-sensitive')).toBe('deliveryFailed');
+    expect(deliveryErrorKey('BREVO_CONNECTION_UNCERTAIN', 'PENDING')).toBe('providerUnavailable');
+    expect(deliveryErrorKey('STAGING_RECIPIENT_NOT_AUTHORIZED', 'FAILED')).toBe(
+      'recipientNotAuthorized',
+    );
+    expect(deliveryErrorKey('WHATSAPP_NOT_AUTHORIZED', 'FAILED')).toBe('channelNotAuthorized');
+    expect(deliveryErrorKey('anything-sensitive', 'PENDING')).toBe('deliveryRetrying');
+    expect(deliveryErrorKey('anything-sensitive', 'FAILED')).toBe('deliveryFailed');
   });
 });
