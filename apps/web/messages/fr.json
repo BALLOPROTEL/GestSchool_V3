@@ -1182,7 +1182,7 @@
     "sessions": "Sessions récentes",
     "title": "Mon profil",
     "twoFactor": "Authentification à deux facteurs",
-    "twoFactorDescription": "Demander un code supplémentaire lors de la connexion.",
+    "twoFactorDescription": "Optionnelle : ajoutez un code supplémentaire à la connexion si vous souhaitez renforcer la sécurité de votre compte.",
     "weeklyDigest": "Récapitulatif hebdomadaire",
     "school": "Établissement",
     "displayName": "Nom affiché",

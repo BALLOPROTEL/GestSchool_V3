@@ -89,11 +89,7 @@ export class SessionsService {
     if (!user?.identity?.activatedAt || user.disabledAt) deny('AUTH_SESSION_EXPIRED', 401);
     const memberships = new MembershipsService(this.repository);
     const membership = await memberships.select(claims.sub, claims.mid);
-    if (
-      (user.identity.mfaEnabledAt || (await memberships.requiresMfa(user.id))) &&
-      !session.mfaVerifiedAt
-    )
-      deny('AUTH_MFA_REQUIRED', 401);
+    if (user.identity.mfaEnabledAt && !session.mfaVerifiedAt) deny('AUTH_MFA_REQUIRED', 401);
     return memberships.context(membership, session.id, metadata);
   }
   async refresh(token: string, metadata: RequestMetadata): Promise<SessionResult> {
@@ -126,11 +122,7 @@ export class SessionsService {
       if (!user?.identity?.activatedAt || user.disabledAt) return null;
       const memberships = new MembershipsService(repository);
       const membership = await memberships.select(user.id, session.membershipId);
-      if (
-        (user.identity.mfaEnabledAt || (await memberships.requiresMfa(user.id))) &&
-        !session.mfaVerifiedAt
-      )
-        return null;
+      if (user.identity.mfaEnabledAt && !session.mfaVerifiedAt) return null;
       const refresh = opaqueToken();
       await repository.rotate(session.id, current.id, tokenHash(refresh), session.expiresAt);
       return this.response(repository, session.id, membership, refresh, session.expiresAt);
@@ -168,8 +160,6 @@ export class SessionsService {
         deny('AUTH_SESSION_EXPIRED', 401);
       const memberships = new MembershipsService(repository);
       const membership = await memberships.select(context.userId, membershipId);
-      if ((await memberships.requiresMfa(context.userId)) && !old.mfaVerifiedAt)
-        deny('AUTH_MFA_REQUIRED', 401);
       await repository.revoke(context.userId, old.id);
       const result = await this.create(
         repository,

@@ -1182,7 +1182,7 @@
     "sessions": "Recent sessions",
     "title": "My profile",
     "twoFactor": "Two-factor authentication",
-    "twoFactorDescription": "Require an additional code when signing in.",
+    "twoFactorDescription": "Optional: add an extra sign-in code if you want stronger protection for your account.",
     "weeklyDigest": "Weekly digest",
     "school": "School",
     "displayName": "Display name",

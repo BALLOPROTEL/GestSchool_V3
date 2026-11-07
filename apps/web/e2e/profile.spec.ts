@@ -179,6 +179,9 @@ test('LOT17.5 uses real profile, preferences, MFA and revocable sessions', async
   await expect(page.getByText('Activée', { exact: true })).toBeVisible();
   await expect(
     page.getByText('L’authentification à deux facteurs est obligatoire pour votre rôle.'),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole('button', { name: 'Désactiver la double authentification', exact: true }),
   ).toBeVisible();
 
   const currentPassword = page.getByLabel('Mot de passe actuel', { exact: true }).first();

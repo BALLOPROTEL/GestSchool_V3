@@ -1,24 +1,10 @@
 import { readFileSync } from 'node:fs';
-import { createHmac } from 'node:crypto';
 import { expect, test } from './fixtures';
 
-// Independent RFC 6238 calculation for the browser enrollment check.
-function totp(secret: string): string {
-  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
-  const bits = [...secret]
-    .map((character) => alphabet.indexOf(character).toString(2).padStart(5, '0'))
-    .join('');
-  const key = Buffer.from(bits.match(/.{8}/g)?.map((byte) => Number.parseInt(byte, 2)) ?? []);
-  const counter = Buffer.alloc(8);
-  counter.writeBigUInt64BE(BigInt(Math.floor(Date.now() / 30000)));
-  const digest = createHmac('sha1', key).update(counter).digest();
-  const offset = (digest[digest.length - 1] ?? 0) & 15;
-  return ((digest.readUInt32BE(offset) & 0x7fffffff) % 1000000).toString().padStart(6, '0');
-}
-test('requires MFA before entering the portal and revokes the session on logout', async ({
+test('allows sign-in without MFA until the user opts in and revokes the session on logout', async ({
   page,
 }, info) => {
-  test.skip(info.project.name !== '1440x900', 'MFA flow certified once.');
+  test.skip(info.project.name !== '1440x900', 'Optional MFA flow certified once.');
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   page.on('console', (message) => {
@@ -31,14 +17,6 @@ test('requires MFA before entering the portal and revokes the session on logout'
   await page.getByLabel('E-mail ou identifiant', { exact: true }).fill(fixture.mfa.email);
   await page.getByLabel('Mot de passe', { exact: true }).fill(fixture.mfa.password);
   await page.getByRole('button', { name: /Se connecter/ }).click();
-  await expect(page.getByRole('heading', { name: 'Vérification en deux étapes' })).toBeVisible();
-  const qr = page.getByTestId('mfa-qr');
-  await expect(qr).toBeVisible();
-  await expect(qr).toHaveAttribute('src', /^data:image\/png;base64,/);
-  const secret = await page.getByTestId('mfa-secret').textContent();
-  if (!secret) throw new Error('Missing enrollment key');
-  await page.getByLabel('Code à six chiffres').fill(totp(secret));
-  await page.getByRole('button', { name: 'Vérifier', exact: true }).click();
   await expect(page).toHaveURL(/\/fr$/);
   await expect(page.locator('main')).toBeVisible();
   await page.getByRole('button', { name: /Utilisateur E2E/ }).click();
