@@ -19,6 +19,12 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { useAuth } from '../auth/auth-provider';
 import { peopleRequest } from '../directory/people-client';
+import {
+  brevoHttpStatus,
+  communicationErrorKey,
+  deliveryErrorKey,
+  type CommunicationErrorKey,
+} from './communication-errors';
 import { PageHeader } from '../shared/page-header';
 import { SearchField } from '../shared/search-field';
 
@@ -68,11 +74,12 @@ export function CommunicationsPage() {
   const [audienceId, setAudienceId] = useState('');
   const [category, setCategory] = useState<'SCHOOL' | 'ACADEMIC' | 'FINANCE'>('SCHOOL');
   const [recipientCount, setRecipientCount] = useState<number | null>(null);
-  const [composerError, setComposerError] = useState(false);
+  const [composerError, setComposerError] = useState<CommunicationErrorKey | null>(null);
   const [sending, setSending] = useState(false);
   const [queued, setQueued] = useState(false);
   const [refresh, setRefresh] = useState(0);
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [loadError, setLoadError] = useState<CommunicationErrorKey>('error');
   const canRead = Boolean(
     session?.session.grants.some(
       (grant) => grant.permission === 'communications.read' && grant.scope !== 'NONE',
@@ -113,8 +120,10 @@ export function CommunicationsPage() {
           setTotal(result.total);
           setState('ready');
         },
-        () => {
-          if (active) setState('error');
+        (error) => {
+          if (!active) return;
+          setLoadError(communicationErrorKey(error));
+          setState('error');
         },
       );
     }, 200);
@@ -126,12 +135,13 @@ export function CommunicationsPage() {
   const view = async (id: string) => {
     try {
       setDetail(await peopleRequest<Communication>(`communications/${id}`));
-    } catch {
+    } catch (error) {
+      setLoadError(communicationErrorKey(error));
       setState('error');
     }
   };
   const previewAudience = async () => {
-    setComposerError(false);
+    setComposerError(null);
     try {
       const result = await peopleRequest<{ recipientCount: number }>(
         'communications/audience-preview',
@@ -139,14 +149,14 @@ export function CommunicationsPage() {
         'POST',
       );
       setRecipientCount(result.recipientCount);
-    } catch {
+    } catch (error) {
       setRecipientCount(null);
-      setComposerError(true);
+      setComposerError(communicationErrorKey(error, 'action'));
     }
   };
   const sendManual = async () => {
     if (recipientCount === null) return;
-    setComposerError(false);
+    setComposerError(null);
     setSending(true);
     try {
       await peopleRequest(
@@ -167,8 +177,8 @@ export function CommunicationsPage() {
       setPage(1);
       setState('loading');
       setRefresh((value) => value + 1);
-    } catch {
-      setComposerError(true);
+    } catch (error) {
+      setComposerError(communicationErrorKey(error, 'action'));
     } finally {
       setSending(false);
     }
@@ -200,7 +210,7 @@ export function CommunicationsPage() {
               className="mt-3"
               onClick={() => {
                 setQueued(false);
-                setComposerError(false);
+                setComposerError(null);
                 setComposer(true);
               }}
             >
@@ -219,7 +229,7 @@ export function CommunicationsPage() {
           ) : null}
           {state === 'error' ? (
             <p role="alert" className="mt-5">
-              {translate('error')}
+              {translate(loadError)}
             </p>
           ) : null}
           {state === 'ready' && items.length === 0 ? (
@@ -264,7 +274,13 @@ export function CommunicationsPage() {
                       · {translate('attempts', { count: message.attempts })}
                     </p>
                     {message.lastErrorCode ? (
-                      <p className="mt-1 text-xs text-destructive">{message.lastErrorCode}</p>
+                      <p className="mt-1 text-xs text-destructive">
+                        {brevoHttpStatus(message.lastErrorCode)
+                          ? translate('providerHttp', {
+                              status: brevoHttpStatus(message.lastErrorCode) ?? '—',
+                            })
+                          : translate(deliveryErrorKey(message.lastErrorCode, message.status))}
+                      </p>
                     ) : null}
                   </div>
                   <div className="flex shrink-0">
@@ -384,7 +400,7 @@ export function CommunicationsPage() {
           ) : (
             <p role="status">{translate('confirmAudience', { count: recipientCount })}</p>
           )}
-          {composerError ? <p role="alert">{translate('error')}</p> : null}
+          {composerError ? <p role="alert">{translate(composerError)}</p> : null}
           <Button disabled={recipientCount === null || sending} onClick={() => void sendManual()}>
             {sending ? translate('sending') : translate('confirmSend')}
           </Button>

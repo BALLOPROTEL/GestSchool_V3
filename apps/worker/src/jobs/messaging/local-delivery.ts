@@ -16,6 +16,7 @@ import {
   messagingIdempotencyKey,
 } from './channel-policy.js';
 import { resolveMessagingEvent } from './event-resolution.js';
+import { safeMessagingFailureCode } from './provider-error-code.js';
 import type { MessageRecipient } from './recipients.js';
 
 interface SelectedTemplate {
@@ -333,6 +334,8 @@ export class MessagingDelivery {
             status: 'SENT',
             providerMessageId: receipt.providerMessageId,
             sentAt: new Date(),
+            failedAt: null,
+            lastErrorCode: null,
           },
         });
         if (updated.count)
@@ -347,13 +350,14 @@ export class MessagingDelivery {
       });
     } catch (error) {
       const finalAttempt = delivery.attempt >= delivery.maxAttempts;
+      const failureCode = safeMessagingFailureCode(error);
       await this.db.$transaction(async (db) => {
         const updated = await db.message.updateMany({
           where: { id: message, tenantId: event.tenantId, status: 'SENDING' },
           data: {
             status: finalAttempt ? 'FAILED' : 'PENDING',
             failedAt: finalAttempt ? new Date() : null,
-            lastErrorCode: `${this.provider.name}_DELIVERY_UNAVAILABLE`,
+            lastErrorCode: failureCode,
           },
         });
         if (updated.count && finalAttempt)
@@ -363,7 +367,7 @@ export class MessagingDelivery {
               action: 'message.failed',
               entityType: 'message',
               entityId: message,
-              metadata: { code: `${this.provider.name}_DELIVERY_UNAVAILABLE` },
+              metadata: { code: failureCode },
             },
           });
       });

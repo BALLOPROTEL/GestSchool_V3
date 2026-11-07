@@ -140,7 +140,9 @@ test('LOT 11 communications, ASSIGNED audiences and notifications at every viewp
   await expect(deniedCategory).toHaveAccessibleName('Catégorie');
   await deniedCategory.selectOption('ACADEMIC');
   expect((await previewStudent(deniedComposer, data.unassignedStudentId)).status()).toBe(403);
-  await expect(page.getByRole('alert')).toContainText('Impossible de charger');
+  await expect(page.getByRole('alert')).toContainText(
+    'Vous n’avez pas les droits nécessaires pour cette audience ou cette catégorie.',
+  );
   await page.keyboard.press('Escape');
   const checkTeacher = watch(page);
   const assignedComposer = await openComposer(page);
