@@ -23,7 +23,14 @@ function membership(id: string, userId: string, role: string, status: 'ACTIVE' |
     tenantId: tenant.id,
     status,
     tenant,
-    roles: [{ role: { code: role } }],
+    roles: [
+      {
+        role: {
+          id: systemRoles.find((item) => item.code === role)?.id ?? 'wrong-role',
+          code: role,
+        },
+      },
+    ],
   };
 }
 
@@ -78,8 +85,10 @@ function fakeRepository(existing = false) {
       if (!current) throw new Error('missing owner membership');
       const role = systemRoles.find((item) => item.id === roleId);
       if (!role) throw new Error('missing role');
-      current.roles = [{ role: { code: role.code } }];
+      current.roles = [{ role: { id: role.id, code: role.code } }];
     }),
+    revokeMembershipSessions: vi.fn(async () => ({ count: 1 })),
+    invalidateMembershipTokens: vi.fn(async () => ({ count: 1 })),
     audit: vi.fn(async () => undefined),
     atomic: vi.fn(async (_userId: string, run: (current: IamRepository) => Promise<unknown>) =>
       run(repository),
@@ -122,6 +131,8 @@ describe('staging role fixtures provisioning', () => {
 
     expect(result).toEqual({ created: 8, existing: 0, ownerPromoted: true });
     expect(raw.replaceRole).toHaveBeenCalledTimes(1);
+    expect(raw.revokeMembershipSessions).toHaveBeenCalledWith('owner-1', 'owner-membership');
+    expect(raw.invalidateMembershipTokens).toHaveBeenCalledWith('owner-1', 'owner-membership');
     expect(raw.invite).toHaveBeenCalledTimes(8);
     expect(issue).toHaveBeenCalledTimes(8);
   });
@@ -150,7 +161,7 @@ describe('staging role fixtures provisioning', () => {
 
     const bound = membershipsByUser.get(target.id)?.[0];
     if (!bound) throw new Error('missing fixture membership');
-    bound.roles = [{ role: { code: 'TEACHER' } }];
+    bound.roles = [{ role: { id: 'wrong-role', code: stagingRoleFixtures[0].role } }];
 
     await expect(
       provisionStagingRoleFixtures(

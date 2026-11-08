@@ -68,6 +68,7 @@ function safeStagingDatabase(environment: NodeJS.ProcessEnv): string {
   if (!owner || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(owner)) throw new Error(failureCode);
 
   const url = new URL(environment.DATABASE_URL ?? '');
+  const parameters = [...url.searchParams.entries()];
   if (
     !['postgres:', 'postgresql:'].includes(url.protocol) ||
     url.hostname !== stagingHost ||
@@ -76,7 +77,9 @@ function safeStagingDatabase(environment: NodeJS.ProcessEnv): string {
     !url.username ||
     !url.password ||
     url.hash ||
-    url.searchParams.get('sslmode') !== 'verify-full'
+    parameters.length !== 1 ||
+    parameters[0]?.[0] !== 'sslmode' ||
+    parameters[0]?.[1] !== 'verify-full'
   )
     throw new Error(failureCode);
 
@@ -124,6 +127,8 @@ export async function provisionStagingRoleFixtures(
 
     await repository.atomic(owner.id, async (current) => {
       await current.replaceRole(ownerMembership.id, tenantId, superAdmin.id);
+      await current.revokeMembershipSessions(owner.id, ownerMembership.id);
+      await current.invalidateMembershipTokens(owner.id, ownerMembership.id);
       await current.audit(
         'staging.super_admin.promoted',
         metadata,
@@ -149,8 +154,8 @@ export async function provisionStagingRoleFixtures(
       known && (await repository.memberships(known.id)).find((item) => item.tenantId === tenantId);
 
     if (membership) {
-      const roleCodes = membership.roles.map((binding) => binding.role.code);
-      if (roleCodes.length !== 1 || roleCodes[0] !== fixture.role) throw new Error(failureCode);
+      const roleIds = membership.roles.map((binding) => binding.role.id);
+      if (roleIds.length !== 1 || roleIds[0] !== role.id) throw new Error(failureCode);
 
       if (
         (membership.status === 'INVITED' && Boolean(known?.identity?.activatedAt)) ||
