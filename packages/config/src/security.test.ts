@@ -84,6 +84,12 @@ describe('LOT13 production fail closed', () => {
     expect(() =>
       loadInfrastructureConfig({
         ...staging,
+        REDIS_URL: 'redis://[::ffff:8.8.8.8]:6379',
+      }),
+    ).toThrow();
+    expect(() =>
+      loadInfrastructureConfig({
+        ...staging,
         REDIS_URL: `redis://default:${secret()}@red-render-private:6379`,
       }),
     ).toThrow(/Staging private Redis/);
