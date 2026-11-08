@@ -1,6 +1,6 @@
 import { DelayedError, Queue, Worker } from 'bullmq';
 import { REPORTS_QUEUE, REPORT_EXPORT_EVENT, reportJobData } from '@gestschool/contracts';
-import { bullmqConnection } from '../documents/queue.js';
+import { bullmqConnection, idleWorkerOptions } from '../documents/queue.js';
 
 export function createReportsQueue(url: string) {
   return new Queue(REPORTS_QUEUE, {
@@ -36,6 +36,7 @@ export function createReportsWorker(
       concurrency: 2,
       lockDuration: 180_000,
       maxStalledCount: 2,
+      ...idleWorkerOptions,
     },
   );
 }
