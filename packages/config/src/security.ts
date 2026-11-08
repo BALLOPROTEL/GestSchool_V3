@@ -118,12 +118,12 @@ export function validateProductionInfrastructure(environment: NodeJS.ProcessEnv)
     )
       throw new Error(`${name} cannot use a local/example host`);
 
-    const stagingPrivateRedis =
+    const stagingRenderKeyValue =
       name === 'REDIS_URL' &&
       environment['APP_ENV'] === 'staging' &&
-      isPrivateHost(host);
+      /^red-[a-z0-9-]+$/.test(host);
 
-    if (stagingPrivateRedis) {
+    if (stagingRenderKeyValue) {
       if (url.protocol !== 'redis:' || url.username || url.password || url.search || url.hash)
         throw new Error(
           'Staging private Redis requires an unauthenticated redis: URL on the private network',
