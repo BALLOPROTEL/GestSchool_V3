@@ -67,6 +67,34 @@ describe('LOT13 production fail closed', () => {
   it('accepts explicit TLS infrastructure with independent non-default credentials', () => {
     expect(loadInfrastructureConfig(production()).nodeEnvironment).toBe('production');
   });
+  it('accepts unauthenticated Redis only on an explicit staging private network', () => {
+    const staging = {
+      ...production(),
+      APP_ENV: 'staging',
+      IAM_ENV: 'staging',
+      REDIS_URL: 'redis://red-render-private:6379',
+    };
+    expect(loadInfrastructureConfig(staging).redisUrl).toBe(staging.REDIS_URL);
+    expect(() =>
+      loadInfrastructureConfig({
+        ...staging,
+        REDIS_URL: 'redis://redis.public.example.com:6379',
+      }),
+    ).toThrow();
+    expect(() =>
+      loadInfrastructureConfig({
+        ...staging,
+        REDIS_URL: `redis://default:${secret()}@red-render-private:6379`,
+      }),
+    ).toThrow(/Staging private Redis/);
+    expect(() =>
+      loadInfrastructureConfig({
+        ...staging,
+        APP_ENV: 'production',
+        IAM_ENV: 'production',
+      }),
+    ).toThrow();
+  });
   it.each([
     ['APP_PUBLIC_ORIGIN', undefined],
     ['APP_PUBLIC_ORIGIN', 'http://school.example.com'],
