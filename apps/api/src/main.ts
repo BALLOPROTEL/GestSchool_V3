@@ -6,6 +6,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module.js';
 import { configureIamHttp } from './modules/iam/presentation/http/security.js';
 import { runStagingBootstrapStartup } from './infrastructure/staging-bootstrap-startup.js';
+import { runStagingRoleFixturesStartup } from './infrastructure/staging-role-fixtures-startup.js';
 import { certificationEnabled } from './infrastructure/lot14-certification/config.js';
 import { runStagingCertification } from './infrastructure/lot14-certification/startup.js';
 import {
@@ -61,6 +62,15 @@ try {
 } catch {
   process.stderr.write(
     '{"check":"LOT14_BOOTSTRAP_STARTUP","status":"FAIL","code":"LOT14_BOOTSTRAP_STARTUP_FAILED"}\n',
+  );
+  process.exit(1);
+}
+
+try {
+  await runStagingRoleFixturesStartup();
+} catch {
+  process.stderr.write(
+    '{"check":"STAGING_ROLE_FIXTURES","status":"FAIL","code":"STAGING_ROLE_FIXTURES_STARTUP_FAILED"}\n',
   );
   process.exit(1);
 }
