@@ -28,9 +28,7 @@ const tenantRoles = stagingRoleFixtures
   }));
 
 function fixtureRole(role: string) {
-  return role === 'SUPER_ADMIN'
-    ? systemSuperAdmin
-    : tenantRoles.find((item) => item.code === role);
+  return role === 'SUPER_ADMIN' ? systemSuperAdmin : tenantRoles.find((item) => item.code === role);
 }
 
 function membership(id: string, userId: string, role: string, status: 'ACTIVE' | 'INVITED') {
