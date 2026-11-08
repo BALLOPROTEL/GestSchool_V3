@@ -111,11 +111,7 @@ export async function provisionStagingRoleFixtures(
 
   await repository.atomic(owner.id, async (current) => {
     for (const fixture of stagingRoleFixtures) {
-      const role = await current.ensureTenantRole(
-        tenantId,
-        fixture.role,
-        roleGrants[fixture.role],
-      );
+      const role = await current.ensureTenantRole(tenantId, fixture.role, roleGrants[fixture.role]);
       roleByCode.set(fixture.role, role);
     }
     await current.audit(
