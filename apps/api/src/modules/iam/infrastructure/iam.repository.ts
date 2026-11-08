@@ -402,12 +402,7 @@ export class IamRepository {
         data: { code, name: code, scope: 'SYSTEM', isSystem: true },
         select: { id: true, code: true, tenantId: true, scope: true, isSystem: true },
       }));
-    if (
-      role.tenantId !== null ||
-      role.scope !== 'SYSTEM' ||
-      !role.isSystem ||
-      role.code !== code
-    )
+    if (role.tenantId !== null || role.scope !== 'SYSTEM' || !role.isSystem || role.code !== code)
       throw new IamError('AUTH_UNAVAILABLE', 503);
 
     await this.db.permission.createMany({
