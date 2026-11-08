@@ -117,8 +117,7 @@ export async function provisionStagingRoleFixtures(
   let ownerPromoted = false;
   if (!ownerMembership.roles.some((binding) => binding.role.code === 'SUPER_ADMIN')) {
     const ownerCodes = ownerMembership.roles.map((binding) => binding.role.code);
-    if (ownerCodes.length !== 1 || ownerCodes[0] !== 'SCHOOL_ADMIN')
-      throw new Error(failureCode);
+    if (ownerCodes.length !== 1 || ownerCodes[0] !== 'SCHOOL_ADMIN') throw new Error(failureCode);
 
     const superAdmin = roleByCode.get('SUPER_ADMIN');
     if (!superAdmin) throw new Error(failureCode);
@@ -151,8 +150,7 @@ export async function provisionStagingRoleFixtures(
 
     if (membership) {
       const roleCodes = membership.roles.map((binding) => binding.role.code);
-      if (roleCodes.length !== 1 || roleCodes[0] !== fixture.role)
-        throw new Error(failureCode);
+      if (roleCodes.length !== 1 || roleCodes[0] !== fixture.role) throw new Error(failureCode);
 
       if (
         (membership.status === 'INVITED' && Boolean(known?.identity?.activatedAt)) ||

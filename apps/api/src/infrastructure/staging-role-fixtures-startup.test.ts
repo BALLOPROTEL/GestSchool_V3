@@ -96,12 +96,7 @@ function fakeRepository(existing = false) {
       const role = systemRoles.find((item) => item.id === roleId);
       if (!role) throw new Error('missing role');
 
-      const created = membership(
-        `created-membership-${index}`,
-        user.id,
-        role.code,
-        'INVITED',
-      );
+      const created = membership(`created-membership-${index}`, user.id, role.code, 'INVITED');
       users.set(email, user);
       membershipsByUser.set(user.id, [created]);
       return { user, membership: created, activationRequired: true };
