@@ -119,9 +119,7 @@ export function validateProductionInfrastructure(environment: NodeJS.ProcessEnv)
       throw new Error(`${name} cannot use a local/example host`);
 
     const stagingRenderKeyValue =
-      name === 'REDIS_URL' &&
-      environment['APP_ENV'] === 'staging' &&
-      /^red-[a-z0-9-]+$/.test(host);
+      name === 'REDIS_URL' && environment['APP_ENV'] === 'staging' && /^red-[a-z0-9-]+$/.test(host);
 
     if (stagingRenderKeyValue) {
       if (url.protocol !== 'redis:' || url.username || url.password || url.search || url.hash)
