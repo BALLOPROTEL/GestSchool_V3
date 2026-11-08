@@ -1,7 +1,5 @@
 import { createServer } from 'node:http';
 
-const readinessCacheMilliseconds = 60_000;
-
 export function workerHealthPort(environment: NodeJS.ProcessEnv): number | null {
   const enabled = environment.WORKER_HTTP_HEALTH_ENABLED;
   if (enabled === undefined || enabled === 'false') return null;
@@ -34,7 +32,7 @@ export async function startWorkerHealthServer(options: {
       () => false,
     );
     const ready = await checking;
-    cached = { ready, until: Date.now() + readinessCacheMilliseconds };
+    cached = { ready, until: Date.now() + 5_000 };
     checking = undefined;
     return ready && !closing;
   };
