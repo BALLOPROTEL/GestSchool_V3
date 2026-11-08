@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
+import { roleGrants } from '@gestschool/contracts';
 import { CredentialsService } from '../modules/iam/application/credentials.service.js';
 import type { RequestMetadata } from '../modules/iam/domain/context.js';
 import { Passwords } from '../modules/iam/infrastructure/crypto.js';
@@ -106,16 +107,25 @@ export async function provisionStagingRoleFixtures(
 
   const ownerMembership = ownerMemberships[0]!;
   const tenantId = ownerMembership.tenantId;
-  const roles = await repository.assignableRoles(tenantId, true);
-  const roleByCode = new Map<FixtureRole, (typeof roles)[number]>();
+  const roleByCode = new Map<FixtureRole, { id: string; code: string }>();
 
-  for (const fixture of stagingRoleFixtures) {
-    const matches = roles.filter(
-      (role) => role.code === fixture.role && role.isSystem && role.tenantId === null,
+  await repository.atomic(owner.id, async (current) => {
+    for (const fixture of stagingRoleFixtures) {
+      const role = await current.ensureTenantRole(
+        tenantId,
+        fixture.role,
+        roleGrants[fixture.role],
+      );
+      roleByCode.set(fixture.role, role);
+    }
+    await current.audit(
+      'staging.role_fixtures.roles_synced',
+      metadata,
+      owner.id,
+      tenantId,
+      ownerMembership.id,
     );
-    if (matches.length !== 1) throw new Error(failureCode);
-    roleByCode.set(fixture.role, matches[0]!);
-  }
+  });
 
   let ownerPromoted = false;
   if (!ownerMembership.roles.some((binding) => binding.role.code === 'SUPER_ADMIN')) {

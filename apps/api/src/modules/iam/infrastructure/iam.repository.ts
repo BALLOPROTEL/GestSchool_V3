@@ -383,6 +383,58 @@ export class IamRepository {
   permission(id: string) {
     return this.db.permission.findUnique({ where: { id } });
   }
+  async ensureTenantRole(
+    tenantId: string,
+    code: string,
+    grants: readonly { permission: string; scope: AccessScope }[],
+  ): Promise<{ id: string; code: string }> {
+    const uniqueGrants = new Map(grants.map((grant) => [grant.permission, grant.scope] as const));
+    if (uniqueGrants.size !== grants.length) throw new IamError('AUTH_UNAVAILABLE', 503);
+
+    const role = await this.db.role.upsert({
+      where: { tenantId_code: { tenantId, code } },
+      update: { name: code, scope: 'TENANT', isSystem: false },
+      create: {
+        tenantId,
+        code,
+        name: code,
+        scope: 'TENANT',
+        isSystem: false,
+      },
+      select: { id: true, code: true, tenantId: true, scope: true, isSystem: true },
+    });
+    if (
+      role.tenantId !== tenantId ||
+      role.scope !== 'TENANT' ||
+      role.isSystem ||
+      role.code !== code
+    )
+      throw new IamError('AUTH_UNAVAILABLE', 503);
+
+    await this.db.permission.createMany({
+      data: grants.map((grant) => ({
+        code: grant.permission,
+        description: grant.permission,
+      })),
+      skipDuplicates: true,
+    });
+    const permissions = await this.db.permission.findMany({
+      where: { code: { in: [...uniqueGrants.keys()] } },
+      select: { id: true, code: true },
+    });
+    if (permissions.length !== uniqueGrants.size) throw new IamError('AUTH_UNAVAILABLE', 503);
+
+    await this.db.rolePermission.deleteMany({ where: { roleId: role.id } });
+    await this.db.rolePermission.createMany({
+      data: permissions.map((permission) => ({
+        roleId: role.id,
+        permissionId: permission.id,
+        tenantId,
+        scope: uniqueGrants.get(permission.code)!,
+      })),
+    });
+    return { id: role.id, code: role.code };
+  }
   async assignRole(membershipId: string, tenantId: string, roleId: string): Promise<void> {
     await this.db.membershipRole.upsert({
       where: { membershipId_roleId: { membershipId, roleId } },

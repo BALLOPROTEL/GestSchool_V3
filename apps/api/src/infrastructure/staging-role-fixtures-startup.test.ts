@@ -7,13 +7,13 @@ import {
 } from './staging-role-fixtures-startup.js';
 
 const tenant = { id: 'tenant-1', status: 'ACTIVE' };
-const systemRoles = stagingRoleFixtures.map((fixture, index) => ({
+const tenantRoles = stagingRoleFixtures.map((fixture, index) => ({
   id: `role-${index + 1}`,
   code: fixture.role,
   name: fixture.role,
-  scope: 'SYSTEM',
-  isSystem: true,
-  tenantId: null,
+  scope: 'TENANT',
+  isSystem: false,
+  tenantId: tenant.id,
 }));
 
 function membership(id: string, userId: string, role: string, status: 'ACTIVE' | 'INVITED') {
@@ -26,7 +26,7 @@ function membership(id: string, userId: string, role: string, status: 'ACTIVE' |
     roles: [
       {
         role: {
-          id: systemRoles.find((item) => item.code === role)?.id ?? 'wrong-role',
+          id: tenantRoles.find((item) => item.code === role)?.id ?? 'wrong-role',
           code: role,
         },
       },
@@ -78,12 +78,16 @@ function fakeRepository(existing = false) {
   const raw = {
     userByEmail: vi.fn(async (email: string) => users.get(email) ?? null),
     memberships: vi.fn(async (userId: string) => membershipsByUser.get(userId) ?? []),
-    assignableRoles: vi.fn(async () => systemRoles),
+    ensureTenantRole: vi.fn(async (_tenantId: string, code: string) => {
+      const role = tenantRoles.find((item) => item.code === code);
+      if (!role) throw new Error('missing role');
+      return { id: role.id, code: role.code };
+    }),
     replaceRole: vi.fn(async (membershipId: string, _tenantId: string, roleId: string) => {
       if (membershipId !== 'owner-membership') return;
       const current = membershipsByUser.get(owner.id)?.[0];
       if (!current) throw new Error('missing owner membership');
-      const role = systemRoles.find((item) => item.id === roleId);
+      const role = tenantRoles.find((item) => item.id === roleId);
       if (!role) throw new Error('missing role');
       current.roles = [{ role: { id: role.id, code: role.code } }];
     }),
@@ -102,7 +106,7 @@ function fakeRepository(existing = false) {
         disabledAt: null,
         identity: { activatedAt: null },
       };
-      const role = systemRoles.find((item) => item.id === roleId);
+      const role = tenantRoles.find((item) => item.id === roleId);
       if (!role) throw new Error('missing role');
 
       const created = membership(`created-membership-${index}`, user.id, role.code, 'INVITED');
@@ -130,6 +134,7 @@ describe('staging role fixtures provisioning', () => {
     });
 
     expect(result).toEqual({ created: 8, existing: 0, ownerPromoted: true });
+    expect(raw.ensureTenantRole).toHaveBeenCalledTimes(8);
     expect(raw.replaceRole).toHaveBeenCalledTimes(1);
     expect(raw.revokeMembershipSessions).toHaveBeenCalledWith('owner-1', 'owner-membership');
     expect(raw.invalidateMembershipTokens).toHaveBeenCalledWith('owner-1', 'owner-membership');
