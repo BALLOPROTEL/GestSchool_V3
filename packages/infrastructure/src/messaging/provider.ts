@@ -101,8 +101,8 @@ export class BrevoMessagingProvider implements MessagingProvider {
   }
   sendEmail(message: OutgoingEmail): Promise<ProviderReceipt> {
     if (
-      this.config.stagingEmailRecipient !== undefined &&
-      message.to.trim().toLowerCase() !== this.config.stagingEmailRecipient
+      this.config.stagingEmailRecipients !== undefined &&
+      !this.config.stagingEmailRecipients.includes(message.to.trim().toLowerCase())
     )
       throw new MessagingProviderError('STAGING_RECIPIENT_NOT_AUTHORIZED');
     return this.send('smtp/email', {
@@ -114,7 +114,7 @@ export class BrevoMessagingProvider implements MessagingProvider {
     });
   }
   sendWhatsApp(message: OutgoingWhatsApp): Promise<ProviderReceipt> {
-    if (this.config.stagingEmailRecipient !== undefined)
+    if (this.config.stagingEmailRecipients !== undefined)
       throw new MessagingProviderError('STAGING_CHANNEL_NOT_AUTHORIZED');
     if (this.config.whatsAppEnabled !== true)
       throw new MessagingProviderError('WHATSAPP_NOT_AUTHORIZED');

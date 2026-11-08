@@ -42,7 +42,7 @@ describe('messaging providers', () => {
       const emailOnly = whatsAppConfigured
         ? config
         : { ...config, whatsAppSender: null, whatsAppTemplateIds: {} };
-      const disabled = new BrevoMessagingProvider({ ...emailOnly, stagingEmailRecipient: null });
+      const disabled = new BrevoMessagingProvider({ ...emailOnly, stagingEmailRecipients: [] });
       expect(() => disabled.sendEmail(email)).toThrow('STAGING_RECIPIENT_NOT_AUTHORIZED');
       expect(() =>
         disabled.sendWhatsApp({
@@ -55,7 +55,7 @@ describe('messaging providers', () => {
       expect(network).not.toHaveBeenCalled();
       const allowed = new BrevoMessagingProvider({
         ...emailOnly,
-        stagingEmailRecipient: 'controlled@example.com',
+        stagingEmailRecipients: ['controlled@example.com', 'second@example.com'],
       });
       expect(() => allowed.sendEmail({ ...email, to: 'another@example.com' })).toThrow(
         'STAGING_RECIPIENT_NOT_AUTHORIZED',
@@ -70,7 +70,8 @@ describe('messaging providers', () => {
       ).toThrow('STAGING_CHANNEL_NOT_AUTHORIZED');
       expect(network).not.toHaveBeenCalled();
       await allowed.sendEmail(email);
-      expect(network).toHaveBeenCalledTimes(1);
+      await allowed.sendEmail({ ...email, messageId: 'second', to: 'SECOND@example.com' });
+      expect(network).toHaveBeenCalledTimes(2);
     },
   );
 

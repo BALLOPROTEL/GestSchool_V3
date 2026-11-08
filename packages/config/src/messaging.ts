@@ -24,8 +24,8 @@ export interface MessagingConfig {
   apiKey: string | null;
   webhookSecret: string | null;
   tokenKey: string;
-  // Present only for staging: null disables all real sends until a test inbox is authorized.
-  stagingEmailRecipient?: string | null;
+  // Present only for staging: an empty list disables all real email sends until test inboxes are authorized.
+  stagingEmailRecipients?: string[];
 }
 
 export function loadMessagingConfig(environment: NodeJS.ProcessEnv = process.env): MessagingConfig {
@@ -129,11 +129,18 @@ export function loadMessagingConfig(environment: NodeJS.ProcessEnv = process.env
     tokenKey,
     ...(staging
       ? {
-          stagingEmailRecipient: (() => {
-            const result = email.safeParse(
-              environment['BREVO_TEST_RECIPIENT']?.trim().toLowerCase(),
-            );
-            return result.success && !result.data.endsWith('.invalid') ? result.data : null;
+          stagingEmailRecipients: (() => {
+            const raw =
+              environment['BREVO_TEST_RECIPIENTS'] ?? environment['BREVO_TEST_RECIPIENT'] ?? '';
+            const values = raw
+              .split(',')
+              .map((value) => value.trim().toLowerCase())
+              .filter(Boolean);
+            const recipients = values.filter((value) => {
+              const result = email.safeParse(value);
+              return result.success && !result.data.endsWith('.invalid');
+            });
+            return [...new Set(recipients)];
           })(),
         }
       : {}),
