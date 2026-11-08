@@ -34,7 +34,7 @@ describe('remote email-only staging and production boundaries', () => {
       expect(config.whatsAppEnabled).toBe(false);
       expect(config.whatsAppSender).toBeNull();
       expect(config.whatsAppTemplateIds).toEqual({});
-      expect(config.stagingEmailRecipient).toBeNull();
+      expect(config.stagingEmailRecipients).toEqual([]);
     },
   );
 
@@ -209,8 +209,8 @@ describe('messaging environment boundaries', () => {
           APP_ENV: 'staging',
           IAM_ENV: 'staging',
           BREVO_TEST_RECIPIENT: recipient,
-        }).stagingEmailRecipient,
-      ).toBeNull();
+        }).stagingEmailRecipients,
+      ).toEqual([]);
     }
     expect(
       loadMessagingConfig({
@@ -218,7 +218,17 @@ describe('messaging environment boundaries', () => {
         APP_ENV: 'staging',
         IAM_ENV: 'staging',
         BREVO_TEST_RECIPIENT: 'controlled@example.com',
-      }).stagingEmailRecipient,
-    ).toBe('controlled@example.com');
+      }).stagingEmailRecipients,
+    ).toEqual(['controlled@example.com']);
+
+    expect(
+      loadMessagingConfig({
+        ...environment,
+        APP_ENV: 'staging',
+        IAM_ENV: 'staging',
+        BREVO_TEST_RECIPIENTS:
+          'controlled@example.com, SECOND@example.com, controlled@example.com, invalid',
+      }).stagingEmailRecipients,
+    ).toEqual(['controlled@example.com', 'second@example.com']);
   });
 });
