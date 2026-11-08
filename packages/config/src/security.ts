@@ -117,6 +117,18 @@ export function validateProductionInfrastructure(environment: NodeJS.ProcessEnv)
       host.startsWith('::ffff:7f')
     )
       throw new Error(`${name} cannot use a local/example host`);
+
+    const stagingRenderKeyValue =
+      name === 'REDIS_URL' && environment['APP_ENV'] === 'staging' && /^red-[a-z0-9-]+$/.test(host);
+
+    if (stagingRenderKeyValue) {
+      if (url.protocol !== 'redis:' || url.username || url.password || url.search || url.hash)
+        throw new Error(
+          'Staging private Redis requires an unauthenticated redis: URL on the private network',
+        );
+      continue;
+    }
+
     requireStrongSecret(decodeURIComponent(url.password), `${name} password`);
     if (name === 'REDIS_URL' && url.protocol !== 'rediss:')
       throw new Error('Production Redis requires TLS');

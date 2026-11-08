@@ -46,3 +46,11 @@ textarea {
 [data-sonner-toast] [data-description] {
   color: var(--muted-foreground) !important;
 }
+
+/* Sonner keeps overflowed toasts in the DOM for stack transitions. With one visible
+   toast, fully hide older entries so accessibility scans do not evaluate text
+   rendered through stack opacity. */
+[data-sonner-toast][data-visible='false'] {
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
