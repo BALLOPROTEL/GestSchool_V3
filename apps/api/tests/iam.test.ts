@@ -1100,23 +1100,22 @@ describe('MFA tests', () => {
     ).toBeNull();
   });
   it.each(['SUPER_ADMIN', 'SCHOOL_ADMIN', 'DIRECTOR', 'ACCOUNTANT'] as const)(
-    'requires TOTP enrollment for %s before granting a session',
+    'allows %s to sign in without MFA until the user opts in',
     async (role) => {
       const user = await fixture(role);
       const browser = await new Browser().init();
       const result = await browser.send('/api/v1/auth/login', { email: user.user.email, password });
-      expect(result.body['kind']).toBe('mfa');
-      expect(result.body['enrollmentRequired']).toBe(true);
-      expect(result.body['accessToken']).toBeUndefined();
-      expect(browser.cookies.has('gs_refresh')).toBe(false);
+      expect(result.body['kind']).toBe('session');
+      expect(typeof result.body['accessToken']).toBe('string');
+      expect(browser.cookies.has('gs_refresh')).toBe(true);
     },
   );
-  it('requires a valid first code, stores encrypted secrets, detects code replay and controls disabling', async () => {
+  it('lets a privileged user opt in, stores encrypted secrets, detects replay and allows opt out', async () => {
     const user = await fixture('SCHOOL_ADMIN');
-    const browser = await new Browser().init();
-    const login = await browser.send('/api/v1/auth/login', { email: user.user.email, password });
+    const browser = await signIn(user);
+    const start = await browser.send('/api/v1/auth/mfa/setup', { password });
     const setup = await browser.send('/api/v1/auth/mfa/enroll', {
-      challenge: field(login.body, 'challenge'),
+      challenge: field(start.body, 'challenge'),
     });
     const secret = field(setup.body, 'secret');
     secretValues.add(secret);
@@ -1142,7 +1141,18 @@ describe('MFA tests', () => {
         })
       ).status,
     ).toBe(401);
-    expect((await browser.send('/api/v1/auth/mfa/disable', { password, code })).status).toBe(403);
+    await database.authIdentity.update({
+      where: { userId: user.user.id },
+      data: { mfaLastCounter: -1 },
+    });
+    expect(
+      (
+        await browser.send('/api/v1/auth/mfa/disable', {
+          password,
+          code: iam.crypto.totp(secret).generate(),
+        })
+      ).status,
+    ).toBe(201);
   });
 });
 describe('CSRF and CORS tests', () => {

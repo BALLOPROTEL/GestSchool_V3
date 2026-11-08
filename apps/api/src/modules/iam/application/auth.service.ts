@@ -77,17 +77,16 @@ export class AuthService {
           );
         }
 
-        if (current?.identity?.mfaEnabledAt || (await memberships.requiresMfa(user.id))) {
+        if (current?.identity?.mfaEnabledAt) {
           const challenge = opaqueToken();
-          const enrollmentRequired = !current?.identity?.mfaEnabledAt;
           await repository.createToken(
             user.id,
             tokenHash(challenge),
-            enrollmentRequired ? 'MFA_ENROLL' : 'MFA_LOGIN',
+            'MFA_LOGIN',
             new Date(Date.now() + 300000),
             membership.id,
           );
-          return { body: { kind: 'mfa', challenge, enrollmentRequired } };
+          return { body: { kind: 'mfa', challenge, enrollmentRequired: false } };
         }
 
         const result = await this.sessions.create(repository, user.id, membership, metadata, false);

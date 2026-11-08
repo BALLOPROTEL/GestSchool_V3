@@ -43,7 +43,7 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import type { FormEvent, ReactNode } from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import { authRequest, AuthClientError } from '../auth/auth-client';
@@ -301,14 +301,6 @@ export function UserProfilePage() {
   }
 
   const currentSessionId = session?.session.sessionId ?? '';
-  const privilegedMfa = useMemo(
-    () =>
-      profile?.membership.roles.some((role) =>
-        ['SUPER_ADMIN', 'SCHOOL_ADMIN', 'DIRECTOR', 'ACCOUNTANT'].includes(role),
-      ) ?? false,
-    [profile],
-  );
-
   async function reloadProfile() {
     const next = await authRequest<ProfileView>('profile', undefined, 'GET');
     setProfile(next);
@@ -457,12 +449,8 @@ export function UserProfilePage() {
       await authRequest('mfa/disable', { password: mfaPassword, code: mfaCode });
       toast.success(translate('mfaDisabled'));
       window.location.assign(`/${locale}/login`);
-    } catch (error) {
-      toast.error(
-        error instanceof AuthClientError && error.code === 'AUTH_MFA_REQUIRED'
-          ? translate('mfaRequiredByRole')
-          : translate('mfaError'),
-      );
+    } catch {
+      toast.error(translate('mfaError'));
     } finally {
       setSecurityBusy(false);
     }
@@ -793,13 +781,7 @@ export function UserProfilePage() {
                     </form>
                   ) : null}
 
-                  {profile.security.mfaEnabled && privilegedMfa ? (
-                    <p className="text-sm text-muted-foreground">
-                      {translate('mfaRequiredByRole')}
-                    </p>
-                  ) : null}
-
-                  {profile.security.mfaEnabled && !privilegedMfa ? (
+                  {profile.security.mfaEnabled ? (
                     <form className="grid max-w-xl gap-4 sm:grid-cols-2" onSubmit={disableMfa}>
                       <FormField
                         htmlFor="mfa-disable-password"

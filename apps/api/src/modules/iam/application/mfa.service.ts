@@ -123,8 +123,6 @@ export class MfaService {
     if (!(await this.passwords.verify(initial?.identity?.passwordHash, password)))
       deny('AUTH_INVALID_CREDENTIALS', 401);
     await this.repository.atomic(context.userId, async (repository) => {
-      if (await new MembershipsService(repository).requiresMfa(context.userId))
-        deny('AUTH_MFA_REQUIRED', 403);
       const user = await repository.user(context.userId);
       if (
         !user?.identity?.mfaSecret ||

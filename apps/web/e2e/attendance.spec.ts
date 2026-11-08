@@ -37,13 +37,11 @@ test('LOT18.4 certifies explicit attendance save, reload persistence, PDF export
   if (!other) throw new Error('Missing cross-tenant attendance fixture');
 
   const check = watch(page);
-  const sessionResponse = page.waitForResponse((response) => {
-    const path = new URL(response.url()).pathname;
-    return (
-      ['/api/v1/auth/mfa/confirm', '/api/v1/auth/mfa/verify'].includes(path) &&
-      response.request().method() === 'POST'
-    );
-  });
+  const sessionResponse = page.waitForResponse(
+    (response) =>
+      new URL(response.url()).pathname === '/api/v1/auth/login' &&
+      response.request().method() === 'POST',
+  );
   await login(page, data.crud, true);
   const auth = (await (await sessionResponse).json()) as LoginResult;
   if (auth.kind !== 'session') throw new Error('Expected attendance admin session');

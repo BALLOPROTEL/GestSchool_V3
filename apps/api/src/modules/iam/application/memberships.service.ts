@@ -1,4 +1,4 @@
-import { privilegedRoles, type MembershipContextView } from '@gestschool/contracts';
+import type { MembershipContextView } from '@gestschool/contracts';
 import { deny, type RequestContext, type RequestMetadata } from '../domain/context.js';
 import type { IamRepository, MembershipRecord } from '../infrastructure/iam.repository.js';
 
@@ -37,13 +37,6 @@ export class MembershipsService {
     return activeMembership(
       memberships.find((item) => item.status === 'ACTIVE' && item.tenant.status === 'ACTIVE') ??
         null,
-    );
-  }
-  async requiresMfa(userId: string): Promise<boolean> {
-    return (await this.repository.memberships(userId)).some(
-      (item) =>
-        item.status === 'ACTIVE' &&
-        resolveMembership(item).roles.some((role) => privilegedRoles.includes(role)),
     );
   }
   async list(userId: string): Promise<MembershipContextView[]> {
