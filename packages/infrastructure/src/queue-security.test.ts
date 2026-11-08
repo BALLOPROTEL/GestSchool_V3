@@ -9,12 +9,18 @@ import {
   messagingEventTypes,
 } from '@gestschool/contracts';
 const processors = vi.hoisted(() => new Map<string, (job: unknown) => Promise<unknown>>());
+const workerOptions = vi.hoisted(() => new Map<string, Record<string, unknown>>());
 vi.mock('bullmq', async () => {
   const original = await vi.importActual<typeof import('bullmq')>('bullmq');
   return {
     ...original,
-    Worker: function Worker(name: string, process: (job: unknown) => Promise<unknown>) {
+    Worker: function Worker(
+      name: string,
+      process: (job: unknown) => Promise<unknown>,
+      options: Record<string, unknown>,
+    ) {
       processors.set(name, process);
+      workerOptions.set(name, options);
     },
   };
 });
@@ -35,6 +41,14 @@ describe('LOT13 queue entry guards, no network', () => {
       if (queue === DOCUMENT_QUEUE) createDocumentWorker(url, run);
       else if (queue === REPORTS_QUEUE) createReportsWorker(url, run);
       else createMessagingWorker(url, run);
+
+      expect(workerOptions.get(queue)).toEqual(
+        expect.objectContaining({
+          drainDelay: 60,
+          stalledInterval: 120_000,
+        }),
+      );
+
       const process = processors.get(queue)!;
       const data = { tenantId: randomUUID(), [id]: randomUUID() };
       await expect(

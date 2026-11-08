@@ -9,6 +9,14 @@ import {
 import { createClient } from 'redis';
 import { DOCUMENT_QUEUE, DOCUMENT_GENERATION_EVENT, documentJobData } from '@gestschool/contracts';
 
+export const idleWorkerOptions = {
+  // BullMQ defaults to 5 seconds. Staging queues are usually idle, so keep the
+  // blocking wait open longer; queue markers still wake workers when a job arrives.
+  drainDelay: 60,
+  // Stalled recovery is safety-oriented, not latency-sensitive on staging.
+  stalledInterval: 120_000,
+} as const;
+
 export function bullmqConnection(url: string): ConnectionOptions {
   // BullMQ defaults to the optional ioredis peer. Reuse the existing node-redis
   // driver through its supported adapter, including worker-owned duplicate connections.
@@ -69,6 +77,12 @@ export function createDocumentWorker(
         throw error;
       }
     },
-    { connection: bullmqConnection(url), concurrency: 2, lockDuration: 90_000, maxStalledCount: 2 },
+    {
+      connection: bullmqConnection(url),
+      concurrency: 2,
+      lockDuration: 90_000,
+      maxStalledCount: 2,
+      ...idleWorkerOptions,
+    },
   );
 }

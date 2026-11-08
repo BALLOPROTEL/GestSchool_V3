@@ -16,6 +16,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
         <Toaster
           closeButton
           position="bottom-right"
+          visibleToasts={1}
           toastOptions={{
             style: {
               background: 'var(--card)',

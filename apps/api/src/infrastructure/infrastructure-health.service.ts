@@ -12,6 +12,7 @@ import { INFRASTRUCTURE_CONFIGURATION, type InfrastructureConfiguration } from '
 @Injectable()
 export class InfrastructureHealthService implements OnApplicationShutdown {
   private readonly checks: InfrastructureChecks;
+  private checking: Promise<DependencyStates> | undefined;
 
   constructor(
     @Inject(INFRASTRUCTURE_CONFIGURATION)
@@ -21,7 +22,10 @@ export class InfrastructureHealthService implements OnApplicationShutdown {
   }
 
   async check(): Promise<DependencyStates> {
-    return checkInfrastructure(this.checks);
+    this.checking ??= checkInfrastructure(this.checks).finally(() => {
+      this.checking = undefined;
+    });
+    return this.checking;
   }
 
   async onApplicationShutdown(): Promise<void> {

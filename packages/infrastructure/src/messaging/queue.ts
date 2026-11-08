@@ -1,6 +1,6 @@
 import { Queue, Worker } from 'bullmq';
 import { MESSAGING_QUEUE, messagingJobData, messagingEventTypes } from '@gestschool/contracts';
-import { bullmqConnection } from '../documents/queue.js';
+import { bullmqConnection, idleWorkerOptions } from '../documents/queue.js';
 
 export const messagingRetryPolicy = {
   attempts: 5,
@@ -43,6 +43,7 @@ export function createMessagingWorker(
       connection: bullmqConnection(redisUrl),
       concurrency: 2,
       maxStalledCount: 2,
+      ...idleWorkerOptions,
     },
   );
 }
