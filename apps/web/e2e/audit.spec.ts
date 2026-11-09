@@ -100,6 +100,16 @@ test('LOT17.4 renders a real tenant audit event with bounded filters', async ({ 
       .violations,
   ).toEqual([]);
 
+  await page.mouse.click(10, 10);
+  await expect(dialog).toBeHidden();
+
+  await row
+    .getByRole('button', {
+      name: 'Afficher le détail de l’action settings.tenant.updated',
+      exact: true,
+    })
+    .click();
+  await expect(dialog).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(dialog).toBeHidden();
 
