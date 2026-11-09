@@ -349,33 +349,6 @@ export function UsersPage() {
     },
   ];
 
-  function auditSummary(record: AuditRecordView): string {
-    const suffix = record.action.split('.').at(-1);
-    switch (suffix) {
-      case 'created':
-        return translate('summaryCreated', { entity: record.entityType });
-      case 'updated':
-        return translate('summaryUpdated', { entity: record.entityType });
-      case 'deleted':
-        return translate('summaryDeleted', { entity: record.entityType });
-      case 'suspended':
-        return translate('summarySuspended', { entity: record.entityType });
-      case 'activated':
-        return translate('summaryActivated', { entity: record.entityType });
-      case 'generated':
-        return translate('summaryGenerated', { entity: record.entityType });
-      case 'published':
-        return translate('summaryPublished', { entity: record.entityType });
-      case 'failed':
-        return translate('summaryFailed', { entity: record.entityType });
-      default:
-        return translate('summaryGeneric', {
-          action: record.action,
-          entity: record.entityType,
-        });
-    }
-  }
-
   if (!canRead) {
     return (
       <div className="page-shell">
@@ -567,6 +540,33 @@ export function AuditPage() {
   function clearFilters() {
     setFilters({ action: '', entityType: '', from: '', to: '' });
     setPage(1);
+  }
+
+  function auditSummary(record: AuditRecordView): string {
+    const suffix = record.action.split('.').at(-1);
+    switch (suffix) {
+      case 'created':
+        return translate('summaryCreated', { entity: record.entityType });
+      case 'updated':
+        return translate('summaryUpdated', { entity: record.entityType });
+      case 'deleted':
+        return translate('summaryDeleted', { entity: record.entityType });
+      case 'suspended':
+        return translate('summarySuspended', { entity: record.entityType });
+      case 'activated':
+        return translate('summaryActivated', { entity: record.entityType });
+      case 'generated':
+        return translate('summaryGenerated', { entity: record.entityType });
+      case 'published':
+        return translate('summaryPublished', { entity: record.entityType });
+      case 'failed':
+        return translate('summaryFailed', { entity: record.entityType });
+      default:
+        return translate('summaryGeneric', {
+          action: record.action,
+          entity: record.entityType,
+        });
+    }
   }
 
   const columns: readonly DataTableColumn<AuditRecordView>[] = [
