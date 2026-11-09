@@ -115,7 +115,7 @@ test('LOT 12 admin requests, completes and securely downloads a real export', as
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Télécharger' }).first().click();
   const download = await downloadPromise;
-  expect(download.suggestedFilename()).toMatch(/^gestschool-students-.+\.csv$/);
+  expect(download.suggestedFilename()).toMatch(/^gestschool-students-.+\.pdf$/);
   await overflow(page);
   check();
 });
