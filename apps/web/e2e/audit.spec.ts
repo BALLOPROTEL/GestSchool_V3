@@ -79,12 +79,11 @@ test('LOT17.4 renders a real tenant audit event with bounded filters', async ({ 
   await expect(row).toContainText('Utilisateur E2E');
   await expect(row).toContainText('tenant');
 
-  await row
-    .getByRole('button', {
-      name: 'Afficher le détail de l’action settings.tenant.updated',
-      exact: true,
-    })
-    .click();
+  const detailButton = row.getByRole('button', {
+    name: 'Afficher le détail de l’action settings.tenant.updated',
+    exact: true,
+  });
+  await detailButton.click();
   const dialog = page.getByRole('dialog', { name: 'Détail de l’action' });
   await expect(dialog).toBeVisible();
   await expect(dialog).toContainText('Utilisateur E2E');
@@ -102,16 +101,13 @@ test('LOT17.4 renders a real tenant audit event with bounded filters', async ({ 
 
   await page.mouse.click(10, 10);
   await expect(dialog).toBeHidden();
+  await expect(detailButton).toBeFocused();
 
-  await row
-    .getByRole('button', {
-      name: 'Afficher le détail de l’action settings.tenant.updated',
-      exact: true,
-    })
-    .click();
+  await detailButton.click();
   await expect(dialog).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(dialog).toBeHidden();
+  await expect(detailButton).toBeFocused();
 
   await page.getByRole('button', { name: 'Effacer', exact: true }).click();
 
