@@ -752,7 +752,10 @@ export function AuditPage() {
           if (!open) setSelectedAudit(null);
         }}
       >
-        <DialogContent aria-describedby="audit-detail-description">
+        <DialogContent
+          aria-describedby="audit-detail-description"
+          closeLabel={common('close')}
+        >
           <DialogHeader>
             <DialogTitle>{translate('detailTitle')}</DialogTitle>
             <DialogDescription id="audit-detail-description">
