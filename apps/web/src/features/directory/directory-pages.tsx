@@ -791,9 +791,7 @@ export function AuditPage() {
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-xs font-medium text-muted-foreground">
-                    {translate('user')}
-                  </dt>
+                  <dt className="text-xs font-medium text-muted-foreground">{translate('user')}</dt>
                   <dd className="mt-1">
                     {selectedAudit.actor?.displayName ?? translate('system')}
                   </dd>
