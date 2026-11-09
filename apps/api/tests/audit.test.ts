@@ -66,6 +66,10 @@ describe('LOT17.4 real audit repository', () => {
           action: 'settings.tenant.updated',
           entityType: 'tenant',
           entityId: own.tenant.id,
+          metadata: {
+            token: 'audit-secret-token-must-never-leak',
+            password: 'audit-secret-password-must-never-leak',
+          },
         },
         {
           tenantId: foreign.tenant.id,
@@ -97,6 +101,9 @@ describe('LOT17.4 real audit repository', () => {
       },
     });
     expect(view.items.some((item) => item.action === 'finance.payment.created')).toBe(false);
+    expect(JSON.stringify(view)).not.toContain('audit-secret-token-must-never-leak');
+    expect(JSON.stringify(view)).not.toContain('audit-secret-password-must-never-leak');
+    expect(view.items[0]).not.toHaveProperty('metadata');
   });
 
   it('searches by actor or action inside the current tenant', async () => {
