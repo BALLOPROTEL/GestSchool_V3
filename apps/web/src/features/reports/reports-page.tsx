@@ -52,6 +52,7 @@ export function ReportsPage() {
     [status, setStatus] = useState(''),
     [page, setPage] = useState(1),
     [historyRevision, setHistoryRevision] = useState(0),
+    [stableHistory, setStableHistory] = useState<ReportExportList['items']>([]),
     [exporting, setExporting] = useState(false),
     [error, setError] = useState(false),
     debounced = useDebounced(search);
@@ -64,7 +65,11 @@ export function ReportsPage() {
     history = usePeopleData<ReportExportList>(
       allowed ? `report-exports?page=1&pageSize=20` : null,
       historyRevision,
-    );
+    ),
+    columnLabels = t.raw('columns') as Record<string, string>;
+  useEffect(() => {
+    if (history.data) setStableHistory(history.data.items);
+  }, [history.data]);
   useEffect(() => {
     if (!history.data?.items.some((item) => ['PENDING', 'PROCESSING'].includes(item.status)))
       return;
@@ -195,7 +200,7 @@ export function ReportsPage() {
                   <tr>
                     {report.data.columns.map((column) => (
                       <th className="border-b p-2 text-start" key={column}>
-                        {column}
+                        {columnLabels[column] ?? column}
                       </th>
                     ))}
                   </tr>
@@ -230,9 +235,10 @@ export function ReportsPage() {
           <CardTitle>{t('history')}</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-3">
-          {history.data?.items.map((item) => (
+          {stableHistory.map((item) => (
             <article
               className="flex flex-col gap-2 rounded-lg border p-3 sm:flex-row sm:items-center"
+              data-report-export
               key={item.id}
             >
               <div className="min-w-0 flex-1">
@@ -256,7 +262,7 @@ export function ReportsPage() {
               ) : null}
             </article>
           ))}
-          {history.data?.items.length === 0 ? <p>{t('emptyHistory')}</p> : null}
+          {stableHistory.length === 0 && !history.loading ? <p>{t('emptyHistory')}</p> : null}
         </CardContent>
       </Card>
     </div>

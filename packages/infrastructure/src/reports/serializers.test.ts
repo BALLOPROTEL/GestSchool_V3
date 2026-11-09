@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { ReportPage } from '@gestschool/contracts';
-import { neutralizeSpreadsheetCell, serializeCsv, serializeXlsx } from './serializers.js';
+import {
+  neutralizeSpreadsheetCell,
+  reportColumnLabel,
+  serializeCsv,
+  serializeXlsx,
+} from './serializers.js';
 const page: ReportPage = {
   type: 'STUDENTS',
   columns: ['firstName', 'amountMinor'],
@@ -23,6 +28,17 @@ describe('LOT 12 report serializers', () => {
     expect(text).toContain("'=HYPERLINK");
     expect(text).toContain('Normal, ""quoted""');
     expect(text).not.toContain('passwordHash');
+  });
+  it('localizes report column headers for French exports', () => {
+    expect(reportColumnLabel('fr', 'firstName')).toBe('Prénom');
+    expect(reportColumnLabel('fr', 'studentStatus')).toBe('Statut élève');
+    expect(reportColumnLabel('fr', 'amountMinor')).toBe('Montant (unités mineures)');
+
+    const csv = serializeCsv(page, 'fr').toString('utf8');
+    expect(csv).toContain('"Prénom"');
+
+    const xlsx = serializeXlsx(page, 'fr').toString('utf8');
+    expect(xlsx).toContain('Prénom');
   });
   it('writes a real OpenXML ZIP workbook with inline, non-formula user cells', () => {
     const bytes = serializeXlsx(page),

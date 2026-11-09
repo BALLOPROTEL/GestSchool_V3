@@ -8,13 +8,146 @@ const labels: Record<ReportLocale, Record<string, string>> = {
   en: { report: 'Report', generated: 'Generated on' },
   ar: { report: 'تقرير', generated: 'تاريخ الإنشاء' },
 };
+const columnLabels: Record<ReportLocale, Record<string, string>> = {
+  fr: {
+    matricule: 'Matricule',
+    lastName: 'Nom',
+    firstName: 'Prénom',
+    className: 'Classe',
+    levelName: 'Niveau',
+    studentStatus: 'Statut élève',
+    enrollmentStatus: 'Statut inscription',
+    academicYear: 'Année scolaire',
+    reference: 'Référence',
+    student: 'Élève',
+    status: 'Statut',
+    type: 'Type',
+    enrolledOn: 'Date d’inscription',
+    endedOn: 'Date de fin',
+    activeEnrollments: 'Inscriptions actives',
+    capacity: 'Capacité',
+    period: 'Période',
+    average: 'Moyenne',
+    rank: 'Rang',
+    invoiceNumber: 'N° facture',
+    currency: 'Devise',
+    invoicedMinor: 'Montant facturé (unités mineures)',
+    paidMinor: 'Montant payé (unités mineures)',
+    balanceMinor: 'Solde (unités mineures)',
+    dueOn: 'Date d’échéance',
+    paymentReference: 'Référence paiement',
+    amountMinor: 'Montant (unités mineures)',
+    reversedMinor: 'Montant annulé (unités mineures)',
+    netMinor: 'Montant net (unités mineures)',
+    method: 'Mode de paiement',
+    paidAt: 'Payé le',
+    documentType: 'Type de document',
+    locale: 'Langue',
+    issuedAt: 'Émis le',
+    createdAt: 'Créé le',
+    channel: 'Canal',
+    eventType: 'Type d’événement',
+    provider: 'Fournisseur',
+    sentAt: 'Envoyé le',
+    deliveredAt: 'Livré le',
+    attempts: 'Tentatives',
+  },
+  en: {
+    matricule: 'Student ID',
+    lastName: 'Last name',
+    firstName: 'First name',
+    className: 'Class',
+    levelName: 'Level',
+    studentStatus: 'Student status',
+    enrollmentStatus: 'Enrollment status',
+    academicYear: 'Academic year',
+    reference: 'Reference',
+    student: 'Student',
+    status: 'Status',
+    type: 'Type',
+    enrolledOn: 'Enrolled on',
+    endedOn: 'Ended on',
+    activeEnrollments: 'Active enrollments',
+    capacity: 'Capacity',
+    period: 'Period',
+    average: 'Average',
+    rank: 'Rank',
+    invoiceNumber: 'Invoice number',
+    currency: 'Currency',
+    invoicedMinor: 'Invoiced amount (minor units)',
+    paidMinor: 'Paid amount (minor units)',
+    balanceMinor: 'Balance (minor units)',
+    dueOn: 'Due date',
+    paymentReference: 'Payment reference',
+    amountMinor: 'Amount (minor units)',
+    reversedMinor: 'Reversed amount (minor units)',
+    netMinor: 'Net amount (minor units)',
+    method: 'Payment method',
+    paidAt: 'Paid at',
+    documentType: 'Document type',
+    locale: 'Language',
+    issuedAt: 'Issued at',
+    createdAt: 'Created at',
+    channel: 'Channel',
+    eventType: 'Event type',
+    provider: 'Provider',
+    sentAt: 'Sent at',
+    deliveredAt: 'Delivered at',
+    attempts: 'Attempts',
+  },
+  ar: {
+    matricule: 'رقم الطالب',
+    lastName: 'اسم العائلة',
+    firstName: 'الاسم الأول',
+    className: 'الفصل',
+    levelName: 'المستوى',
+    studentStatus: 'حالة الطالب',
+    enrollmentStatus: 'حالة التسجيل',
+    academicYear: 'السنة الدراسية',
+    reference: 'المرجع',
+    student: 'الطالب',
+    status: 'الحالة',
+    type: 'النوع',
+    enrolledOn: 'تاريخ التسجيل',
+    endedOn: 'تاريخ الانتهاء',
+    activeEnrollments: 'التسجيلات النشطة',
+    capacity: 'السعة',
+    period: 'الفترة',
+    average: 'المعدل',
+    rank: 'الترتيب',
+    invoiceNumber: 'رقم الفاتورة',
+    currency: 'العملة',
+    invoicedMinor: 'المبلغ المفوتر (بوحدات صغرى)',
+    paidMinor: 'المبلغ المدفوع (بوحدات صغرى)',
+    balanceMinor: 'الرصيد (بوحدات صغرى)',
+    dueOn: 'تاريخ الاستحقاق',
+    paymentReference: 'مرجع الدفع',
+    amountMinor: 'المبلغ (بوحدات صغرى)',
+    reversedMinor: 'المبلغ الملغى (بوحدات صغرى)',
+    netMinor: 'المبلغ الصافي (بوحدات صغرى)',
+    method: 'طريقة الدفع',
+    paidAt: 'تاريخ الدفع',
+    documentType: 'نوع المستند',
+    locale: 'اللغة',
+    issuedAt: 'تاريخ الإصدار',
+    createdAt: 'تاريخ الإنشاء',
+    channel: 'القناة',
+    eventType: 'نوع الحدث',
+    provider: 'المزوّد',
+    sentAt: 'تاريخ الإرسال',
+    deliveredAt: 'تاريخ التسليم',
+    attempts: 'المحاولات',
+  },
+};
+export const reportColumnLabel = (locale: ReportLocale, column: string) =>
+  columnLabels[locale][column] ?? column;
 export function neutralizeSpreadsheetCell(value: string): string {
   return /^[\t\r ]*[=+\-@]/.test(value) ? `'${value}` : value;
 }
 const csvCell = (value: string) => `"${neutralizeSpreadsheetCell(value).replaceAll('"', '""')}"`;
-export function serializeCsv(page: ReportPage): Buffer {
+export function serializeCsv(page: ReportPage, locale: ReportLocale = 'en'): Buffer {
   const rows = [
-    page.columns.map(csvCell).join(','),
+    page.columns.map((column) => csvCell(reportColumnLabel(locale, column))).join(','),
     ...page.items.map((row) =>
       page.columns.map((column) => csvCell(String(row[column] ?? ''))).join(','),
     ),
@@ -84,9 +217,9 @@ function xlsxCell(reference: string, value: string | number | null, header = fal
   const text = neutralizeSpreadsheetCell(String(value ?? ''));
   return `<c r="${reference}" t="inlineStr" s="${header ? 1 : 0}"><is><t xml:space="preserve">${xml(text)}</t></is></c>`;
 }
-export function serializeXlsx(page: ReportPage): Buffer {
+export function serializeXlsx(page: ReportPage, locale: ReportLocale = 'en'): Buffer {
   const all = [
-    page.columns,
+    page.columns.map((column) => reportColumnLabel(locale, column)),
     ...page.items.map((row) => page.columns.map((column) => row[column] ?? null)),
   ];
   const sheet = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><sheetData>${all.map((row, rowIndex) => `<row r="${rowIndex + 1}">${row.map((value, columnIndex) => xlsxCell(`${columnName(columnIndex)}${rowIndex + 1}`, value, rowIndex === 0)).join('')}</row>`).join('')}</sheetData><autoFilter ref="A1:${columnName(Math.max(page.columns.length - 1, 0))}${Math.max(all.length, 1)}"/></worksheet>`;
@@ -129,7 +262,7 @@ export async function serializePdf(page: ReportPage, locale: ReportLocale): Prom
   if (page.items.length > 1000) throw new Error('REPORT_PDF_ROW_LIMIT');
   const direction = locale === 'ar' ? 'rtl' : 'ltr',
     rows = page.items;
-  const html = `<!doctype html><html lang="${locale}" dir="${direction}"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none';font-src data:;style-src 'unsafe-inline'"><style>${await localFonts()}@page{size:A4 landscape;margin:12mm}*{box-sizing:border-box}body{font-family:'GS Latin','GS Arabic',sans-serif;color:#172033;font-size:9px}html[dir=rtl] body{font-family:'GS Arabic','GS Latin',sans-serif}h1{font-size:18px}table{border-collapse:collapse;width:100%;table-layout:auto}thead{display:table-header-group}tr{break-inside:avoid}th,td{border:1px solid #cbd5e1;padding:4px;text-align:start;overflow-wrap:anywhere}th{background:#eef2f7}footer{margin-top:8px;color:#64748b}</style></head><body><h1>${xml(labels[locale]['report'] ?? 'Report')} · ${xml(page.type)}</h1><table><thead><tr>${page.columns.map((column) => `<th>${xml(column)}</th>`).join('')}</tr></thead><tbody>${rows.map((row) => `<tr>${page.columns.map((column) => `<td>${xml(String(row[column] ?? ''))}</td>`).join('')}</tr>`).join('')}</tbody></table><footer>${xml(labels[locale]['generated'] ?? 'Generated')} ${new Date().toISOString()} · ${page.total}</footer></body></html>`;
+  const html = `<!doctype html><html lang="${locale}" dir="${direction}"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none';font-src data:;style-src 'unsafe-inline'"><style>${await localFonts()}@page{size:A4 landscape;margin:12mm}*{box-sizing:border-box}body{font-family:'GS Latin','GS Arabic',sans-serif;color:#172033;font-size:9px}html[dir=rtl] body{font-family:'GS Arabic','GS Latin',sans-serif}h1{font-size:18px}table{border-collapse:collapse;width:100%;table-layout:auto}thead{display:table-header-group}tr{break-inside:avoid}th,td{border:1px solid #cbd5e1;padding:4px;text-align:start;overflow-wrap:anywhere}th{background:#eef2f7}footer{margin-top:8px;color:#64748b}</style></head><body><h1>${xml(labels[locale]['report'] ?? 'Report')} · ${xml(page.type)}</h1><table><thead><tr>${page.columns.map((column) => `<th>${xml(reportColumnLabel(locale, column))}</th>`).join('')}</tr></thead><tbody>${rows.map((row) => `<tr>${page.columns.map((column) => `<td>${xml(String(row[column] ?? ''))}</td>`).join('')}</tr>`).join('')}</tbody></table><footer>${xml(labels[locale]['generated'] ?? 'Generated')} ${new Date().toISOString()} · ${page.total}</footer></body></html>`;
   const browser = await chromium.launch({ headless: true, timeout: 15_000 });
   const deadline = setTimeout(() => void browser.close(), 30_000);
   try {
@@ -161,10 +294,14 @@ export async function serializeReport(
   locale: ReportLocale,
 ): Promise<{ bytes: Buffer; mimeType: string; extension: string }> {
   if (format === 'CSV')
-    return { bytes: serializeCsv(page), mimeType: 'text/csv; charset=utf-8', extension: 'csv' };
+    return {
+      bytes: serializeCsv(page, locale),
+      mimeType: 'text/csv; charset=utf-8',
+      extension: 'csv',
+    };
   if (format === 'XLSX')
     return {
-      bytes: serializeXlsx(page),
+      bytes: serializeXlsx(page, locale),
       mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       extension: 'xlsx',
     };
