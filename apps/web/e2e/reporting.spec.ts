@@ -103,8 +103,13 @@ test('LOT 12 admin requests, completes and securely downloads a real export', as
     timeout: 30_000,
   });
   await page.getByLabel('Type de rapport').selectOption('STUDENTS');
-  await page.getByLabel('Format').selectOption('CSV');
+  await page.getByLabel('Format').selectOption('PDF');
   await page.getByRole('button', { name: 'Générer un rapport' }).click();
+  await expect(page.locator('[data-reports-ready]')).toHaveAttribute('data-reports-ready', 'true');
+  await expect(page.getByRole('table')).toBeVisible();
+  await page.waitForTimeout(2_200);
+  await expect(page.locator('[data-reports-ready]')).toHaveAttribute('data-reports-ready', 'true');
+  await expect(page.getByRole('table')).toBeVisible();
   const ready = page.getByText('Prêt', { exact: true }).first();
   await expect(ready).toBeVisible({ timeout: 45_000 });
   const downloadPromise = page.waitForEvent('download');
