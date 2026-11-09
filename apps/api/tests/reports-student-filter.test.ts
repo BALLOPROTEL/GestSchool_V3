@@ -205,18 +205,18 @@ describe('LOT 15 students report studentId filter', () => {
   it(
     'separates student identity status from the latest enrollment status and filters on enrollment status',
     async () => {
-    const response = await report(admin);
-    expect(response.status).toBe(200);
-    const active = response.body.items.find((row) => row['matricule'] === a.student.matricule);
-    const completed = response.body.items.find(
-      (row) => row['matricule'] === second.student.matricule,
-    );
-    expect(active).toMatchObject({ studentStatus: 'ACTIVE', enrollmentStatus: 'ACTIVE' });
-    expect(completed).toMatchObject({ studentStatus: 'ACTIVE', enrollmentStatus: 'COMPLETED' });
+      const response = await report(admin);
+      expect(response.status).toBe(200);
+      const active = response.body.items.find((row) => row['matricule'] === a.student.matricule);
+      const completed = response.body.items.find(
+        (row) => row['matricule'] === second.student.matricule,
+      );
+      expect(active).toMatchObject({ studentStatus: 'ACTIVE', enrollmentStatus: 'ACTIVE' });
+      expect(completed).toMatchObject({ studentStatus: 'ACTIVE', enrollmentStatus: 'COMPLETED' });
 
-    const filtered = await report(admin, { status: 'COMPLETED' });
-    expect(filtered.status).toBe(200);
-    expect(filtered.body.total).toBe(1);
+      const filtered = await report(admin, { status: 'COMPLETED' });
+      expect(filtered.status).toBe(200);
+      expect(filtered.body.total).toBe(1);
       expect(filtered.body.items[0]).toMatchObject({
         matricule: second.student.matricule,
         studentStatus: 'ACTIVE',
