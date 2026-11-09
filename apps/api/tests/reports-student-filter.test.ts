@@ -35,14 +35,14 @@ async function report(actor: FinanceAccount, filters: Record<string, string> = {
 
 type StudentExportFormat = 'CSV' | 'XLSX' | 'PDF';
 
-async function requestExport(actor: FinanceAccount, format: StudentExportFormat, studentId: string) {
+async function requestExport(actor: FinanceAccount, format: StudentExportFormat, id: string) {
   return actor.browser.send<ReportExportView>(
     'report-exports',
     {
       reportType: 'STUDENTS',
       format,
       locale: 'fr',
-      filters: { search: '', studentId },
+      filters: { search: '', studentId: id },
     },
     'POST',
     { 'Idempotency-Key': randomUUID() },
