@@ -65,7 +65,8 @@ export function ReportsPage() {
     history = usePeopleData<ReportExportList>(
       allowed ? `report-exports?page=1&pageSize=20` : null,
       historyRevision,
-    );
+    ),
+    columnLabels = t.raw('columns') as Record<string, string>;
   useEffect(() => {
     if (history.data) setStableHistory(history.data.items);
   }, [history.data]);
@@ -199,7 +200,7 @@ export function ReportsPage() {
                   <tr>
                     {report.data.columns.map((column) => (
                       <th className="border-b p-2 text-start" key={column}>
-                        {t(`columns.${column}`)}
+                        {columnLabels[column] ?? column}
                       </th>
                     ))}
                   </tr>
@@ -237,6 +238,7 @@ export function ReportsPage() {
           {stableHistory.map((item) => (
             <article
               className="flex flex-col gap-2 rounded-lg border p-3 sm:flex-row sm:items-center"
+              data-report-export
               key={item.id}
             >
               <div className="min-w-0 flex-1">
