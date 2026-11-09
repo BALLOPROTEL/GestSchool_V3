@@ -233,7 +233,8 @@ const status = (q: ReportQuery, expression: Prisma.Sql) =>
 const students: Handler = (db, a, q, limit, offset) =>
   db.$queryRaw<Raw[]>(Prisma.sql`
   SELECT s.matricule,s.last_name "lastName",s.first_name "firstName",c.name "className",l.name "levelName",
-    s.status::text status,y.name "academicYear",count(*) over() total_count
+    s.status::text "studentStatus",e.status::text "enrollmentStatus",y.name "academicYear",
+    count(*) over() total_count
   FROM students s LEFT JOIN LATERAL (
     SELECT x.* FROM enrollments x WHERE x.tenant_id=s.tenant_id AND x.student_id=s.id
       ${q.academicYearId ? Prisma.sql`AND x.academic_year_id=${q.academicYearId}::uuid` : Prisma.empty}
@@ -245,7 +246,7 @@ const students: Handler = (db, a, q, limit, offset) =>
     ${q.studentId ? Prisma.sql`AND s.id=${q.studentId}::uuid` : Prisma.empty}
     ${q.classId ? Prisma.sql`AND e.school_class_id=${q.classId}::uuid` : Prisma.empty}
     ${q.levelId ? Prisma.sql`AND c.level_id=${q.levelId}::uuid` : Prisma.empty}
-    ${status(q, Prisma.sql`s.status::text`)} ${search(q, Prisma.sql`s.matricule||' '||s.first_name||' '||s.last_name`)}
+    ${status(q, Prisma.sql`e.status::text`)} ${search(q, Prisma.sql`s.matricule||' '||s.first_name||' '||s.last_name`)}
   ORDER BY s.last_name,s.first_name,s.id ${paging(limit, offset)}`);
 
 const enrollments: Handler = (db, a, q, limit, offset) =>
@@ -391,7 +392,8 @@ const columns: Record<ReportType, string[]> = {
     'firstName',
     'className',
     'levelName',
-    'status',
+    'studentStatus',
+    'enrollmentStatus',
     'academicYear',
   ],
   ENROLLMENTS: [
