@@ -103,13 +103,20 @@ test('LOT 12 admin requests, completes and securely downloads a real export', as
     timeout: 30_000,
   });
   await page.getByLabel('Type de rapport').selectOption('STUDENTS');
+  await expect(page.getByRole('columnheader', { name: 'Nom' })).toBeVisible();
+  await expect(page.getByRole('columnheader', { name: 'Prénom' })).toBeVisible();
+  await expect(page.getByRole('columnheader', { name: 'Statut élève' })).toBeVisible();
+  await expect(page.getByRole('columnheader', { name: 'Statut inscription' })).toBeVisible();
   await page.getByLabel('Format').selectOption('PDF');
   await page.getByRole('button', { name: 'Générer un rapport' }).click();
   await expect(page.locator('[data-reports-ready]')).toHaveAttribute('data-reports-ready', 'true');
   await expect(page.getByRole('table')).toBeVisible();
+  const exportRow = page.locator('[data-report-export]').first();
+  await expect(exportRow).toBeVisible({ timeout: 10_000 });
   await page.waitForTimeout(2_200);
   await expect(page.locator('[data-reports-ready]')).toHaveAttribute('data-reports-ready', 'true');
   await expect(page.getByRole('table')).toBeVisible();
+  await expect(exportRow).toBeVisible();
   const ready = page.getByText('Prêt', { exact: true }).first();
   await expect(ready).toBeVisible({ timeout: 45_000 });
   const downloadPromise = page.waitForEvent('download');
