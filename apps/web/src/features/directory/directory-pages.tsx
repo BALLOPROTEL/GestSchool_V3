@@ -30,7 +30,7 @@ import type {
 import { KeyRound, Plus, RefreshCcw, SearchX, ShieldCheck, UserCheck, UserX } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { FormEvent, ReactNode } from 'react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 import { getInitials } from '../shared/format';
@@ -512,6 +512,7 @@ export function AuditPage() {
   const [query, setQuery] = useState('');
   const debounced = useDebounced(query);
   const [page, setPage] = useState(1);
+  const auditTriggerRef = useRef<HTMLButtonElement | null>(null);
   const [selectedAudit, setSelectedAudit] = useState<AuditRecordView | null>(null);
   const [filters, setFilters] = useState({
     action: '',
@@ -598,7 +599,10 @@ export function AuditPage() {
           className="h-auto justify-start px-0 py-0 font-normal"
           size="sm"
           variant="ghost"
-          onClick={() => setSelectedAudit(record)}
+          onClick={(event) => {
+            auditTriggerRef.current = event.currentTarget;
+            setSelectedAudit(record);
+          }}
         >
           <StatusBadge tone="neutral">{record.action}</StatusBadge>
         </Button>
@@ -755,6 +759,10 @@ export function AuditPage() {
         <DialogContent
           aria-describedby="audit-detail-description"
           closeLabel={common('close')}
+          onCloseAutoFocus={(event) => {
+            event.preventDefault();
+            auditTriggerRef.current?.focus();
+          }}
         >
           <DialogHeader>
             <DialogTitle>{translate('detailTitle')}</DialogTitle>
