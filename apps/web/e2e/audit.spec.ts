@@ -79,10 +79,29 @@ test('LOT17.4 renders a real tenant audit event with bounded filters', async ({ 
   await expect(row).toContainText('Utilisateur E2E');
   await expect(row).toContainText('tenant');
 
+  await row
+    .getByRole('button', {
+      name: 'Afficher le détail de l’action settings.tenant.updated',
+      exact: true,
+    })
+    .click();
+  const dialog = page.getByRole('dialog', { name: 'Détail de l’action' });
+  await expect(dialog).toBeVisible();
+  await expect(dialog).toContainText('Utilisateur E2E');
+  await expect(dialog).toContainText('settings.tenant.updated');
+  await expect(dialog).toContainText('tenant');
+  await expect(dialog).toContainText('Mise à jour d’une ressource');
+  await expect(dialog).not.toContainText('metadata');
+  await expect(dialog).not.toContainText('password');
+  await expect(dialog).not.toContainText('token');
+
   expect(
     (await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze())
       .violations,
   ).toEqual([]);
+
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
 
   await page.getByRole('button', { name: 'Effacer', exact: true }).click();
 
