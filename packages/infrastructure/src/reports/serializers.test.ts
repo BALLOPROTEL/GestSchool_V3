@@ -32,6 +32,7 @@ describe('LOT 12 report serializers', () => {
   it('localizes report column headers for French exports', () => {
     expect(reportColumnLabel('fr', 'firstName')).toBe('Prénom');
     expect(reportColumnLabel('fr', 'studentStatus')).toBe('Statut élève');
+    expect(reportColumnLabel('fr', 'amountMinor')).toBe('Montant (unités mineures)');
 
     const csv = serializeCsv(page, 'fr').toString('utf8');
     expect(csv).toContain('"Prénom"');
