@@ -33,7 +33,11 @@ async function report(actor: FinanceAccount, filters: Record<string, string> = {
   return actor.browser.send<ReportPage>(`reports/students?${query.toString()}`);
 }
 
-async function requestExport(actor: FinanceAccount, format: 'CSV' | 'XLSX' | 'PDF', studentId: string) {
+async function requestExport(
+  actor: FinanceAccount,
+  format: 'CSV' | 'XLSX' | 'PDF',
+  studentId: string,
+) {
   return actor.browser.send<ReportExportView>(
     'report-exports',
     {
@@ -198,7 +202,9 @@ describe('LOT 15 students report studentId filter', () => {
     expect(classOnly.body.items[0]?.['matricule']).toBe(a.student.matricule);
   });
 
-  it('separates student identity status from the latest enrollment status and filters on enrollment status', async () => {
+  it(
+    'separates student identity status from the latest enrollment status and filters on enrollment status',
+    async () => {
     const response = await report(admin);
     expect(response.status).toBe(200);
     const active = response.body.items.find((row) => row['matricule'] === a.student.matricule);
@@ -211,12 +217,13 @@ describe('LOT 15 students report studentId filter', () => {
     const filtered = await report(admin, { status: 'COMPLETED' });
     expect(filtered.status).toBe(200);
     expect(filtered.body.total).toBe(1);
-    expect(filtered.body.items[0]).toMatchObject({
-      matricule: second.student.matricule,
-      studentStatus: 'ACTIVE',
-      enrollmentStatus: 'COMPLETED',
-    });
-  });
+      expect(filtered.body.items[0]).toMatchObject({
+        matricule: second.student.matricule,
+        studentStatus: 'ACTIVE',
+        enrollmentStatus: 'COMPLETED',
+      });
+    },
+  );
 
   it('applies the same studentId filter to CSV, XLSX and PDF exports', async () => {
     for (const format of ['CSV', 'XLSX', 'PDF'] as const) {
