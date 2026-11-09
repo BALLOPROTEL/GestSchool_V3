@@ -103,7 +103,7 @@ test('LOT 12 admin requests, completes and securely downloads a real export', as
     timeout: 30_000,
   });
   await page.getByLabel('Type de rapport').selectOption('STUDENTS');
-  await expect(page.getByRole('columnheader', { name: 'Nom' })).toBeVisible();
+  await expect(page.getByRole('columnheader', { name: 'Nom', exact: true })).toBeVisible();
   await expect(page.getByRole('columnheader', { name: 'Prénom' })).toBeVisible();
   await expect(page.getByRole('columnheader', { name: 'Statut élève' })).toBeVisible();
   await expect(page.getByRole('columnheader', { name: 'Statut inscription' })).toBeVisible();
