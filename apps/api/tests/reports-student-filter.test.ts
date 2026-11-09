@@ -33,14 +33,16 @@ async function report(actor: FinanceAccount, filters: Record<string, string> = {
   return actor.browser.send<ReportPage>(`reports/students?${query.toString()}`);
 }
 
-async function requestExport(actor: FinanceAccount, format: 'CSV' | 'XLSX', studentId: string) {
+type StudentExportFormat = 'CSV' | 'XLSX' | 'PDF';
+
+async function requestExport(actor: FinanceAccount, format: StudentExportFormat, id: string) {
   return actor.browser.send<ReportExportView>(
     'report-exports',
     {
       reportType: 'STUDENTS',
       format,
       locale: 'fr',
-      filters: { search: '', studentId },
+      filters: { search: '', studentId: id },
     },
     'POST',
     { 'Idempotency-Key': randomUUID() },
@@ -67,6 +69,10 @@ beforeAll(async () => {
   a = await h.graph(tenant.id, admin.browser, pupil.userId);
   second = await h.graph(tenant.id, admin.browser);
   foreign = await h.graph(other.id, foreignAdmin.browser);
+  await h.db.enrollment.update({
+    where: { id: second.enrollment.id },
+    data: { status: 'COMPLETED', endedOn: new Date('2026-06-30') },
+  });
 
   const guardian = await h.db.guardian.create({
     data: {
@@ -194,8 +200,28 @@ describe('LOT 15 students report studentId filter', () => {
     expect(classOnly.body.items[0]?.['matricule']).toBe(a.student.matricule);
   });
 
-  it('applies the same studentId filter to CSV and XLSX exports', async () => {
-    for (const format of ['CSV', 'XLSX'] as const) {
+  it('separates student and enrollment statuses and filters by enrollment', async () => {
+    const response = await report(admin);
+    expect(response.status).toBe(200);
+    const active = response.body.items.find((row) => row['matricule'] === a.student.matricule);
+    const completed = response.body.items.find(
+      (row) => row['matricule'] === second.student.matricule,
+    );
+    expect(active).toMatchObject({ studentStatus: 'ACTIVE', enrollmentStatus: 'ACTIVE' });
+    expect(completed).toMatchObject({ studentStatus: 'ACTIVE', enrollmentStatus: 'COMPLETED' });
+
+    const filtered = await report(admin, { status: 'COMPLETED' });
+    expect(filtered.status).toBe(200);
+    expect(filtered.body.total).toBe(1);
+    expect(filtered.body.items[0]).toMatchObject({
+      matricule: second.student.matricule,
+      studentStatus: 'ACTIVE',
+      enrollmentStatus: 'COMPLETED',
+    });
+  });
+
+  it('applies studentId to CSV, XLSX and PDF exports', async () => {
+    for (const format of ['CSV', 'XLSX', 'PDF'] as const) {
       const created = await requestExport(admin, format, a.student.id);
       expect(created.status).toBe(202);
 
@@ -214,8 +240,10 @@ describe('LOT 15 students report studentId filter', () => {
         expect(csv).toContain(a.student.matricule);
         expect(csv).not.toContain(second.student.matricule);
         expect(csv).not.toContain(foreign.student.matricule);
-      } else {
+      } else if (format === 'XLSX') {
         expect(bytes.subarray(0, 2).toString()).toBe('PK');
+      } else {
+        expect(bytes.subarray(0, 5).toString()).toBe('%PDF-');
       }
     }
   });

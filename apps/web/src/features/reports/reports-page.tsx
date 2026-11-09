@@ -29,7 +29,7 @@ const types: ReportType[] = [
   'COMMUNICATIONS',
 ];
 const formats: Record<ReportType, ReportFormat[]> = {
-  STUDENTS: ['CSV', 'XLSX'],
+  STUDENTS: ['CSV', 'XLSX', 'PDF'],
   ENROLLMENTS: ['CSV', 'XLSX'],
   ACADEMIC: ['CSV', 'XLSX'],
   RESULTS: ['XLSX', 'PDF'],
@@ -51,7 +51,7 @@ export function ReportsPage() {
     [search, setSearch] = useState(''),
     [status, setStatus] = useState(''),
     [page, setPage] = useState(1),
-    [revision, setRevision] = useState(0),
+    [historyRevision, setHistoryRevision] = useState(0),
     [exporting, setExporting] = useState(false),
     [error, setError] = useState(false),
     debounced = useDebounced(search);
@@ -60,15 +60,15 @@ export function ReportsPage() {
       `reports/${type.toLowerCase()}?page=${page}&pageSize=20&search=${encodeURIComponent(debounced)}${status ? `&status=${encodeURIComponent(status)}` : ''}`,
     [type, page, debounced, status],
   );
-  const report = usePeopleData<ReportPage>(allowed ? query : null, revision),
+  const report = usePeopleData<ReportPage>(allowed ? query : null),
     history = usePeopleData<ReportExportList>(
       allowed ? `report-exports?page=1&pageSize=20` : null,
-      revision,
+      historyRevision,
     );
   useEffect(() => {
     if (!history.data?.items.some((item) => ['PENDING', 'PROCESSING'].includes(item.status)))
       return;
-    const timer = setInterval(() => setRevision((value) => value + 1), 2000);
+    const timer = setInterval(() => setHistoryRevision((value) => value + 1), 2000);
     return () => clearInterval(timer);
   }, [history.data]);
   async function create() {
@@ -86,7 +86,7 @@ export function ReportsPage() {
         'POST',
         crypto.randomUUID(),
       );
-      setRevision((value) => value + 1);
+      setHistoryRevision((value) => value + 1);
     } catch {
       setError(true);
     } finally {

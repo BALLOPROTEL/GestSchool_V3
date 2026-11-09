@@ -86,7 +86,7 @@ export class PrismaReportsRepository extends ReportsRepository implements OnModu
   ) {
     assertReportAccess(actor, input.reportType, 'export');
     const formats: Record<ReportType, readonly ('CSV' | 'XLSX' | 'PDF')[]> = {
-      STUDENTS: ['CSV', 'XLSX'],
+      STUDENTS: ['CSV', 'XLSX', 'PDF'],
       ENROLLMENTS: ['CSV', 'XLSX'],
       ACADEMIC: ['CSV', 'XLSX'],
       RESULTS: ['XLSX', 'PDF'],
