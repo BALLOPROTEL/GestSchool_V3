@@ -1138,7 +1138,22 @@
     "page": "الصفحة {page} من {pages}",
     "system": "النظام",
     "from": "من",
-    "to": "إلى"
+    "to": "إلى",
+    "detailTitle": "تفاصيل الإجراء",
+    "detailDescription": "معلومات آمنة ومفيدة حول حدث التدقيق هذا.",
+    "openDetails": "عرض تفاصيل الإجراء {action}",
+    "summary": "الملخص",
+    "entityId": "معرّف المورد",
+    "safeDetailHint": "يتم عرض المعلومات المصرح بها فقط. لا يتم عرض البيانات الوصفية الخام أو كلمات المرور أو الرموز أو مفاتيح API أو الأسرار.",
+    "summaryCreated": "تم إنشاء مورد من نوع «{entity}».",
+    "summaryUpdated": "تم تحديث مورد من نوع «{entity}».",
+    "summaryDeleted": "تم حذف مورد من نوع «{entity}».",
+    "summarySuspended": "تم تعليق مورد من نوع «{entity}».",
+    "summaryActivated": "تم تفعيل مورد من نوع «{entity}».",
+    "summaryGenerated": "تم إنشاء مورد من نوع «{entity}».",
+    "summaryPublished": "تم نشر مورد من نوع «{entity}».",
+    "summaryFailed": "فشلت عملية مرتبطة بالمورد «{entity}».",
+    "summaryGeneric": "تم تسجيل الإجراء «{action}» على المورد «{entity}»."
   },
   "Settings": {
     "absenceAlertDescription": "إبلاغ أولياء الأمور عند وجود غياب غير مبرر.",

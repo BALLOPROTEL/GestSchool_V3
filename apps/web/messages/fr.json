@@ -1138,7 +1138,22 @@
     "page": "Page {page} sur {pages}",
     "system": "Système",
     "from": "Du",
-    "to": "Au"
+    "to": "Au",
+    "detailTitle": "Détail de l’action",
+    "detailDescription": "Informations sûres et utiles sur cet événement d’audit.",
+    "openDetails": "Afficher le détail de l’action {action}",
+    "summary": "Résumé",
+    "entityId": "Identifiant de ressource",
+    "safeDetailHint": "Seules les informations autorisées sont affichées. Les métadonnées brutes, mots de passe, jetons, clés API et secrets ne sont jamais présentés.",
+    "summaryCreated": "Création d’une ressource « {entity} ».",
+    "summaryUpdated": "Mise à jour d’une ressource « {entity} ».",
+    "summaryDeleted": "Suppression d’une ressource « {entity} ».",
+    "summarySuspended": "Suspension d’une ressource « {entity} ».",
+    "summaryActivated": "Activation d’une ressource « {entity} ».",
+    "summaryGenerated": "Génération d’une ressource « {entity} ».",
+    "summaryPublished": "Publication d’une ressource « {entity} ».",
+    "summaryFailed": "Échec d’une opération liée à la ressource « {entity} ».",
+    "summaryGeneric": "L’action « {action} » a été enregistrée sur la ressource « {entity} »."
   },
   "Settings": {
     "absenceAlertDescription": "Avertir les responsables lors d’une absence non justifiée.",

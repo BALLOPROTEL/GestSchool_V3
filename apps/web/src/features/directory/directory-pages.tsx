@@ -30,7 +30,7 @@ import type {
 import { KeyRound, Plus, RefreshCcw, SearchX, ShieldCheck, UserCheck, UserX } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { FormEvent, ReactNode } from 'react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 import { getInitials } from '../shared/format';
@@ -512,6 +512,8 @@ export function AuditPage() {
   const [query, setQuery] = useState('');
   const debounced = useDebounced(query);
   const [page, setPage] = useState(1);
+  const auditTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const [selectedAudit, setSelectedAudit] = useState<AuditRecordView | null>(null);
   const [filters, setFilters] = useState({
     action: '',
     entityType: '',
@@ -541,6 +543,33 @@ export function AuditPage() {
     setPage(1);
   }
 
+  function auditSummary(record: AuditRecordView): string {
+    const suffix = record.action.split('.').at(-1);
+    switch (suffix) {
+      case 'created':
+        return translate('summaryCreated', { entity: record.entityType });
+      case 'updated':
+        return translate('summaryUpdated', { entity: record.entityType });
+      case 'deleted':
+        return translate('summaryDeleted', { entity: record.entityType });
+      case 'suspended':
+        return translate('summarySuspended', { entity: record.entityType });
+      case 'activated':
+        return translate('summaryActivated', { entity: record.entityType });
+      case 'generated':
+        return translate('summaryGenerated', { entity: record.entityType });
+      case 'published':
+        return translate('summaryPublished', { entity: record.entityType });
+      case 'failed':
+        return translate('summaryFailed', { entity: record.entityType });
+      default:
+        return translate('summaryGeneric', {
+          action: record.action,
+          entity: record.entityType,
+        });
+    }
+  }
+
   const columns: readonly DataTableColumn<AuditRecordView>[] = [
     {
       cell: (record) => (
@@ -564,7 +593,20 @@ export function AuditPage() {
       id: 'user',
     },
     {
-      cell: (record) => <StatusBadge tone="neutral">{record.action}</StatusBadge>,
+      cell: (record) => (
+        <Button
+          aria-label={translate('openDetails', { action: record.action })}
+          className="h-auto justify-start px-0 py-0 font-normal"
+          size="sm"
+          variant="ghost"
+          onClick={(event) => {
+            auditTriggerRef.current = event.currentTarget;
+            setSelectedAudit(record);
+          }}
+        >
+          <StatusBadge tone="neutral">{record.action}</StatusBadge>
+        </Button>
+      ),
       header: translate('action'),
       id: 'action',
     },
@@ -708,6 +750,85 @@ export function AuditPage() {
           </div>
         </div>
       </DirectoryLayout>
+      <Dialog
+        open={Boolean(selectedAudit)}
+        onOpenChange={(open) => {
+          if (!open) setSelectedAudit(null);
+        }}
+      >
+        <DialogContent
+          aria-describedby="audit-detail-description"
+          closeLabel={common('close')}
+          onCloseAutoFocus={(event) => {
+            event.preventDefault();
+            auditTriggerRef.current?.focus();
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>{translate('detailTitle')}</DialogTitle>
+            <DialogDescription id="audit-detail-description">
+              {translate('detailDescription')}
+            </DialogDescription>
+          </DialogHeader>
+          {selectedAudit ? (
+            <div className="grid gap-4">
+              <div className="rounded-lg border bg-muted/20 p-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  {translate('summary')}
+                </p>
+                <p className="mt-1 text-sm">{auditSummary(selectedAudit)}</p>
+              </div>
+              <dl className="grid gap-3 text-sm sm:grid-cols-2">
+                <div>
+                  <dt className="text-xs font-medium text-muted-foreground">
+                    {translate('timestamp')}
+                  </dt>
+                  <dd className="mt-1">
+                    {new Intl.DateTimeFormat(undefined, {
+                      dateStyle: 'medium',
+                      timeStyle: 'medium',
+                    }).format(new Date(selectedAudit.occurredAt))}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-medium text-muted-foreground">{translate('user')}</dt>
+                  <dd className="mt-1">
+                    {selectedAudit.actor?.displayName ?? translate('system')}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-medium text-muted-foreground">
+                    {translate('action')}
+                  </dt>
+                  <dd className="mt-1 break-all font-mono text-xs">{selectedAudit.action}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-medium text-muted-foreground">
+                    {translate('entity')}
+                  </dt>
+                  <dd className="mt-1">{selectedAudit.entityType}</dd>
+                </div>
+                {selectedAudit.entityId ? (
+                  <div className="sm:col-span-2">
+                    <dt className="text-xs font-medium text-muted-foreground">
+                      {translate('entityId')}
+                    </dt>
+                    <dd className="mt-1 break-all font-mono text-xs">{selectedAudit.entityId}</dd>
+                  </div>
+                ) : null}
+              </dl>
+              <p className="rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground">
+                {translate('safeDetailHint')}
+              </p>
+            </div>
+          ) : null}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSelectedAudit(null)}>
+              {common('close')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

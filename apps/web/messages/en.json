@@ -1138,7 +1138,22 @@
     "page": "Page {page} of {pages}",
     "system": "System",
     "from": "From",
-    "to": "To"
+    "to": "To",
+    "detailTitle": "Action details",
+    "detailDescription": "Safe and useful information about this audit event.",
+    "openDetails": "Show details for action {action}",
+    "summary": "Summary",
+    "entityId": "Resource identifier",
+    "safeDetailHint": "Only approved information is displayed. Raw metadata, passwords, tokens, API keys and secrets are never shown.",
+    "summaryCreated": "A “{entity}” resource was created.",
+    "summaryUpdated": "A “{entity}” resource was updated.",
+    "summaryDeleted": "A “{entity}” resource was deleted.",
+    "summarySuspended": "A “{entity}” resource was suspended.",
+    "summaryActivated": "A “{entity}” resource was activated.",
+    "summaryGenerated": "A “{entity}” resource was generated.",
+    "summaryPublished": "A “{entity}” resource was published.",
+    "summaryFailed": "An operation related to the “{entity}” resource failed.",
+    "summaryGeneric": "The action “{action}” was recorded for the “{entity}” resource."
   },
   "Settings": {
     "absenceAlertDescription": "Notify guardians when an absence is not justified.",

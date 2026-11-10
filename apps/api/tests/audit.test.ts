@@ -66,6 +66,9 @@ describe('LOT17.4 real audit repository', () => {
           action: 'settings.tenant.updated',
           entityType: 'tenant',
           entityId: own.tenant.id,
+          metadata: {
+            internalMarker: 'audit-private-marker',
+          },
         },
         {
           tenantId: foreign.tenant.id,
@@ -97,6 +100,8 @@ describe('LOT17.4 real audit repository', () => {
       },
     });
     expect(view.items.some((item) => item.action === 'finance.payment.created')).toBe(false);
+    expect(JSON.stringify(view)).not.toContain('audit-private-marker');
+    expect(view.items[0]).not.toHaveProperty('metadata');
   });
 
   it('searches by actor or action inside the current tenant', async () => {
