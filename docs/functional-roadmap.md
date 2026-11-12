@@ -61,6 +61,7 @@ Follow-ups absorbés et fermés : #110, #112, #114.
 Parent : #130 — **READY** après nettoyage GitHub post-LOT18.
 
 Ordre prévu :
+
 1. emploi du temps ;
 2. créneaux, salles et détection de conflits ;
 3. calendrier scolaire et événements ;
@@ -70,6 +71,7 @@ Ordre prévu :
 7. certification finale multi-rôles.
 
 Pré-flight :
+
 - #138 — mode break-glass SUPER_ADMIN audité sur les actions sensibles pertinentes ;
 - réévaluer les nouvelles PR Dependabot propres depuis `main` ;
 - conserver staging-only tant qu'aucune autorisation de production n'est donnée.

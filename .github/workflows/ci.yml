@@ -163,4 +163,3 @@ jobs:
 
       - name: Test frontend, IAM, directory, academic, enrollment, finance, results and document journeys
         run: pnpm test:e2e
-

@@ -48,6 +48,7 @@ pipeline évaluation → note → moyenne/rang → bulletin, cartes scolaires/br
 Brevo, rapports PDF/statuts, recette multi-rôles et Audit UX.
 
 Référence finale LOT18 :
+
 - `main@9b8ff4196a0352582506be7ce1c3b79b1996cb7a`
 - CI main #506 : SUCCESS
 - staging Vercel/Render : aligné
