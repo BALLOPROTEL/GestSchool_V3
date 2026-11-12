@@ -1,4 +1,4 @@
-name: Post-LOT18 GitHub cleanup
+name: Post-LOT18 branch and tag cleanup
 
 on:
   push:
@@ -7,13 +7,10 @@ on:
 
 permissions:
   contents: write
-  issues: read
-  pull-requests: read
-  repository-projects: write
 
 jobs:
   cleanup:
-    if: github.event.head_commit.message == 'chore: run post-LOT18 GitHub cleanup'
+    if: github.event.head_commit.message == 'chore: run post-LOT18 branch-tag cleanup'
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
@@ -57,27 +54,3 @@ jobs:
             echo "Deleting obsolete branch: $branch"
             git push origin --delete "$branch"
           done
-
-      - name: Audit linked GitHub Projects V2
-        env:
-          GH_TOKEN: ${{ github.token }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          gh api graphql \
-            -f owner="${{ github.repository_owner }}" \
-            -f name="${{ github.event.repository.name }}" \
-            -f query='
-              query($owner: String!, $name: String!) {
-                repository(owner: $owner, name: $name) {
-                  projectsV2(first: 20) {
-                    nodes {
-                      id
-                      number
-                      title
-                      closed
-                      url
-                    }
-                  }
-                }
-              }' | tee project-v2-audit.json
