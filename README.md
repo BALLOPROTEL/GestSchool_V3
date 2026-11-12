@@ -1,17 +1,21 @@
 # GestSchool
 
-GestSchool V3 est un SaaS scolaire multi-tenant en staging avancé. Les LOTS 0 à 17 couvrent
+GestSchool V3 est un SaaS scolaire multi-tenant en staging avancé. Les LOTS 0 à 18 couvrent
 le socle technique, IAM/MFA/RBAC, annuaires élèves/parents/enseignants, référentiel académique,
 inscriptions/réinscriptions/transferts, finance, évaluations/notes/moyennes/rangs/bulletins,
-documents PDF/QR, messagerie/notifications, dashboards/rapports/exports, sécurité,
-préparation d'exploitation, continuité d'identité V2 → V3 et finalisation des parcours visibles
-sans mocks métier.
+présences, documents PDF/QR, messagerie/notifications, dashboards/rapports/exports, sécurité,
+continuité d'identité V2 → V3, stabilisation UX et recette multi-rôles.
 
-Le LOT17 est clôturé avec CI, sécurité, Codex et recette staging PASS. Le chantier courant est
-le [LOT18](https://github.com/BALLOPROTEL/GestSchool_V3/issues/118) : **stabilisation fonctionnelle
-et UX du cœur existant**, fondé sur la recette réelle du propriétaire. Les nouveaux grands domaines
-(emploi du temps, calendrier, devoirs, vie scolaire, admissions) sont planifiés au LOT19 ; RH,
-bibliothèque, cantine, transport, inventaire et paiement en ligne au LOT20.
+Le [LOT18](https://github.com/BALLOPROTEL/GestSchool_V3/issues/118) est **TERMINÉ — TECH PASS + MANUAL PASS**.
+La référence certifiée est `main@9b8ff4196a0352582506be7ce1c3b79b1996cb7a` avec CI #506 SUCCESS,
+Vercel staging READY, Render API/worker LIVE et recette propriétaire finale PASS.
+
+Le prochain chantier est le [LOT19](https://github.com/BALLOPROTEL/GestSchool_V3/issues/130) :
+**exploitation quotidienne de l’établissement** (emploi du temps, salles/conflits, calendrier,
+devoirs/agenda, vie scolaire, admissions). Le pré-flight LOT19 conserve la dette transverse
+[#138](https://github.com/BALLOPROTEL/GestSchool_V3/issues/138) sur le mode break-glass SUPER_ADMIN.
+Le [LOT20](https://github.com/BALLOPROTEL/GestSchool_V3/issues/131) reste le backlog futur pour RH,
+bibliothèque, cantine, transport, inventaire et paiement en ligne.
 
 GestSchool V3 reste **staging uniquement** : aucune mise en production réelle, aucun cutover V2 → V3
 et aucun onboarding d'établissement réel ne sont autorisés sans décision explicite du propriétaire.

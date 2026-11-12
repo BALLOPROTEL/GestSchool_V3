@@ -38,28 +38,31 @@ dans [`lot10-ci-storage.md`](lot10-ci-storage.md).
 
 ## État fonctionnel courant
 
-Les LOTS 0 à 17 ont remplacé les principaux mocks métier visibles par des parcours réels.
-Le portail comprend aujourd'hui les domaines IAM, annuaires, académique, inscriptions,
-finance, résultats/bulletins, documents, communications, dashboards, rapports, paramètres,
-audit, profil, recherche globale et présences.
+Les LOTS 0 à 18 sont terminés. Le portail couvre aujourd'hui les domaines IAM/MFA/RBAC,
+annuaires, académique, inscriptions, finance, résultats/bulletins, présences, documents,
+communications, dashboards, rapports, paramètres, audit, profil et recherche globale.
 
-Cette couverture technique ne signifie pas que tous les parcours sont ergonomiquement ou
-fonctionnellement parfaits. La recette propriétaire post-LOT17 a identifié plusieurs écarts
-réels : onboarding MFA sans QR, absence de photos élève, référentiel académique difficile à
-comprendre, réouverture d'inscriptions, persistance/validation des présences, pipeline
-évaluation → note → bulletin, cartes scolaires, communications, rapports et certains réglages.
+Le LOT18 a stabilisé les parcours réellement utilisés dans le navigateur : QR MFA, avatars,
+navigation académique guidée, réouverture des inscriptions, persistance/export PDF des présences,
+pipeline évaluation → note → moyenne/rang → bulletin, cartes scolaires/branding, communications
+Brevo, rapports PDF/statuts, recette multi-rôles et Audit UX.
 
-Ces écarts sont la source du LOT18. Ils sont suivis dans
-[functional-roadmap.md](functional-roadmap.md).
+Référence finale LOT18 :
+- `main@9b8ff4196a0352582506be7ce1c3b79b1996cb7a`
+- CI main #506 : SUCCESS
+- staging Vercel/Render : aligné
+- recette manuelle propriétaire : PASS
+
+La source de vérité fonctionnelle est [functional-roadmap.md](functional-roadmap.md).
 
 ## Limites et roadmap
 
-- **LOT18 — Stabilisation fonctionnelle & UX** : corriger les parcours existants avant d'ajouter
-  de nouveaux grands domaines.
-- **LOT19 — Exploitation quotidienne** : emploi du temps, créneaux/salles/conflits, calendrier,
-  devoirs/agenda, vie scolaire et admissions.
-- **LOT20 — Extensions de gestion** : RH, bibliothèque, cantine, transport, inventaire et
-  paiement bancaire/en ligne.
+- **LOT19 — Exploitation quotidienne** (#130) : prochain chantier, statut READY après nettoyage
+  GitHub post-LOT18 ; emploi du temps, créneaux/salles/conflits, calendrier, devoirs/agenda,
+  vie scolaire et admissions.
+- **#138 — Break-glass SUPER_ADMIN** : dette sécurité/gouvernance transverse du pré-flight LOT19.
+- **LOT20 — Extensions de gestion** (#131) : backlog futur RH, bibliothèque, cantine, transport,
+  inventaire et paiement bancaire/en ligne.
 
 Le paiement en ligne n'est pas implémenté. La production réelle et le cutover V2 → V3 restent
 interdits sans autorisation explicite. V2 reste la référence opérationnelle tant qu'une décision
@@ -73,8 +76,9 @@ Le [rapport de certification locale](lot13-certification.md) détaille les 88 po
 
 Le [LOT14](lot14-certification.md) a établi le GO staging fonctionnel. LOT15 a ensuite préparé
 les prérequis d'exploitation technique et le rollback sans autoriser de production réelle.
-LOT16 a préparé la continuité d'identité V2 → V3 sans migration réelle, puis LOT17 a certifié
-les parcours visibles sans mocks métier sur le staging fixe.
+LOT16 a préparé la continuité d'identité V2 → V3 sans migration réelle, LOT17 a certifié
+les parcours visibles sans mocks métier, puis LOT18 a stabilisé et recetté le cœur fonctionnel
+sur le staging fixe.
 
 Le [plan de cutover V2→V3](deployment/cutover-v2-v3.md) reste non exécuté ; V2 est intacte.
-La stabilisation fonctionnelle continue au LOT18 avant tout nouveau GO produit.
+Le prochain chantier produit est LOT19 (#130).

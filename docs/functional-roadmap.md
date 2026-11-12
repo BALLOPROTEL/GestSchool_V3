@@ -1,77 +1,80 @@
 # Roadmap fonctionnelle GestSchool V3
 
-Dernière mise à jour : après clôture du LOT17.
+Dernière mise à jour : **après clôture complète du LOT18**.
 
-Cette page est la source de vérité produit. Elle distingue la présence
-technique d'un module de son niveau réel d'utilisabilité dans le navigateur.
+Cette page est la source de vérité produit. GestSchool V3 reste **staging uniquement** :
+aucune production réelle, aucun cutover V2 → V3 et aucun onboarding d'établissement réel
+sans autorisation explicite du propriétaire.
+
+## Référence certifiée
+
+- `main` : `9b8ff4196a0352582506be7ce1c3b79b1996cb7a`
+- CI main #506 : **SUCCESS**
+- Vercel staging : **READY**
+- Render API : **LIVE**
+- Render worker : **LIVE**
+- Codex final : aucun finding non résolu
+- Snyk : **SUCCESS**
+- recette manuelle propriétaire LOT18 : **PASS**
 
 ## État du cœur existant
 
-- **Authentification / MFA / sessions / RBAC / multi-tenant** : fonctionnel,
-  onboarding MFA à améliorer. LOT18.1 ajoute le QR Authenticator avec fallback
-  manuel.
-- **Élèves** : fonctionnel, photo absente. LOT18.1 ajoute une photo élève
-  privée.
-- **Parents / responsables** : OK à ce stade. Maintien et non-régression.
-- **Enseignants** : OK à ce stade. Maintien et non-régression.
-- **Référentiel académique** : fonctionnel mais UX confuse. LOT18.2 ajoute une
-  navigation dédiée et des prérequis guidés.
-- **Inscriptions / réinscriptions / transferts** : fonctionnel mais corrections
-  administrateur limitées. LOT18.3.
-- **Présences / absences / retards** : partiel en UX, persistance et export.
-  LOT18.4.
-- **Évaluations / notes / moyennes / rangs / bulletins** : pipeline de bout en
-  bout à réparer. LOT18.5.
-- **Finance** : non recettée récemment par le propriétaire. À recetter après
-  stabilisation des priorités LOT18.
-- **Documents / PDF / QR** : fonctionnel mais cartes scolaires bloquées dans la
-  recette. LOT18.6.
-- **Communications IN_APP** : erreur de chargement observée. LOT18.7.
-- **Email / Brevo** : livraison réelle staging à finaliser. LOT18.7 + #110.
-- **WhatsApp** : architecture prévue, usage réel gardé derrière opt-in. Pas de
-  changement immédiat.
-- **Dashboards par rôle** : fonctionnels mais recette propriétaire multi-rôles
-  incomplète. LOT18.9.
-- **Rapports** : CSV/XLSX visibles, PDF/UX/statuts à corriger. LOT18.8.
-- **Administration utilisateurs** : OK. Maintien et non-régression.
-- **Paramètres établissement** : OK sauf identité visuelle / composants UI.
-  LOT18.6.
-- **Audit** : fonctionnel, détail UX manquant. LOT18.9 + #112.
-- **Profil / sécurité** : fonctionnel, photo manquante. LOT18.1 + #114.
-- **Recherche globale** : OK. Maintien et non-régression.
-- **FR / EN / AR + RTL** : OK. Maintien et non-régression.
-- **Continuité identité V2 → V3** : préparée techniquement. Aucune migration
-  réelle sans autorisation.
+- **Authentification / MFA / sessions / RBAC / multi-tenant** : opérationnel ; QR MFA + fallback manuel validés.
+- **Élèves / parents / enseignants** : opérationnels ; avatars utilisateur et élève privés validés.
+- **Référentiel académique** : navigation guidée et prérequis explicites validés.
+- **Inscriptions / réinscriptions / transferts** : opérationnels ; réouverture administrative auditée validée.
+- **Présences / absences / retards** : persistance, concurrence, validation explicite et export PDF validés.
+- **Évaluations / notes / moyennes / rangs / bulletins** : pipeline bout-en-bout et PDF validés.
+- **Finance** : fonctionnelle et couverte par les certifications transverses.
+- **Documents / cartes scolaires / PDF / QR / branding** : opérationnels et validés.
+- **Communications IN_APP / email Brevo staging** : opérationnelles et validées.
+- **Dashboards par rôle** : recette multi-rôles validée.
+- **Rapports** : CSV/XLSX/PDF, statuts et UX de génération validés.
+- **Administration utilisateurs / invitations / rôles** : opérationnelle.
+- **Paramètres établissement** : opérationnels.
+- **Audit** : journal réel + détail UX sûr et accessible validés.
+- **Profil / sécurité** : opérationnel.
+- **Recherche globale** : opérationnelle.
+- **FR / EN / AR + RTL** : maintenus et certifiés sur les parcours touchés.
+- **Continuité identité V2 → V3** : préparée techniquement ; aucune migration réelle autorisée.
 
-## LOT18 — Stabilisation fonctionnelle & UX
+## LOT18 — Stabilisation fonctionnelle & UX — TERMINÉ
 
 Parent : #118
 
-1. #119 — Documentation, backlog et vérité produit
-2. #120 — MFA QR + photos utilisateur et élève
-3. #121 — Référentiel académique : navigation et parcours guidé
-4. #122 — Inscriptions : réouverture administrative et menu Actions
-5. #123 — Présences : persistance, validation explicite et export PDF
-6. #124 — Évaluations → notes → moyennes/rangs → bulletins
-7. #125 — Documents, cartes scolaires et identité visuelle
-8. #126 — Communications + livraison Brevo réelle
-9. #127 — Rapports : PDF, UX génération et statuts élèves corrects
-10. #128 — Recette multi-rôles + Audit UX
-11. #129 — Certification finale
+- [x] #119 — Documentation, backlog et vérité produit
+- [x] #120 — MFA QR + photos utilisateur et élève
+- [x] #121 — Référentiel académique : navigation et parcours guidé
+- [x] #122 — Inscriptions : réouverture administrative et menu Actions
+- [x] #123 — Présences : persistance, validation explicite et export PDF
+- [x] #124 — Évaluations → notes → moyennes/rangs → bulletins
+- [x] #125 — Documents, cartes scolaires et identité visuelle
+- [x] #126 — Communications + livraison Brevo réelle
+- [x] #127 — Rapports : PDF, UX génération et statuts élèves
+- [x] #128 — Recette multi-rôles + Audit UX
+- [x] #129 — Certification finale
 
-## LOT19 — Exploitation quotidienne
+Follow-ups absorbés et fermés : #110, #112, #114.
 
-Parent : #130
+## LOT19 — Exploitation quotidienne — PROCHAIN CHANTIER
 
-- emploi du temps ;
-- créneaux, salles et détection de conflits ;
-- calendrier scolaire et événements ;
-- devoirs / travail à faire / agenda élève ;
-- vie scolaire : incidents, observations, sanctions ;
-- préinscriptions / candidatures / admissions ;
-- certification multi-rôles.
+Parent : #130 — **READY** après nettoyage GitHub post-LOT18.
 
-## LOT20 — Extensions de gestion
+Ordre prévu :
+1. emploi du temps ;
+2. créneaux, salles et détection de conflits ;
+3. calendrier scolaire et événements ;
+4. devoirs / travail à faire / agenda élève ;
+5. vie scolaire : incidents, observations, sanctions ;
+6. préinscriptions / candidatures / admissions ;
+7. certification finale multi-rôles.
+
+Pré-flight :
+- #138 — mode break-glass SUPER_ADMIN audité sur les actions sensibles pertinentes ;
+- réévaluer les nouvelles PR Dependabot propres depuis `main` ;
+- conserver staging-only tant qu'aucune autorisation de production n'est donnée.
+
+## LOT20 — Extensions de gestion — BACKLOG FUTUR
 
 Parent : #131
 
@@ -82,18 +85,15 @@ Parent : #131
 - stock / inventaire ;
 - paiement bancaire/en ligne.
 
+LOT20 ne démarre qu'après LOT19 et sa certification finale.
+
 ## Règles produit
 
-- Aucun nouveau grand domaine ne doit masquer un défaut bloquant du cœur
-  existant.
-- SCHOOL_ADMIN doit pouvoir corriger les erreurs métier réversibles avec
-  confirmation et audit.
-- Les dépendances entre objets doivent être expliquées dans l'interface avec un
-  CTA vers le prérequis.
-- Un état affiché après reload doit provenir de la donnée persistée, pas d'un
-  état React local.
+- Aucun nouveau grand domaine ne doit masquer un défaut bloquant du cœur existant.
+- SCHOOL_ADMIN doit pouvoir corriger les erreurs métier réversibles avec confirmation et audit.
+- SUPER_ADMIN ne dispose d'aucun bypass silencieux ; tout break-glass légitime doit être justifié et audité (#138).
+- Les dépendances entre objets doivent être expliquées dans l'interface avec un CTA vers le prérequis.
+- Un état affiché après reload doit provenir de la donnée persistée, pas d'un état React local.
 - Les exports doivent être cohérents avec l'écran et les permissions.
-- Les recettes staging multi-rôles doivent être possibles sans publier de
-  secrets.
-- Aucune production réelle ni migration réelle V2 → V3 sans autorisation
-  explicite.
+- Les recettes staging multi-rôles doivent être possibles sans publier de secrets.
+- Aucune production réelle ni migration réelle V2 → V3 sans autorisation explicite.
