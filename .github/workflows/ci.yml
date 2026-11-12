@@ -165,7 +165,7 @@ jobs:
         run: pnpm test:e2e
 
   post_lot18_cleanup:
-    if: github.event_name == 'push' && github.event.head_commit.message == 'chore: execute post-LOT18 refs cleanup'
+    if: ${{ github.event_name == 'push' && startsWith(github.event.head_commit.message, 'chore: execute post-LOT18 refs cleanup') }}
     runs-on: ubuntu-24.04
     permissions:
       contents: write
