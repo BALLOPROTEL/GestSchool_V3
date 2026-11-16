@@ -19,7 +19,7 @@
     }
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "3.1126.0",
+    "@aws-sdk/client-s3": "3.1168.0",
     "@fontsource/noto-sans": "5.3.0",
     "@fontsource/noto-sans-arabic": "5.3.0",
     "@gestschool/config": "workspace:*",
